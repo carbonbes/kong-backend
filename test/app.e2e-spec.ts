@@ -1,3 +1,4 @@
+import { describe, beforeEach, test } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
@@ -15,7 +16,7 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  test('/ (GET)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
