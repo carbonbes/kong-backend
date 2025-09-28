@@ -4,10 +4,10 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm'
-import { User, UserGender } from './user.interface'
+import { UserGender } from './user.interface'
 
 @Entity()
-export class UserEntity implements User {
+export class User {
   @PrimaryGeneratedColumn()
   id: number
 
@@ -17,7 +17,11 @@ export class UserEntity implements User {
   @Column({ unique: true })
   email: string
 
-  @Column({ type: 'enum', enum: UserGender, default: UserGender.OTHER })
+  @Column({
+    type: 'enum',
+    enum: UserGender,
+    default: UserGender.OTHER,
+  })
   gender: UserGender
 
   @CreateDateColumn()
