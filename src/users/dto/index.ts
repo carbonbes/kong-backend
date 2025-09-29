@@ -1,37 +1,47 @@
-import { User } from './user.entity'
-import { UserGender } from './user.interface'
+import { User } from '../entity'
+import { UserGender } from '../enum'
 import { PartialType, PickType } from '@nestjs/mapped-types'
 import { IsDate, IsEmail, IsEnum, IsNumber, IsString } from 'class-validator'
-import { Exclude, Expose } from 'class-transformer'
+import { Expose } from 'class-transformer'
 
 class BaseUserDto implements User {
   @IsNumber()
-  @Expose()
   id: number
 
-  @IsString()
-  @Expose()
-  name: string
-
   @IsEmail()
-  @Exclude()
   email: string
 
+  @IsString()
+  name: string
+
   @IsEnum(UserGender)
-  @Expose()
   gender: UserGender
 
   @IsDate()
-  @Expose()
   createdAt: Date
 }
 
 export class CreateUserDto extends PickType(BaseUserDto, [
-  'name',
   'email',
+  'name',
   'gender',
 ] as const) {}
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {}
 
-export class UserResponseDto extends BaseUserDto {}
+export class UserResponseDto implements User {
+  @Expose()
+  id: number
+
+  @Expose({ groups: ['owner', 'admin'] })
+  email: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  gender: UserGender
+
+  @Expose()
+  createdAt: Date
+}

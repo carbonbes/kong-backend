@@ -6,7 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { addTransactionalDataSource } from 'typeorm-transactional'
 import { DataSource } from 'typeorm'
 import { AuthModule } from './auth/auth.module'
-import { UsersService } from './users/users.service'
+import { UsersModule } from './users/users.module'
+import { OtpsModule } from './otps/otps.module'
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UsersService } from './users/users.service'
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
         autoLoadEntities: true,
+        synchronize: true,
       }),
 
       async dataSourceFactory(options) {
@@ -34,9 +36,11 @@ import { UsersService } from './users/users.service'
     }),
 
     AuthModule,
+    UsersModule,
+    OtpsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, UsersService],
+  providers: [AppService],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {}

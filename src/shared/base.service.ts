@@ -6,51 +6,33 @@ import {
   Repository,
 } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
-import { ClassConstructor, plainToInstance } from 'class-transformer'
 
-export abstract class BaseService<T, R> {
-  protected constructor(
-    protected readonly repository: Repository<T>,
-    protected readonly responseDto: ClassConstructor<R>,
-  ) {}
-
-  private async response(plain: T | T[]) {
-    return plainToInstance(this.responseDto, plain)
-  }
+export abstract class BaseService<T> {
+  protected constructor(protected readonly repository: Repository<T>) {}
 
   async create(entities: DeepPartial<T>) {
-    const plain = await this.repository.save(entities)
-
-    return this.response(plain)
+    return this.repository.save(entities)
   }
 
   async findOne(options: FindOneOptions<T>) {
-    const plain = await this.repository.findOne(options)
-
-    return this.response(plain)
+    return this.repository.findOne(options)
   }
 
   async findAll(options?: FindManyOptions<T>) {
-    const plain = await this.repository.find(options)
-
-    return this.response(plain)
+    return this.repository.find(options)
   }
 
   async updateOne(
     criteria: FindOptionsWhere<T> | FindOptionsWhere<T>[],
     partialEntity: T,
   ) {
-    const plain = await this.repository.update(
+    return this.repository.update(
       criteria,
       partialEntity as QueryDeepPartialEntity<T>,
     )
-
-    return this.response(plain)
   }
 
   async deleteOne(criteria: FindOptionsWhere<T> | FindOptionsWhere<T>[]) {
-    const plain = await this.repository.delete(criteria)
-
-    return this.response(plain)
+    return this.repository.delete(criteria)
   }
 }
