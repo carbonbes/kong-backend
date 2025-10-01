@@ -20,6 +20,9 @@ export class User {
   @Column({ type: 'enum', enum: UserGender })
   gender: UserGender
 
+  @Column({ default: false })
+  isActive: boolean
+
   @CreateDateColumn()
   createdAt: Date
 }

@@ -1,19 +1,21 @@
 import { Body, Controller, Post } from '@nestjs/common'
-import { UsersService } from '../users/users.service'
-import { SignUpDto } from './dto'
-import { plainToInstance } from 'class-transformer'
-import { UserResponseDto } from '../users/dto'
+import { SignInDto, SignUpDto } from './dto'
+import { AuthService } from './auth.service'
+import { Public } from '../shared/decorators/public.decorator'
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
+  @Public()
   async signUp(@Body() data: SignUpDto) {
-    const user = await this.usersService.create(data)
+    return await this.authService.signUp(data)
+  }
 
-    return plainToInstance(UserResponseDto, user, {
-      groups: user.email === data.email ? ['owner'] : undefined,
-    })
+  @Post('signin')
+  @Public()
+  async signIn(@Body() data: SignInDto) {
+    return await this.authService.signIn(data)
   }
 }
