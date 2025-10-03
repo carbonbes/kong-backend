@@ -1,7 +1,4 @@
-import { Otp } from '../entity'
-import { User } from '../../users/entity'
+import { CreateOtpDto, VerifyOtpDto } from '../dto'
 
-export type CreateOtpInput = Pick<Otp, 'type' | 'user'>
-export type CreateSignUpOtpInput = Pick<Otp, 'user'>
-export type CreateSignInOtpInput = CreateSignUpOtpInput
-export type VerifyOtpInput = Pick<Otp, 'otp' | 'type'> & Pick<User, 'email'>
+export type CreateOtpInput = CreateOtpDto
+export type VerifyOtpInput = VerifyOtpDto

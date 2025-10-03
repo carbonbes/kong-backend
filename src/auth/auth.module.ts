@@ -6,15 +6,19 @@ import { OtpsModule } from '../otps/otps.module'
 import { PassportModule } from '@nestjs/passport'
 import { JwtModule } from '@nestjs/jwt'
 import { JwtStrategy } from './jwt.strategy'
+import { ConfigService } from '@nestjs/config'
 
 @Module({
   imports: [
     UsersModule,
     OtpsModule,
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_STRATEGY_SECRET_KEY,
-      signOptions: { expiresIn: '300s' },
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_STRATEGY_SECRET_KEY'),
+      }),
     }),
   ],
   providers: [AuthService, JwtStrategy],

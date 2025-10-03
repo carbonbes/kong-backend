@@ -1,6 +1,5 @@
-import { User } from '../entity'
+import { ActivateUserDto, CreateUserDto, FindOneUserByDto } from '../dto'
 
-export type CreateUserInput = Pick<User, 'email' | 'name' | 'gender'>
-export type UpdateUserInput = Partial<User>
-export type FindOneByUserInput = Partial<User>
-export type ActivateUserInput = Pick<User, 'email'>
+export type CreateUserInput = CreateUserDto
+export type FindOneUserByInput = FindOneUserByDto
+export type ActivateUserInput = ActivateUserDto

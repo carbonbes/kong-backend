@@ -18,14 +18,13 @@ import { JwtAuthGuard } from './auth/jwt.guard'
     }),
 
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
 
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: configService.get<boolean>('TYPEORM_OPTIONS_SYNCHRONIZE'),
       }),
 
       async dataSourceFactory(options) {

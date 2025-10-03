@@ -1,7 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common'
-import { SignInDto, SignUpDto } from './dto'
+import { Body, Controller, Get, Post, Req } from '@nestjs/common'
+import { SignInDto, SignUpDto, VerifyOtpDto } from './dto'
 import { AuthService } from './auth.service'
 import { Public } from '../shared/decorators/public.decorator'
+import { Request } from 'express'
 
 @Controller('auth')
 export class AuthController {
@@ -17,5 +18,16 @@ export class AuthController {
   @Public()
   async signIn(@Body() data: SignInDto) {
     return await this.authService.signIn(data)
+  }
+
+  @Post('verify-otp')
+  @Public()
+  async verifyOtp(@Body() data: VerifyOtpDto) {
+    return await this.authService.verifyOtp(data)
+  }
+
+  @Get('me')
+  async me(@Req() req: Request) {
+    return req.user
   }
 }

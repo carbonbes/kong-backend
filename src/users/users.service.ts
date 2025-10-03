@@ -5,7 +5,7 @@ import { User } from './entity'
 import {
   ActivateUserInput,
   CreateUserInput,
-  FindOneByUserInput,
+  FindOneUserByInput,
 } from './interface'
 
 @Injectable()
@@ -19,11 +19,11 @@ export class UsersService {
     return this.usersRepository.save(data)
   }
 
-  async findOneBy(data: FindOneByUserInput) {
+  async findOneBy(data: FindOneUserByInput) {
     return this.usersRepository.findOneBy(data)
   }
 
   async activate({ email }: ActivateUserInput) {
-    return this.usersRepository.update(email, { isActive: true })
+    return this.usersRepository.update({ email }, { isActive: true })
   }
 }

@@ -9,6 +9,7 @@ import {
   IsString,
 } from 'class-validator'
 import { Expose } from 'class-transformer'
+import { PartialType, PickType } from '@nestjs/mapped-types'
 
 export class BaseUserDto implements User {
   @IsNumber()
@@ -29,6 +30,18 @@ export class BaseUserDto implements User {
   @IsDate()
   createdAt: Date
 }
+
+export class CreateUserDto extends PickType(BaseUserDto, [
+  'email',
+  'name',
+  'gender',
+] as const) {}
+
+export class FindOneUserByDto extends PartialType(BaseUserDto) {}
+
+export class ActivateUserDto extends PickType(BaseUserDto, [
+  'email',
+] as const) {}
 
 export class UserResponseDto implements User {
   @Expose()
