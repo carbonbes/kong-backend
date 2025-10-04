@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { User } from './entity'
+import { User } from './user.entity'
 import {
-  ActivateUserInput,
-  CreateUserInput,
-  FindOneUserByInput,
-} from './interface'
+  ActivateUserOptions,
+  CreateUserOptions,
+  FindOneUserByOptions,
+} from './user.interface'
 
 @Injectable()
 export class UsersService {
@@ -15,15 +15,15 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  async create(data: CreateUserInput) {
+  async create(data: CreateUserOptions) {
     return this.usersRepository.save(data)
   }
 
-  async findOneBy(data: FindOneUserByInput) {
+  async findOneBy(data: FindOneUserByOptions) {
     return this.usersRepository.findOneBy(data)
   }
 
-  async activate({ email }: ActivateUserInput) {
+  async activate({ email }: ActivateUserOptions) {
     return this.usersRepository.update({ email }, { isActive: true })
   }
 }

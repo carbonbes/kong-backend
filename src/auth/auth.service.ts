@@ -5,72 +5,37 @@ import {
 } from '@nestjs/common'
 import { UsersService } from 'src/users/users.service'
 import {
-  AccessJwtPayload,
-  SignJwtInput,
-  RefreshJwtPayload,
-  SignInInput,
-  SignUpInput,
-  VerifyOtpInput,
-} from './interface'
+  LogoutOptions,
+  SignInOptions,
+  SignUpOptions,
+  VerifyOtpOptions,
+} from './auth.interface'
 import { Transactional } from 'typeorm-transactional'
 import { OtpsService } from '../otps/otps.service'
-import { JwtService } from '@nestjs/jwt'
-import { ConfigService } from '@nestjs/config'
-import { OtpType } from '../otps/enum'
+import { OtpType } from '../otps/otp.enum'
+import { JwtsService } from '../jwts/jwts.service'
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly otpsService: OtpsService,
-    private readonly jwtService: JwtService,
+    private readonly jwtsService: JwtsService,
   ) {}
 
-  private async signJwt({ email }: SignJwtInput) {
-    const accessTokenExpiresIn = this.configService.get<string>(
-      'JWT_SIGN_OPTIONS_ACCESS_TOKEN_EXPIRES_IN',
-    )
-
-    const refreshTokenExpiresIn = this.configService.get<string>(
-      'JWT_SIGN_OPTIONS_REFRESH_TOKEN_EXPIRES_IN',
-    )
-
-    const user = await this.usersService.findOneBy({ email })
-
-    const jwtPayload = { sub: user.id, user }
-
-    const accessJwtPayload: AccessJwtPayload = {
-      ...jwtPayload,
-      type: 'access_token',
-    }
-
-    const refreshJwtPayload: RefreshJwtPayload = {
-      ...jwtPayload,
-      type: 'refresh_token',
-    }
-
-    const access_token = this.jwtService.sign(accessJwtPayload, {
-      expiresIn: accessTokenExpiresIn,
-    })
-
-    const refresh_token = this.jwtService.sign(refreshJwtPayload, {
-      expiresIn: refreshTokenExpiresIn,
-    })
-
-    return { access_token, refresh_token }
-  }
-
   @Transactional()
-  async signUp(data: SignUpInput) {
+  async signUp(data: SignUpOptions) {
     const user = await this.usersService.create(data)
-    const otp = await this.otpsService.create({ type: OtpType.SIGN_UP, user })
+    const otp = await this.otpsService.create({
+      type: OtpType.SIGN_UP,
+      user,
+    })
 
     return { otp }
   }
 
   @Transactional()
-  async signIn({ email }: SignInInput) {
+  async signIn({ email }: SignInOptions) {
     const user = await this.usersService.findOneBy({ email })
 
     if (!user) {
@@ -81,13 +46,20 @@ export class AuthService {
       throw new ForbiddenException('Пользователь не активирован')
     }
 
-    const otp = await this.otpsService.create({ type: OtpType.SIGN_IN, user })
+    const otp = await this.otpsService.create({
+      type: OtpType.SIGN_IN,
+      user,
+    })
 
     return { otp }
   }
 
+  async logout({ email }: LogoutOptions) {
+
+  }
+
   @Transactional()
-  async verifyOtp(data: VerifyOtpInput) {
+  async verifyOtp(data: VerifyOtpOptions) {
     const isVerify = await this.otpsService.verify(data)
 
     if (!isVerify) {
@@ -102,6 +74,8 @@ export class AuthService {
       await this.usersService.activate({ email })
     }
 
-    return await this.signJwt({ email })
+    const { id } = await this.usersService.findOneBy({ email })
+
+    return await this.jwtsService.sign(id)
   }
 }

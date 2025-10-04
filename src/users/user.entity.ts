@@ -4,7 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm'
-import { UserGender } from '../enum'
+import { UserGender } from './user.enum'
 
 @Entity()
 export class User {

@@ -10,11 +10,27 @@ import { UsersModule } from './users/users.module'
 import { OtpsModule } from './otps/otps.module'
 import { APP_GUARD } from '@nestjs/core'
 import { JwtAuthGuard } from './auth/jwt.guard'
+import { JwtsModule } from './jwts/jwts.module'
+import { CacheModule } from '@nestjs/cache-manager'
+import KeyvRedis from '@keyv/redis'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+
+    CacheModule.registerAsync({
+      inject: [ConfigService],
+      isGlobal: true,
+
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL')
+
+        return {
+          stores: [new KeyvRedis(redisUrl)],
+        }
+      },
     }),
 
     TypeOrmModule.forRootAsync({
@@ -39,6 +55,7 @@ import { JwtAuthGuard } from './auth/jwt.guard'
     AuthModule,
     UsersModule,
     OtpsModule,
+    JwtsModule,
   ],
   controllers: [AppController],
   providers: [

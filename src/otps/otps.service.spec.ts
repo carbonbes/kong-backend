@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, test } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { OtpsService } from './otps.service'
 
@@ -12,7 +13,7 @@ describe('OtpsService', () => {
     service = module.get<OtpsService>(OtpsService)
   })
 
-  it('should be defined', () => {
+  test('should be defined', () => {
     expect(service).toBeDefined()
   })
 })

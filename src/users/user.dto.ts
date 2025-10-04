@@ -1,5 +1,5 @@
-import { User } from '../entity'
-import { UserGender } from '../enum'
+import { User } from './user.entity'
+import { UserGender } from './user.enum'
 import {
   IsBoolean,
   IsDate,
@@ -8,7 +8,6 @@ import {
   IsNumber,
   IsString,
 } from 'class-validator'
-import { Expose } from 'class-transformer'
 import { PartialType, PickType } from '@nestjs/mapped-types'
 
 export class BaseUserDto implements User {
@@ -42,23 +41,3 @@ export class FindOneUserByDto extends PartialType(BaseUserDto) {}
 export class ActivateUserDto extends PickType(BaseUserDto, [
   'email',
 ] as const) {}
-
-export class UserResponseDto implements User {
-  @Expose()
-  id: number
-
-  @Expose({ groups: ['owner', 'admin'] })
-  email: string
-
-  @Expose()
-  name: string
-
-  @Expose()
-  gender: UserGender
-
-  @Expose({ groups: ['owner', 'admin'] })
-  isActive: boolean
-
-  @Expose()
-  createdAt: Date
-}

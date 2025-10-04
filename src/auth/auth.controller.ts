@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Req } from '@nestjs/common'
-import { SignInDto, SignUpDto, VerifyOtpDto } from './dto'
+import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dto'
 import { AuthService } from './auth.service'
 import { Public } from '../shared/decorators/public.decorator'
 import { Request } from 'express'
