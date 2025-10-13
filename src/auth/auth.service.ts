@@ -54,10 +54,6 @@ export class AuthService {
     return { otp }
   }
 
-  async logout({ email }: LogoutOptions) {
-
-  }
-
   @Transactional()
   async verifyOtp(data: VerifyOtpOptions) {
     const isVerify = await this.otpsService.verify(data)
@@ -77,5 +73,13 @@ export class AuthService {
     const { id } = await this.usersService.findOneBy({ email })
 
     return await this.jwtsService.sign(id)
+  }
+
+  async logout({ email }: LogoutOptions) {}
+
+  async update(authorization: string) {
+    const jwt = authorization.split(' ')[1]
+
+    return jwt
   }
 }

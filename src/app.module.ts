@@ -8,8 +8,6 @@ import { DataSource } from 'typeorm'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { OtpsModule } from './otps/otps.module'
-import { APP_GUARD } from '@nestjs/core'
-import { JwtAuthGuard } from './auth/jwt.guard'
 import { JwtsModule } from './jwts/jwts.module'
 import { CacheModule } from '@nestjs/cache-manager'
 import KeyvRedis from '@keyv/redis'
@@ -57,14 +55,9 @@ import KeyvRedis from '@keyv/redis'
     OtpsModule,
     JwtsModule,
   ],
+
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {
   constructor(private dataSource: DataSource) {}

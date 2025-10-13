@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { JwtPayload } from './jwts.interface'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import getUuid from '../shared/utils/getUuid'
+import { JwtOptions, JwtPayload } from './jwts.interface'
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager'
 
 @Injectable()
@@ -13,42 +13,49 @@ export class JwtsService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
-  private getSecret(configKey: string) {
-    return this.configService.get<string>(configKey)
-  }
-
-  private getExpiresIn(configKey: string) {
-    return Number(this.configService.get(configKey))
-  }
-
-  private signAccessJwt(sub: number) {
+  private getPayload(sub: number): Pick<JwtPayload, 'jti' | 'sub'> {
     const jti = getUuid()
-    const payload = { jti, sub }
 
-    const secret = this.getSecret('JWT_SIGN_OPTIONS_ACCESS_TOKEN_SECRET_KEY')
-    const expiresIn = this.getExpiresIn(
-      'JWT_SIGN_OPTIONS_ACCESS_TOKEN_EXPIRES_IN',
+    return { jti, sub }
+  }
+
+  private getOptions(
+    type: 'access' | 'refresh',
+  ): Pick<JwtOptions, 'secret' | 'expiresIn'> {
+    const key = type.toUpperCase()
+
+    const secret = this.configService.get<string>(
+      `JWT_SIGN_OPTIONS_${key}_TOKEN_SECRET_KEY`,
     )
 
-    return this.jwtService.sign(payload, { secret, expiresIn })
-  }
-
-  private signRefreshJwt(sub: number) {
-    const jti = getUuid()
-    const payload = { jti, sub }
-
-    const secret = this.getSecret('JWT_SIGN_OPTIONS_REFRESH_TOKEN_SECRET_KEY')
-    const expiresIn = this.getExpiresIn(
-      'JWT_SIGN_OPTIONS_REFRESH_TOKEN_EXPIRES_IN',
+    const expiresIn = Number(
+      this.configService.get(`JWT_SIGN_OPTIONS_${key}_TOKEN_EXPIRES_IN`),
     )
 
-    return this.jwtService.sign(payload, { secret, expiresIn })
+    return { secret, expiresIn }
+  }
+
+  private signJwt(sub: number, type: 'access' | 'refresh') {
+    const payload = this.getPayload(sub)
+    const options = this.getOptions(type)
+
+    return this.jwtService.sign(payload, options)
   }
 
   async sign(sub: number) {
-    const access_token = this.signAccessJwt(sub)
-    const refresh_token = this.signRefreshJwt(sub)
+    const access_token = this.signJwt(sub, 'access')
+    const refresh_token = this.signJwt(sub, 'refresh')
 
     return { access_token, refresh_token }
   }
+
+  async revoke(jti: string, ttl: number) {
+    return await this.cacheManager.set(jti, '', ttl)
+  }
+
+  async isRevoked(jti: string) {
+    return !!(await this.cacheManager.get(jti))
+  }
+
+  async rotate(jti: string) {}
 }
