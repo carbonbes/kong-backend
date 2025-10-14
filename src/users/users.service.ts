@@ -6,7 +6,7 @@ import {
   ActivateUserOptions,
   CreateUserOptions,
   FindOneUserByOptions,
-} from './user.interface'
+} from './user.types'
 
 @Injectable()
 export class UsersService {

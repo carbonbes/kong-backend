@@ -1,7 +1,13 @@
 import { Otp } from './otp.entity'
 import { OtpType } from './otp.enum'
 import { User } from '../users/user.entity'
-import { IsDate, IsEnum, IsNumber, ValidateNested } from 'class-validator'
+import {
+  IsDate,
+  IsEnum,
+  IsNumber,
+  IsString,
+  ValidateNested,
+} from 'class-validator'
 import { Type } from 'class-transformer'
 import { IntersectionType, PickType } from '@nestjs/mapped-types'
 import { BaseUserDto } from '../users/user.dto'
@@ -10,8 +16,8 @@ export class BaseOtpDto implements Otp {
   @IsNumber()
   id: number
 
-  @IsNumber()
-  otp: number
+  @IsString()
+  otp: string
 
   @IsEnum(OtpType)
   type: OtpType

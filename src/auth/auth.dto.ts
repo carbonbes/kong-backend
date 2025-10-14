@@ -10,8 +10,6 @@ export class SignUpDto extends PickType(BaseUserDto, [
 
 export class SignInDto extends PickType(BaseUserDto, ['email'] as const) {}
 
-export class LogoutDto extends PickType(BaseUserDto, ['email'] as const) {}
-
 export class VerifyOtpDto extends IntersectionType(
   PickType(BaseOtpDto, ['otp', 'type'] as const),
   PickType(BaseUserDto, ['email'] as const),

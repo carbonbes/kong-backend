@@ -1,11 +1,12 @@
-import { ExtractJwt, Strategy } from 'passport-jwt'
+import { Strategy } from 'passport-jwt'
 import { PassportStrategy } from '@nestjs/passport'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { JwtPayload } from '../jwts/jwts.interface'
-import { User } from '../users/user.entity'
-import { UsersService } from '../users/users.service'
-import { JwtsService } from '../jwts/jwts.service'
+import { JwtPayload } from '../../jwts/jwts.types'
+import { User } from '../../users/user.entity'
+import { UsersService } from '../../users/users.service'
+import { JwtsService } from '../../jwts/jwts.service'
+import { Request } from 'express'
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -13,18 +14,22 @@ declare module 'express-serve-static-core' {
   }
 }
 
+const jwtCookieExtractor = (req: Request) => {
+  return req.cookies['access_token']
+}
+
 @Injectable()
 export class AccessJwtStrategy extends PassportStrategy(
   Strategy,
-  'access-jwt-strategy',
+  'access-jwt',
 ) {
   constructor(
-    configService: ConfigService,
+    readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly jwtsService: JwtsService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: jwtCookieExtractor,
       ignoreExpiration: false,
       secretOrKey: configService.get(
         'JWT_SIGN_OPTIONS_ACCESS_TOKEN_SECRET_KEY',
@@ -33,9 +38,9 @@ export class AccessJwtStrategy extends PassportStrategy(
   }
 
   async validate({ jti, sub }: JwtPayload) {
-    const jwtIsRevoked = await this.jwtsService.isRevoked(jti)
+    const isRevoked = await this.jwtsService.isRevoked(jti)
 
-    if (jwtIsRevoked) {
+    if (isRevoked) {
       throw new UnauthorizedException()
     }
 

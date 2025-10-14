@@ -8,8 +8,9 @@ import {
   LogoutOptions,
   SignInOptions,
   SignUpOptions,
+  UpdateOptions,
   VerifyOtpOptions,
-} from './auth.interface'
+} from './auth.types'
 import { Transactional } from 'typeorm-transactional'
 import { OtpsService } from '../otps/otps.service'
 import { OtpType } from '../otps/otp.enum'
@@ -39,11 +40,11 @@ export class AuthService {
     const user = await this.usersService.findOneBy({ email })
 
     if (!user) {
-      throw new NotFoundException('Пользователя с такой почтой не существует')
+      throw new NotFoundException()
     }
 
     if (!user.isActive) {
-      throw new ForbiddenException('Пользователь не активирован')
+      throw new ForbiddenException()
     }
 
     const otp = await this.otpsService.create({
@@ -59,9 +60,7 @@ export class AuthService {
     const isVerify = await this.otpsService.verify(data)
 
     if (!isVerify) {
-      throw new NotFoundException(
-        'Код не найден, или у него истек срок действия',
-      )
+      throw new NotFoundException()
     }
 
     const { type, email } = data
@@ -72,14 +71,18 @@ export class AuthService {
 
     const { id } = await this.usersService.findOneBy({ email })
 
-    return await this.jwtsService.sign(id)
+    return this.jwtsService.sign(id)
   }
 
-  async logout({ email }: LogoutOptions) {}
+  update(credentials: UpdateOptions) {
+    return this.jwtsService.rotate(credentials)
+  }
 
-  async update(authorization: string) {
-    const jwt = authorization.split(' ')[1]
+  async logout(credentials: LogoutOptions) {
+    await Promise.all([
+      credentials.map(async (jwt) => await this.jwtsService.revoke(jwt)),
+    ])
 
-    return jwt
+    return true
   }
 }

@@ -2,7 +2,18 @@ import { Inject, Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import getUuid from '../shared/utils/getUuid'
-import { JwtOptions, JwtPayload } from './jwts.interface'
+import {
+  DecodeOptions,
+  EncodedJwt,
+  GetPayloadOptions,
+  GetSignOptionsOptions,
+  IsRevokedOptions,
+  JwtPayload,
+  RevokeOptions,
+  RotateOptions,
+  SignJwtOptions,
+  SignOptions,
+} from './jwts.types'
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager'
 
 @Injectable()
@@ -13,15 +24,13 @@ export class JwtsService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
-  private getPayload(sub: number): Pick<JwtPayload, 'jti' | 'sub'> {
+  private getPayload(sub: GetPayloadOptions) {
     const jti = getUuid()
 
     return { jti, sub }
   }
 
-  private getOptions(
-    type: 'access' | 'refresh',
-  ): Pick<JwtOptions, 'secret' | 'expiresIn'> {
+  private getSignOptions(type: GetSignOptionsOptions) {
     const key = type.toUpperCase()
 
     const secret = this.configService.get<string>(
@@ -35,27 +44,44 @@ export class JwtsService {
     return { secret, expiresIn }
   }
 
-  private signJwt(sub: number, type: 'access' | 'refresh') {
+  private signJwt({ sub, type }: SignJwtOptions) {
     const payload = this.getPayload(sub)
-    const options = this.getOptions(type)
+    const options = this.getSignOptions(type)
 
-    return this.jwtService.sign(payload, options)
+    return this.jwtService.sign(payload, options) as EncodedJwt
   }
 
-  async sign(sub: number) {
-    const access_token = this.signJwt(sub, 'access')
-    const refresh_token = this.signJwt(sub, 'refresh')
+  sign(sub: SignOptions) {
+    const access_token = this.signJwt({ sub, type: 'access' })
+    const refresh_token = this.signJwt({ sub, type: 'refresh' })
 
     return { access_token, refresh_token }
   }
 
-  async revoke(jti: string, ttl: number) {
-    return await this.cacheManager.set(jti, '', ttl)
+  private decode(jwt: DecodeOptions) {
+    return this.jwtService.decode<JwtPayload>(jwt)
   }
 
-  async isRevoked(jti: string) {
-    return !!(await this.cacheManager.get(jti))
+  async revoke(jwt: RevokeOptions) {
+    const { jti, exp } = this.decode(jwt)
+
+    const ttl = (exp - Math.round(Date.now() / 1000)) * 1000
+
+    await this.cacheManager.set(jti, ' ', ttl)
+
+    return true
   }
 
-  async rotate(jti: string) {}
+  async isRevoked(jti: IsRevokedOptions) {
+    return !!(await this.cacheManager.get<string>(jti))
+  }
+
+  async rotate(credentials: RotateOptions) {
+    await Promise.all([credentials.map(async (jwt) => await this.revoke(jwt))])
+
+    const [, refresh_token] = credentials
+    const { sub } = this.decode(refresh_token)
+
+    return this.sign(sub)
+  }
 }

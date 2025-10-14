@@ -14,7 +14,7 @@ export class Otp {
   id: number
 
   @Column()
-  otp: number
+  otp: string
 
   @Column({ type: 'enum', enum: OtpType })
   type: OtpType
