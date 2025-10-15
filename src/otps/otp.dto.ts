@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsNumber,
   IsString,
+  Length,
   ValidateNested,
 } from 'class-validator'
 import { Type } from 'class-transformer'
@@ -17,6 +18,7 @@ export class BaseOtpDto implements Otp {
   id: number
 
   @IsString()
+  @Length(6, 6)
   otp: string
 
   @IsEnum(OtpType)

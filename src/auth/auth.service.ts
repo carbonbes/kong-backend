@@ -78,11 +78,7 @@ export class AuthService {
     return this.jwtsService.rotate(credentials)
   }
 
-  async logout(credentials: LogoutOptions) {
-    await Promise.all([
-      credentials.map(async (jwt) => await this.jwtsService.revoke(jwt)),
-    ])
-
-    return true
+  logout(credentials: LogoutOptions) {
+    credentials.map(async (jwt) => await this.jwtsService.revoke(jwt))
   }
 }

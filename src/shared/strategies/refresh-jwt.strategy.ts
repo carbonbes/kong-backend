@@ -5,9 +5,10 @@ import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '../../jwts/jwts.types'
 import { JwtsService } from '../../jwts/jwts.service'
 import { Request } from 'express'
+import { REFRESH_TOKEN_NAME } from '../consts'
 
 const jwtCookieExtractor = (req: Request) => {
-  return req.cookies['refresh_token']
+  return req.cookies[REFRESH_TOKEN_NAME]
 }
 
 @Injectable()

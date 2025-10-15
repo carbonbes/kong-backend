@@ -7,6 +7,7 @@ import { User } from '../../users/user.entity'
 import { UsersService } from '../../users/users.service'
 import { JwtsService } from '../../jwts/jwts.service'
 import { Request } from 'express'
+import { ACCESS_TOKEN_NAME } from '../consts'
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -15,7 +16,7 @@ declare module 'express-serve-static-core' {
 }
 
 const jwtCookieExtractor = (req: Request) => {
-  return req.cookies['access_token']
+  return req.cookies[ACCESS_TOKEN_NAME]
 }
 
 @Injectable()

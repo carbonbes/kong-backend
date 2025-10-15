@@ -9,8 +9,8 @@ import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { OtpsModule } from './otps/otps.module'
 import { JwtsModule } from './jwts/jwts.module'
-import { CacheModule } from '@nestjs/cache-manager'
-import KeyvRedis from '@keyv/redis'
+import { SignedJwtsModule } from './signed-jwts/signed-jwts.module'
+import { RedisModule } from './redis/redis.module'
 
 @Module({
   imports: [
@@ -18,23 +18,10 @@ import KeyvRedis from '@keyv/redis'
       isGlobal: true,
     }),
 
-    CacheModule.registerAsync({
-      inject: [ConfigService],
-      isGlobal: true,
-
-      useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL')
-
-        return {
-          stores: [new KeyvRedis(redisUrl)],
-        }
-      },
-    }),
-
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
 
-      useFactory: (configService: ConfigService) => ({
+      useFactory: async (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
         autoLoadEntities: true,
@@ -54,6 +41,8 @@ import KeyvRedis from '@keyv/redis'
     UsersModule,
     OtpsModule,
     JwtsModule,
+    SignedJwtsModule,
+    RedisModule,
   ],
 
   controllers: [AppController],
