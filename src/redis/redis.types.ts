@@ -10,3 +10,5 @@ export type SetOptions = Parameters<RedisClientType['set']>
 export type GetOptions = Parameters<RedisClientType['get']>
 export type SAddOptions = Parameters<RedisClientType['sAdd']>
 export type SMembersOptions = Parameters<RedisClientType['sMembers']>
+export type HSetOptions = Parameters<RedisClientType['hSet']>
+export type HGetOptions = Parameters<RedisClientType['hGet']>

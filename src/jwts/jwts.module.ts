@@ -3,6 +3,7 @@ import { JwtsService } from './jwts.service'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 import { RedisModule } from '../redis/redis.module'
+import { SignedJwtsModule } from '../signed-jwts/signed-jwts.module'
 
 @Module({
   imports: [
@@ -21,6 +22,8 @@ import { RedisModule } from '../redis/redis.module'
         url: configService.get<string>('REDIS_URL'),
       }),
     }),
+
+    SignedJwtsModule,
   ],
 
   providers: [JwtsService],

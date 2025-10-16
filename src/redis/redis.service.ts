@@ -8,6 +8,8 @@ import { createClient } from 'redis'
 import {
   ConfigModuleOptions,
   GetOptions,
+  HGetOptions,
+  HSetOptions,
   RedisClient,
   SAddOptions,
   SetOptions,
@@ -47,5 +49,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   sMembers(...opts: SMembersOptions) {
     return this.client.sMembers(...opts)
+  }
+
+  hSet(...opts: HSetOptions) {
+    return this.client.hSet(...opts)
+  }
+
+  hGet(...opts: HGetOptions) {
+    return this.client.hGet(...opts)
   }
 }

@@ -1,5 +1,5 @@
 import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dto'
-import { EncodedJwt } from '../jwts/jwts.types'
+import { EncodedJwt } from '../shared/types'
 import { Credentials } from '../shared/types'
 import { Response } from 'express'
 

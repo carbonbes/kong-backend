@@ -4,18 +4,17 @@ import { ConfigService } from '@nestjs/config'
 import getUuid from '../shared/utils/getUuid'
 import {
   DecodeOptions,
-  EncodedJwt,
   GetPayloadOptions,
   GetSignOptionsOptions,
   IsRevokedOptions,
-  JwtPayload,
   RevokeOptions,
   RotateOptions,
   SignJwtOptions,
   SignOptions,
 } from './jwts.types'
-import { Credentials } from '../shared/types'
+import { Credentials, EncodedJwt, JwtPayload } from '../shared/types'
 import { RedisService } from 'src/redis/redis.service'
+import { SignedJwtsService } from '../signed-jwts/signed-jwts.service'
 
 @Injectable()
 export class JwtsService {
@@ -23,11 +22,12 @@ export class JwtsService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
+    private readonly signedJwtsService: SignedJwtsService,
   ) {}
 
-  sign(sub: SignOptions): Credentials {
-    const access_token = this.signJwt({ sub, type: 'access' })
-    const refresh_token = this.signJwt({ sub, type: 'refresh' })
+  async sign(sub: SignOptions): Promise<Credentials> {
+    const access_token = await this.signJwt({ sub, type: 'access' })
+    const refresh_token = await this.signJwt({ sub, type: 'refresh' })
 
     return { access_token, refresh_token }
   }
@@ -73,11 +73,15 @@ export class JwtsService {
     return { secret, expiresIn }
   }
 
-  private signJwt({ sub, type }: SignJwtOptions) {
+  private async signJwt({ sub, type }: SignJwtOptions) {
     const payload = this.getPayload(sub)
     const options = this.getSignOptions(type)
 
-    return this.jwtService.sign(payload, options) as EncodedJwt
+    const jwt = this.jwtService.sign(payload, options) as EncodedJwt
+
+    await this.signedJwtsService.add(jwt)
+
+    return jwt
   }
 
   private decode(jwt: DecodeOptions) {

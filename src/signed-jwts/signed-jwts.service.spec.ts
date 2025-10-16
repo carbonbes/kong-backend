@@ -1,3 +1,4 @@
+import { describe, beforeEach, test, expect } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { SignedJwtsService } from './signed-jwts.service'
 
@@ -12,7 +13,7 @@ describe('SignedJwtsService', () => {
     service = module.get<SignedJwtsService>(SignedJwtsService)
   })
 
-  it('should be defined', () => {
+  test('should be defined', () => {
     expect(service).toBeDefined()
   })
 })

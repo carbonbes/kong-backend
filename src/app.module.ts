@@ -9,8 +9,6 @@ import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { OtpsModule } from './otps/otps.module'
 import { JwtsModule } from './jwts/jwts.module'
-import { SignedJwtsModule } from './signed-jwts/signed-jwts.module'
-import { RedisModule } from './redis/redis.module'
 
 @Module({
   imports: [
@@ -41,8 +39,6 @@ import { RedisModule } from './redis/redis.module'
     UsersModule,
     OtpsModule,
     JwtsModule,
-    SignedJwtsModule,
-    RedisModule,
   ],
 
   controllers: [AppController],

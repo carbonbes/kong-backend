@@ -13,7 +13,7 @@ import { CookieOptions, Request, Response } from 'express'
 import { AccessJwtAuthGuard } from '../shared/guards/access-jwt.guard'
 import { RefreshJwtAuthGuard } from '../shared/guards/refresh-jwt.guard'
 import { Cookies } from '../shared/decorators/cookies.decorator'
-import { EncodedJwt } from '../jwts/jwts.types'
+import { EncodedJwt } from '../shared/types'
 import {
   ACCESS_TOKEN_NAME,
   CREDENTIAL_JWTS,
