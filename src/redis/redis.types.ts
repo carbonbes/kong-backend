@@ -1,14 +1,10 @@
-import { createClient, RedisClientType } from 'redis'
+import { createClient, RedisClientOptions } from 'redis'
 
-export interface ConfigModuleOptions {
-  url: string
-}
+export type ConfigModuleOptions = RedisClientOptions
 
 export type RedisClient = ReturnType<typeof createClient>
 
-export type SetOptions = Parameters<RedisClientType['set']>
-export type GetOptions = Parameters<RedisClientType['get']>
-export type SAddOptions = Parameters<RedisClientType['sAdd']>
-export type SMembersOptions = Parameters<RedisClientType['sMembers']>
-export type HSetOptions = Parameters<RedisClientType['hSet']>
-export type HGetOptions = Parameters<RedisClientType['hGet']>
+export type SetOptions = Parameters<RedisClient['set']>
+export type GetOptions = Parameters<RedisClient['get']>
+export type HSetOptions = Parameters<RedisClient['hSet']>
+export type HGetOptions = Parameters<RedisClient['hGet']>

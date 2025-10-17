@@ -11,51 +11,41 @@ import {
   HGetOptions,
   HSetOptions,
   RedisClient,
-  SAddOptions,
   SetOptions,
-  SMembersOptions,
 } from './redis.types'
 import { MODULE_OPTIONS_TOKEN } from './redis.module-definition'
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
+  private readonly redis: RedisClient
+
   constructor(
     @Inject(MODULE_OPTIONS_TOKEN) private readonly options: ConfigModuleOptions,
-  ) {}
-
-  private client: RedisClient
+  ) {
+    this.redis = createClient(this.options)
+  }
 
   async onModuleInit() {
-    this.client = await createClient({
-      url: this.options.url,
-    }).connect()
+    await this.redis.connect()
   }
 
   onModuleDestroy() {
-    this.client.destroy()
+    this.redis.destroy()
   }
 
   set(...opts: SetOptions) {
-    return this.client.set(...opts)
+    return this.redis.set(...opts)
   }
 
   get(...opts: GetOptions) {
-    return this.client.get(...opts)
-  }
-
-  sAdd(...opts: SAddOptions) {
-    return this.client.sAdd(...opts)
-  }
-
-  sMembers(...opts: SMembersOptions) {
-    return this.client.sMembers(...opts)
+    return this.redis.get(...opts)
   }
 
   hSet(...opts: HSetOptions) {
-    return this.client.hSet(...opts)
+    return this.redis.hSet(...opts)
   }
 
   hGet(...opts: HGetOptions) {
-    return this.client.hGet(...opts)
+    return this.redis.hGet(...opts)
   }
 }

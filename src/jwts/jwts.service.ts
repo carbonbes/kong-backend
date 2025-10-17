@@ -13,16 +13,16 @@ import {
   SignOptions,
 } from './jwts.types'
 import { Credentials, EncodedJwt, JwtPayload } from '../shared/types'
-import { RedisService } from 'src/redis/redis.service'
 import { SignedJwtsService } from '../signed-jwts/signed-jwts.service'
+import { RevokedJwtsService } from 'src/revoked-jwts/revoked-jwts.service'
 
 @Injectable()
 export class JwtsService {
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly redisService: RedisService,
     private readonly signedJwtsService: SignedJwtsService,
+    private readonly revokedJwtsService: RevokedJwtsService,
   ) {}
 
   async sign(sub: SignOptions): Promise<Credentials> {
@@ -32,22 +32,20 @@ export class JwtsService {
     return { access_token, refresh_token }
   }
 
-  async revoke(jwt: RevokeOptions) {
+  revoke(jwt: RevokeOptions) {
     const { jti, exp } = this.decode(jwt)
 
-    await this.redisService.set(jti, ' ', {
-      expiration: { type: 'EXAT', value: exp },
-    })
+    return this.revokedJwtsService.add({ jti, exp })
   }
 
-  async isRevoked(jti: IsRevokedOptions) {
-    return !!(await this.redisService.get(jti))
+  isRevoked(jti: IsRevokedOptions) {
+    return this.revokedJwtsService.has(jti)
   }
 
-  async rotate(credentials: RotateOptions) {
-    await Promise.all([credentials.map(async (jwt) => await this.revoke(jwt))])
+  async rotate(jwts: RotateOptions) {
+    await Promise.all([jwts.map(async (jwt) => await this.revoke(jwt))])
 
-    const [, refresh_token] = credentials
+    const [, refresh_token] = jwts
     const { sub } = this.decode(refresh_token)
 
     return this.sign(sub)
