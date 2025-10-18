@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common'
 import { UsersService } from 'src/users/users.service'
 import {
+  GetJwtCookieOptionsOptions,
   LogoutOptions,
+  SetJwtCookieOptions,
+  SetJwtsCookieOptions,
   SignInOptions,
   SignUpOptions,
   UpdateOptions,
@@ -15,6 +18,8 @@ import { Transactional } from 'typeorm-transactional'
 import { OtpsService } from '../otps/otps.service'
 import { OtpType } from '../otps/otp.enum'
 import { JwtsService } from '../jwts/jwts.service'
+import { CookieOptions, Response } from 'express'
+import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '../shared/consts'
 
 @Injectable()
 export class AuthService {
@@ -74,11 +79,46 @@ export class AuthService {
     return this.jwtsService.sign(id)
   }
 
-  update(credentials: UpdateOptions) {
-    return this.jwtsService.rotate(credentials)
+  update(jwts: UpdateOptions) {
+    return this.jwtsService.rotate(jwts)
   }
 
-  logout(credentials: LogoutOptions) {
-    credentials.map(async (jwt) => await this.jwtsService.revoke(jwt))
+  logout(jwts: LogoutOptions) {
+    jwts.map(async (jwt) => await this.jwtsService.revoke(jwt))
+  }
+
+  setJwtsCookie({
+    res,
+    jwts: { access_token, refresh_token },
+  }: SetJwtsCookieOptions) {
+    this.setJwtCookie({ res, name: ACCESS_TOKEN_NAME, jwt: access_token })
+    this.setJwtCookie({ res, name: REFRESH_TOKEN_NAME, jwt: refresh_token })
+  }
+
+  removeJwtsCookie(res: Response) {
+    res.clearCookie(ACCESS_TOKEN_NAME)
+    res.clearCookie(REFRESH_TOKEN_NAME)
+  }
+
+  private getJwtCookieOptions(exp: GetJwtCookieOptionsOptions) {
+    const expires = new Date(exp * 1000)
+
+    const options: CookieOptions = {
+      path: '/auth',
+      sameSite: 'strict',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      expires,
+    }
+
+    return options
+  }
+
+  private setJwtCookie({ res, name, jwt }: SetJwtCookieOptions) {
+    const { exp } = this.jwtsService.decode(jwt)
+
+    const options = this.getJwtCookieOptions(exp)
+
+    res.cookie(name, jwt, options)
   }
 }
