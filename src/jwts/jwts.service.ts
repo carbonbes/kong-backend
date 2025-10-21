@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
-import getUuid from '../shared/utils/getUuid'
+import { getUuid } from '../shared/utils'
 import {
   DecodeOptions,
   GetPayloadOptions,
@@ -25,9 +25,9 @@ export class JwtsService {
     private readonly revokedJwtsService: RevokedJwtsService,
   ) {}
 
-  sign(sub: SignOptions) {
-    const access_token = this.signJwt({ sub, type: 'access' })
-    const refresh_token = this.signJwt({ sub, type: 'refresh' })
+  async sign(sub: SignOptions) {
+    const access_token = await this.signJwt({ sub, type: 'access' })
+    const refresh_token = await this.signJwt({ sub, type: 'refresh' })
 
     return { access_token, refresh_token }
   }
@@ -35,17 +35,21 @@ export class JwtsService {
   revoke(jwt: RevokeOptions) {
     const { jti, exp } = this.decode(jwt)
 
-    return this.revokedJwtsService.add({ jti, exp })
+    this.revokedJwtsService.add({ jti, exp })
   }
 
   isRevoked(jti: IsRevokedOptions) {
     return this.revokedJwtsService.has(jti)
   }
 
-  async rotate(jwts: RotateOptions) {
-    await Promise.all([jwts.map(async (jwt) => await this.revoke(jwt))])
+  rotate(credentials: RotateOptions) {
+    Object.values(credentials).forEach((credential) => {
+      if (!credential) return
 
-    const [, refresh_token] = jwts
+      this.revoke(credential)
+    })
+
+    const { refresh_token } = credentials
     const { sub } = this.decode(refresh_token)
 
     return this.sign(sub)
@@ -75,14 +79,14 @@ export class JwtsService {
     return { secret, expiresIn }
   }
 
-  private signJwt({ sub, type }: SignJwtOptions) {
+  private async signJwt({ sub, type }: SignJwtOptions) {
     const payload = this.getPayload(sub)
     const options = this.getSignOptions(type)
 
     const jwt = this.jwtService.sign(payload, options) as EncodedJwt
 
     const { jti, exp } = this.decode(jwt)
-    this.signedJwtsService.add({ jti, sub, exp })
+    await this.signedJwtsService.add({ jti, sub, exp })
 
     return jwt
   }

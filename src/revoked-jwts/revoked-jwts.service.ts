@@ -1,19 +1,20 @@
-import { Injectable } from '@nestjs/common'
-import { RedisService } from 'src/redis/redis.service'
+import { Inject, Injectable } from '@nestjs/common'
 import { AddOptions, GetOptions, HasOptions } from './revoked-jwts.types'
+import { REDIS_CLIENT } from '../redis/redis.consts'
+import { RedisClient } from '../redis/redis.types'
 
 @Injectable()
 export class RevokedJwtsService {
-  constructor(private readonly redisService: RedisService) {}
+  constructor(@Inject(REDIS_CLIENT) private readonly redis: RedisClient) {}
 
   add({ jti, exp }: AddOptions) {
-    return this.redisService.set(jti, ' ', {
+    return this.redis.set(jti, ' ', {
       expiration: { type: 'EXAT', value: exp },
     })
   }
 
   get(jti: GetOptions) {
-    return this.redisService.get(jti)
+    return this.redis.get(jti)
   }
 
   async has(jti: HasOptions) {

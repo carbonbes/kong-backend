@@ -12,8 +12,8 @@ import { AuthService } from './auth.service'
 import { Request, Response } from 'express'
 import { AccessJwtAuthGuard, RefreshJwtAuthGuard } from '../shared/guards'
 import { Cookies } from '../shared/decorators'
-import { JWTS_COOKIE } from './auth.consts'
-import { EncodedJwt } from '../shared/types'
+import { CREDENTIALS } from './auth.consts'
+import { Credentials } from '../shared/types'
 
 @Controller('auth')
 export class AuthController {
@@ -34,8 +34,8 @@ export class AuthController {
     @Body() data: VerifyOtpDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const jwts = await this.authService.verifyOtp(data)
-    this.authService.setJwtsCookie({ res, jwts })
+    const credentials = await this.authService.verifyOtp(data)
+    this.authService.setCredentialsCookie({ res, credentials })
   }
 
   @UseGuards(AccessJwtAuthGuard)
@@ -45,22 +45,22 @@ export class AuthController {
   }
 
   @UseGuards(RefreshJwtAuthGuard)
-  @Post('update')
-  async update(
-    @Cookies(JWTS_COOKIE) jwts: EncodedJwt[],
+  @Post('rotate')
+  async rotate(
+    @Cookies(CREDENTIALS) credentials: Credentials,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const newJwts = await this.authService.update(jwts)
-    this.authService.setJwtsCookie({ res, jwts: newJwts })
+    const newCredentials = await this.authService.rotate(credentials)
+    this.authService.setCredentialsCookie({ res, credentials: newCredentials })
   }
 
   @UseGuards(AccessJwtAuthGuard)
   @Post('logout')
   async logout(
-    @Cookies(JWTS_COOKIE) jwts: EncodedJwt[],
+    @Cookies(CREDENTIALS) credentials: Credentials,
     @Res({ passthrough: true }) res: Response,
   ) {
-    this.authService.logout(jwts)
-    this.authService.removeJwtsCookie(res)
+    this.authService.logout(credentials)
+    this.authService.removeCredentialsCookie(res)
   }
 }

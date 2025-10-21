@@ -1,18 +1,29 @@
-import { Injectable } from '@nestjs/common'
-import { RedisService } from 'src/redis/redis.service'
-import { AddOptions } from './signed-jwts.types'
+import { Inject, Injectable } from '@nestjs/common'
+import { AddOptions, GetAllOptions, GetOptions } from './signed-jwts.types'
+import { REDIS_CLIENT } from '../redis/redis.consts'
+import { RedisClient } from '../redis/redis.types'
 
 @Injectable()
 export class SignedJwtsService {
-  constructor(private readonly redisService: RedisService) {}
+  constructor(@Inject(REDIS_CLIENT) private readonly redis: RedisClient) {}
 
-  add({ jti, sub, exp }: AddOptions) {
-    const userId = sub.toString()
+  async add({ jti, sub, exp }: AddOptions) {
+    const key = sub.toString()
+    const ttl = exp.toString()
 
-    return this.redisService.hSet(userId, { jti, exp })
+    await this.redis.hSet(key, jti, ' ')
+    await this.redis.sendCommand(['HEXPIREAT', key, ttl, 'FIELDS', '1', jti])
   }
 
-  get() {}
+  get({ sub, field }: GetOptions) {
+    const key = sub.toString()
 
-  has() {}
+    return this.redis.hGet(key, field)
+  }
+
+  getAll({ sub }: GetAllOptions) {
+    const key = sub.toString()
+
+    return this.redis.hGetAll(key)
+  }
 }

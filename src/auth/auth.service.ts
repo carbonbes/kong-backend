@@ -11,7 +11,7 @@ import {
   SetJwtsCookieOptions,
   SignInOptions,
   SignUpOptions,
-  UpdateOptions,
+  RotateOptions,
   VerifyOtpOptions,
 } from './auth.types'
 import { Transactional } from 'typeorm-transactional'
@@ -19,7 +19,8 @@ import { OtpsService } from '../otps/otps.service'
 import { OtpType } from '../otps/otp.enum'
 import { JwtsService } from '../jwts/jwts.service'
 import { CookieOptions, Response } from 'express'
-import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '../shared/consts'
+import { CREDENTIALS } from './auth.consts'
+import { TokenName } from '../shared/types'
 
 @Injectable()
 export class AuthService {
@@ -79,28 +80,33 @@ export class AuthService {
     return this.jwtsService.sign(id)
   }
 
-  update(jwts: UpdateOptions) {
+  rotate(jwts: RotateOptions) {
     return this.jwtsService.rotate(jwts)
   }
 
-  logout(jwts: LogoutOptions) {
-    jwts.map(async (jwt) => await this.jwtsService.revoke(jwt))
+  logout(credentials: LogoutOptions) {
+    Object.values(credentials).forEach((credential) =>
+      this.jwtsService.revoke(credential),
+    )
   }
 
-  setJwtsCookie({
-    res,
-    jwts: { access_token, refresh_token },
-  }: SetJwtsCookieOptions) {
-    this.setJwtCookie({ res, name: ACCESS_TOKEN_NAME, jwt: access_token })
-    this.setJwtCookie({ res, name: REFRESH_TOKEN_NAME, jwt: refresh_token })
+  setCredentialsCookie({ res, credentials }: SetJwtsCookieOptions) {
+    CREDENTIALS.forEach((tokenName: TokenName) => {
+      this.setCredentialCookie({
+        res,
+        name: tokenName,
+        credential: credentials[tokenName],
+      })
+    })
   }
 
-  removeJwtsCookie(res: Response) {
-    res.clearCookie(ACCESS_TOKEN_NAME)
-    res.clearCookie(REFRESH_TOKEN_NAME)
+  removeCredentialsCookie(res: Response) {
+    CREDENTIALS.forEach((tokenName) => {
+      res.clearCookie(tokenName)
+    })
   }
 
-  private getJwtCookieOptions(exp: GetJwtCookieOptionsOptions) {
+  private getCredentialCookieOptions(exp: GetJwtCookieOptionsOptions) {
     const expires = new Date(exp * 1000)
 
     const options: CookieOptions = {
@@ -114,11 +120,11 @@ export class AuthService {
     return options
   }
 
-  private setJwtCookie({ res, name, jwt }: SetJwtCookieOptions) {
-    const { exp } = this.jwtsService.decode(jwt)
+  private setCredentialCookie({ res, name, credential }: SetJwtCookieOptions) {
+    const { exp } = this.jwtsService.decode(credential)
 
-    const options = this.getJwtCookieOptions(exp)
+    const options = this.getCredentialCookieOptions(exp)
 
-    res.cookie(name, jwt, options)
+    res.cookie(name, credential, options)
   }
 }

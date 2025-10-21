@@ -5,9 +5,13 @@ export const Cookies = createParamDecorator(
     const request = ctx.switchToHttp().getRequest()
 
     if (typeof key === 'string') {
-      return request.cookies[key]
+      return { [key]: request.cookies[key] }
     } else if (Array.isArray(key)) {
-      return key.map((key: string) => request.cookies[key])
+      return key.reduce((obj, key) => {
+        obj[key] = request.cookies[key]
+
+        return obj
+      }, {})
     }
 
     return request.cookies
