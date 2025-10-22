@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
-import { getUuid } from '../shared/utils'
+import { getUuid } from '../shared/utils/getUuid'
 import {
   DecodeOptions,
   GetPayloadOptions,
@@ -12,9 +12,9 @@ import {
   SignJwtOptions,
   SignOptions,
 } from './jwts.types'
-import { EncodedJwt, JwtPayload } from '../shared/types'
+import { EncodedJwt, JwtPayload } from '../shared/types/jwt.type'
 import { SignedJwtsService } from '../signed-jwts/signed-jwts.service'
-import { RevokedJwtsService } from 'src/revoked-jwts/revoked-jwts.service'
+import { RevokedJwtsService } from '../revoked-jwts/revoked-jwts.service'
 
 @Injectable()
 export class JwtsService {

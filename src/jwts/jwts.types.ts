@@ -1,4 +1,5 @@
-import { Credentials, EncodedJwt, JwtPayload } from '../shared/types'
+import { Credentials } from '../shared/types/credentials.type'
+import { EncodedJwt, JwtPayload } from '../shared/types/jwt.type'
 
 export type GetPayloadOptions = JwtPayload['sub']
 export type GetSignOptionsOptions = 'access' | 'refresh'

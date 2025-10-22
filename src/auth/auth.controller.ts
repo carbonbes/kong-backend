@@ -10,10 +10,11 @@ import {
 import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dto'
 import { AuthService } from './auth.service'
 import { Request, Response } from 'express'
-import { AccessJwtAuthGuard, RefreshJwtAuthGuard } from '../shared/guards'
-import { Cookies } from '../shared/decorators'
+import { AccessJwtAuthGuard } from '../shared/guards/access-jwt.guard'
+import { RefreshJwtAuthGuard } from '../shared/guards/refresh-jwt.guard'
+import { Cookies } from '../shared/decorators/cookies.decorator'
 import { CREDENTIALS } from './auth.consts'
-import { Credentials } from '../shared/types'
+import { Credentials } from '../shared/types/credentials.type'
 
 @Controller('auth')
 export class AuthController {
@@ -35,7 +36,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const credentials = await this.authService.verifyOtp(data)
-    this.authService.setCredentialsCookie({ res, credentials })
+    this.authService.setCredentialCookies({ res, credentials })
   }
 
   @UseGuards(AccessJwtAuthGuard)
@@ -51,7 +52,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const newCredentials = await this.authService.rotate(credentials)
-    this.authService.setCredentialsCookie({ res, credentials: newCredentials })
+    this.authService.setCredentialCookies({ res, credentials: newCredentials })
   }
 
   @UseGuards(AccessJwtAuthGuard)
@@ -61,6 +62,6 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     this.authService.logout(credentials)
-    this.authService.removeCredentialsCookie(res)
+    this.authService.removeCredentialCookies(res)
   }
 }

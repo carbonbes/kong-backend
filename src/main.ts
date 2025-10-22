@@ -5,7 +5,7 @@ import {
   initializeTransactionalContext,
   StorageDriver,
 } from 'typeorm-transactional'
-import * as cookieParser from 'cookie-parser'
+import cookieParser from 'cookie-parser'
 
 async function bootstrap() {
   initializeTransactionalContext({ storageDriver: StorageDriver.AUTO })

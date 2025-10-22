@@ -3,7 +3,7 @@ import { Otp } from './otp.entity'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CreateOtpOptions, VerifyOtpOptions } from './otp.types'
-import { getCode } from '../shared/utils'
+import { getCode } from '../shared/utils/getCode'
 
 @Injectable()
 export class OtpsService {

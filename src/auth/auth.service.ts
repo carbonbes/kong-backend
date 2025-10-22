@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { UsersService } from 'src/users/users.service'
+import { UsersService } from '../users/users.service'
 import {
   GetJwtCookieOptionsOptions,
   LogoutOptions,
@@ -20,7 +20,7 @@ import { OtpType } from '../otps/otp.enum'
 import { JwtsService } from '../jwts/jwts.service'
 import { CookieOptions, Response } from 'express'
 import { CREDENTIALS } from './auth.consts'
-import { TokenName } from '../shared/types'
+import { TokenName } from '../shared/types/jwt.type'
 
 @Injectable()
 export class AuthService {
@@ -90,7 +90,7 @@ export class AuthService {
     )
   }
 
-  setCredentialsCookie({ res, credentials }: SetJwtsCookieOptions) {
+  setCredentialCookies({ res, credentials }: SetJwtsCookieOptions) {
     CREDENTIALS.forEach((tokenName: TokenName) => {
       this.setCredentialCookie({
         res,
@@ -100,7 +100,7 @@ export class AuthService {
     })
   }
 
-  removeCredentialsCookie(res: Response) {
+  removeCredentialCookies(res: Response) {
     CREDENTIALS.forEach((tokenName) => {
       res.clearCookie(tokenName)
     })

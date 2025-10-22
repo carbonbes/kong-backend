@@ -1,3 +1,3 @@
-import { Uuid } from '../types'
+import { Uuid } from '../types/uuid.type'
 
 export const getUuid = (): Uuid => crypto.randomUUID()

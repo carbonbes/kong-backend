@@ -1,4 +1,4 @@
-import { JwtPayload } from '../shared/types'
+import { JwtPayload } from '../shared/types/jwt.type'
 
 export type AddOptions = { jti: JwtPayload['jti']; exp: JwtPayload['exp'] }
 export type GetOptions = JwtPayload['jti']
