@@ -84,8 +84,8 @@ export class JwtsService {
     const options = this.getSignOptions(type)
 
     const jwt = this.jwtService.sign(payload, options) as EncodedJwt
-
     const { jti, exp } = this.decode(jwt)
+
     await this.signedJwtsService.add({ jti, sub, exp })
 
     return jwt

@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { User } from './user.entity'
 import {
-  ActivateUserOptions,
   CreateUserOptions,
   FindOneUserByOptions,
+  UpdateUserOptions,
 } from './user.types'
 
 @Injectable()
@@ -15,15 +15,17 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  async create(data: CreateUserOptions) {
+  create(data: CreateUserOptions): Promise<User> {
     return this.usersRepository.save(data)
   }
 
-  async findOneBy(data: FindOneUserByOptions) {
-    return this.usersRepository.findOneBy(data)
+  findOneBy(where: FindOneUserByOptions): Promise<User> {
+    return this.usersRepository.findOneBy(where)
   }
 
-  async activate({ email }: ActivateUserOptions) {
-    return this.usersRepository.update({ email }, { isActive: true })
+  async update({ where, data }: UpdateUserOptions): Promise<User> {
+    const user = await this.findOneBy(where)
+
+    return this.usersRepository.save({ ...user, ...data })
   }
 }

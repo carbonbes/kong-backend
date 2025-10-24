@@ -21,6 +21,7 @@ import { JwtsService } from '../jwts/jwts.service'
 import { CookieOptions, Response } from 'express'
 import { CREDENTIALS } from './auth.consts'
 import { TokenName } from '../shared/types/jwt.type'
+import { getCode } from '../shared/utils/getCode'
 
 @Injectable()
 export class AuthService {
@@ -33,9 +34,15 @@ export class AuthService {
   @Transactional()
   async signUp(data: SignUpOptions) {
     const user = await this.usersService.create(data)
+
+    const code = getCode()
+    const expiresAt = new Date(Date.now() + 300 * 1000)
+
     const otp = await this.otpsService.create({
+      otp: code,
       type: OtpType.SIGN_UP,
       user,
+      expiresAt,
     })
 
     return { otp }

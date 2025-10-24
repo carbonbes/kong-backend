@@ -8,7 +8,7 @@ import {
   IsNumber,
   IsString,
 } from 'class-validator'
-import { PartialType, PickType } from '@nestjs/mapped-types'
+import { PickType } from '@nestjs/mapped-types'
 
 export class BaseUserDto implements User {
   @IsNumber()
@@ -34,10 +34,4 @@ export class CreateUserDto extends PickType(BaseUserDto, [
   'email',
   'name',
   'gender',
-] as const) {}
-
-export class FindOneUserByDto extends PartialType(BaseUserDto) {}
-
-export class ActivateUserDto extends PickType(BaseUserDto, [
-  'email',
 ] as const) {}

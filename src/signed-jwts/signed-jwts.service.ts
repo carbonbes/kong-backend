@@ -11,8 +11,12 @@ export class SignedJwtsService {
     const key = sub.toString()
     const ttl = exp.toString()
 
-    await this.redis.hSet(key, jti, ' ')
-    await this.redis.sendCommand(['HEXPIREAT', key, ttl, 'FIELDS', '1', jti])
+    await Promise.all([
+      this.redis.hSet(key, jti, ' '),
+      this.redis.sendCommand(['HEXPIREAT', key, ttl, 'FIELDS', '1', jti]),
+    ])
+
+    return true
   }
 
   get({ sub, field }: GetOptions) {

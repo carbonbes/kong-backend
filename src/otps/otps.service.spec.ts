@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { OtpsService } from './otps.service'
-import { MockRepository } from '../shared/types/tests.type'
 import { Repository } from 'typeorm'
 import { Otp } from './otp.entity'
 import { getRepositoryToken } from '@nestjs/typeorm'
@@ -12,11 +11,9 @@ import { UserGender } from '../users/user.enum'
 
 describe('OtpsService', () => {
   let service: OtpsService
-  let mockRepository: MockRepository<
-    Pick<Repository<Otp>, 'save' | 'findOneBy' | 'delete'>
-  >
+  let repository: Pick<Repository<Otp>, 'save' | 'findOneBy' | 'delete'>
 
-  mockRepository = {
+  repository = {
     save: vi.fn(),
     findOneBy: vi.fn(),
     delete: vi.fn(),
@@ -37,34 +34,36 @@ describe('OtpsService', () => {
         OtpsService,
         {
           provide: getRepositoryToken(Otp),
-          useValue: mockRepository,
+          useValue: repository,
         },
       ],
     }).compile()
 
     service = module.get<OtpsService>(OtpsService)
-    mockRepository = module.get(getRepositoryToken(Otp))
+    repository = module.get<Repository<Otp>>(getRepositoryToken(Otp))
   })
 
   test('create', async () => {
     const createOptions: CreateOtpOptions = {
+      otp: '123456',
       type: OtpType.SIGN_IN,
       user,
+      expiresAt: new Date(Date.now() + 300 * 1000),
     }
 
     const createdOtp: Otp = {
       ...createOptions,
       id: 1,
-      otp: '123456',
       createdAt: new Date(),
-      expiresAt: new Date(),
     }
 
-    mockRepository.save.mockResolvedValue(createdOtp)
+    const save = vi
+      .spyOn(repository, 'save')
+      .mockImplementation(async () => createdOtp)
 
     const result = await service.create(createOptions)
+
+    expect(save).toHaveBeenCalledWith(createOptions)
     expect(result).toEqual(createdOtp)
   })
-
-  test('verify', async () => {})
 })

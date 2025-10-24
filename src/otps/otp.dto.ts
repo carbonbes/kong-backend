@@ -36,8 +36,10 @@ export class BaseOtpDto implements Otp {
 }
 
 export class CreateOtpDto extends PickType(BaseOtpDto, [
+  'otp',
   'type',
   'user',
+  'expiresAt',
 ] as const) {}
 
 export class VerifyOtpDto extends IntersectionType(

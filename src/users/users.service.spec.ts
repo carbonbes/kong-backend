@@ -3,25 +3,21 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from './users.service'
 import { User } from './user.entity'
 import {
-  ActivateUserOptions,
   CreateUserOptions,
   FindOneUserByOptions,
+  UpdateUserOptions,
 } from './user.types'
 import { UserGender } from './user.enum'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { MockRepository } from '../shared/types/tests.type'
 
 describe('UsersService', () => {
   let service: UsersService
-  let mockRepository: MockRepository<
-    Pick<Repository<User>, 'save' | 'findOneBy' | 'update'>
-  >
+  let repository: Pick<Repository<User>, 'save' | 'findOneBy'>
 
-  mockRepository = {
+  repository = {
     save: vi.fn(),
     findOneBy: vi.fn(),
-    update: vi.fn(),
   }
 
   const user: User = {
@@ -39,13 +35,13 @@ describe('UsersService', () => {
         UsersService,
         {
           provide: getRepositoryToken(User),
-          useValue: mockRepository,
+          useValue: repository,
         },
       ],
     }).compile()
 
     service = module.get<UsersService>(UsersService)
-    mockRepository = module.get(getRepositoryToken(User))
+    repository = module.get<Repository<User>>(getRepositoryToken(User))
   })
 
   test('create', async () => {
@@ -62,32 +58,49 @@ describe('UsersService', () => {
       createdAt: new Date(),
     }
 
-    mockRepository.save.mockResolvedValue(createdUser)
+    const save = vi
+      .spyOn(repository, 'save')
+      .mockImplementation(async () => createdUser)
 
     const result = await service.create(createOptions)
+
+    expect(save).toHaveBeenCalledWith(createOptions)
     expect(result).toEqual(createdUser)
   })
 
   test('findOneBy', async () => {
     const findOneByOptions: FindOneUserByOptions = { id: 1 }
 
-    mockRepository.findOneBy.mockResolvedValue(user)
+    const findOneBy = vi
+      .spyOn(repository, 'findOneBy')
+      .mockImplementation(async () => user)
 
     const result = await service.findOneBy(findOneByOptions)
+
+    expect(findOneBy).toHaveBeenCalledWith(findOneByOptions)
     expect(result).toEqual(user)
   })
 
-  test('activate', async () => {
-    const activateOptions: ActivateUserOptions = { email: 'test@test.com' }
+  test('update', async () => {
+    const updateOptions: UpdateUserOptions = {
+      where: { email: 'test@test.com' },
+      data: {
+        isActive: true,
+      },
+    }
 
-    const activatedUser = {
+    const updatedUser: User = {
       ...user,
       isActive: true,
     }
 
-    mockRepository.update.mockResolvedValue(activatedUser)
+    const save = vi
+      .spyOn(repository, 'save')
+      .mockImplementation(async () => updatedUser)
 
-    const result = await service.activate(activateOptions)
-    expect(result).toEqual(activatedUser)
+    const result = await service.update(updateOptions)
+
+    expect(save).toHaveBeenCalledWith(updatedUser)
+    expect(result).toEqual(updatedUser)
   })
 })

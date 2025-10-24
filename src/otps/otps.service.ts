@@ -3,7 +3,6 @@ import { Otp } from './otp.entity'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CreateOtpOptions, VerifyOtpOptions } from './otp.types'
-import { getCode } from '../shared/utils/getCode'
 
 @Injectable()
 export class OtpsService {
@@ -12,10 +11,7 @@ export class OtpsService {
   ) {}
 
   async create(data: CreateOtpOptions) {
-    const otp = getCode()
-    const expiresAt = new Date(Date.now() + 300 * 1000)
-
-    return this.otpsRepository.save({ ...data, otp, expiresAt })
+    return this.otpsRepository.save(data)
   }
 
   async verify(data: VerifyOtpOptions) {

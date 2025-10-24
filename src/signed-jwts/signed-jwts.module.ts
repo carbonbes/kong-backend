@@ -9,7 +9,7 @@ import { ConfigService } from '@nestjs/config'
       inject: [ConfigService],
 
       useFactory: async (configService: ConfigService) => ({
-        url: configService.get<string>('SIGNED_JWTS_STORAGE_URL'),
+        url: configService.get<string>('SIGNED_JWTS_REDIS_STORAGE_URL'),
       }),
     }),
   ],
