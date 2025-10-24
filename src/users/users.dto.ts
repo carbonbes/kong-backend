@@ -1,5 +1,5 @@
-import { User } from './user.entity'
-import { UserGender } from './user.enum'
+import { User } from './users.entity'
+import { UserGender } from './users.enum'
 import {
   IsBoolean,
   IsDate,

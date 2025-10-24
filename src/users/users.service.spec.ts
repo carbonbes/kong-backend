@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from './users.service'
-import { User } from './user.entity'
+import { User } from './users.entity'
 import {
   CreateUserOptions,
   FindOneUserByOptions,
   UpdateUserOptions,
-} from './user.types'
-import { UserGender } from './user.enum'
+} from './users.types'
+import { UserGender } from './users.enum'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
@@ -91,7 +91,7 @@ describe('UsersService', () => {
 
     const updatedUser: User = {
       ...user,
-      isActive: true,
+      ...updateOptions.data,
     }
 
     const save = vi

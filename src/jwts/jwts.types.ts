@@ -1,5 +1,6 @@
-import { Credentials } from '../shared/types/credentials.type'
-import { EncodedJwt, JwtPayload } from '../shared/types/jwt.type'
+import { Credentials } from '@/shared/types/credentials.type'
+import { EncodedJwt, JwtPayload } from '@/shared/types/jwt.type'
+import { PromisifyCredentials } from '@/shared/types/promisify'
 
 export type GetPayloadOptions = JwtPayload['sub']
 export type GetSignOptionsOptions = 'access' | 'refresh'
@@ -10,7 +11,8 @@ export type SignJwtOptions = {
 }
 
 export type SignOptions = JwtPayload['sub']
-export type DecodeOptions = EncodedJwt
+export type SignReturn = PromisifyCredentials
 export type RevokeOptions = EncodedJwt
 export type IsRevokedOptions = JwtPayload['jti']
 export type RotateOptions = Credentials
+export type DecodeOptions = EncodedJwt

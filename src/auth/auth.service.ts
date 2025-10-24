@@ -3,25 +3,21 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { UsersService } from '../users/users.service'
+import { UsersService } from '@/users/users.service'
 import {
-  GetJwtCookieOptionsOptions,
   LogoutOptions,
-  SetJwtCookieOptions,
-  SetJwtsCookieOptions,
-  SignInOptions,
-  SignUpOptions,
   RotateOptions,
+  SignInOptions,
+  SignInReturn,
+  SignUpOptions,
+  SignUpReturn,
   VerifyOtpOptions,
 } from './auth.types'
 import { Transactional } from 'typeorm-transactional'
-import { OtpsService } from '../otps/otps.service'
-import { OtpType } from '../otps/otp.enum'
-import { JwtsService } from '../jwts/jwts.service'
-import { CookieOptions, Response } from 'express'
-import { CREDENTIALS } from './auth.consts'
-import { TokenName } from '../shared/types/jwt.type'
-import { getCode } from '../shared/utils/getCode'
+import { OtpsService } from '@/otps/otps.service'
+import { OtpType } from '@/otps/otps.enum'
+import { JwtsService } from '@/jwts/jwts.service'
+import getCode from '@/shared/utils/getCode'
 
 @Injectable()
 export class AuthService {
@@ -32,24 +28,30 @@ export class AuthService {
   ) {}
 
   @Transactional()
-  async signUp(data: SignUpOptions) {
+  async signUp(data: SignUpOptions): SignUpReturn {
+    const existingUser = await this.usersService.findOneBy({
+      email: data.email,
+    })
+
+    if (existingUser) {
+      return
+    }
+
     const user = await this.usersService.create(data)
 
     const code = getCode()
     const expiresAt = new Date(Date.now() + 300 * 1000)
 
-    const otp = await this.otpsService.create({
+    return this.otpsService.create({
       otp: code,
       type: OtpType.SIGN_UP,
       user,
       expiresAt,
     })
-
-    return { otp }
   }
 
   @Transactional()
-  async signIn({ email }: SignInOptions) {
+  async signIn({ email }: SignInOptions): SignInReturn {
     const user = await this.usersService.findOneBy({ email })
 
     if (!user) {
@@ -60,12 +62,15 @@ export class AuthService {
       throw new ForbiddenException()
     }
 
-    const otp = await this.otpsService.create({
+    const code = getCode()
+    const expiresAt = new Date(Date.now() + 300 * 1000)
+
+    return this.otpsService.create({
+      otp: code,
       type: OtpType.SIGN_IN,
       user,
+      expiresAt,
     })
-
-    return { otp }
   }
 
   @Transactional()
@@ -79,7 +84,10 @@ export class AuthService {
     const { type, email } = data
 
     if (type === 'SIGN_UP') {
-      await this.usersService.activate({ email })
+      await this.usersService.update({
+        where: { email },
+        data: { isActive: true },
+      })
     }
 
     const { id } = await this.usersService.findOneBy({ email })
@@ -95,43 +103,5 @@ export class AuthService {
     Object.values(credentials).forEach((credential) =>
       this.jwtsService.revoke(credential),
     )
-  }
-
-  setCredentialCookies({ res, credentials }: SetJwtsCookieOptions) {
-    CREDENTIALS.forEach((tokenName: TokenName) => {
-      this.setCredentialCookie({
-        res,
-        name: tokenName,
-        credential: credentials[tokenName],
-      })
-    })
-  }
-
-  removeCredentialCookies(res: Response) {
-    CREDENTIALS.forEach((tokenName) => {
-      res.clearCookie(tokenName)
-    })
-  }
-
-  private getCredentialCookieOptions(exp: GetJwtCookieOptionsOptions) {
-    const expires = new Date(exp * 1000)
-
-    const options: CookieOptions = {
-      path: '/auth',
-      sameSite: 'strict',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      expires,
-    }
-
-    return options
-  }
-
-  private setCredentialCookie({ res, name, credential }: SetJwtCookieOptions) {
-    const { exp } = this.jwtsService.decode(credential)
-
-    const options = this.getCredentialCookieOptions(exp)
-
-    res.cookie(name, credential, options)
   }
 }

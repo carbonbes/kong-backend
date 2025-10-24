@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common'
 import { JwtsService } from './jwts.service'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
-import { SignedJwtsModule } from '../signed-jwts/signed-jwts.module'
-import { RevokedJwtsModule } from '../revoked-jwts/revoked-jwts.module'
+import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
+import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 
 @Module({
   imports: [

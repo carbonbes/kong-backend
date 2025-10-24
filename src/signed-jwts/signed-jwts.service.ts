@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { AddOptions, GetAllOptions, GetOptions } from './signed-jwts.types'
-import { REDIS_CLIENT } from '../redis/redis.consts'
-import { RedisClient } from '../redis/redis.types'
+import { REDIS_CLIENT } from '@/redis/redis.consts'
+import { RedisClient } from '@/redis/redis.types'
 
 @Injectable()
 export class SignedJwtsService {

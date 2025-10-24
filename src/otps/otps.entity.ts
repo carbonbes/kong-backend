@@ -5,8 +5,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm'
-import { OtpType } from './otp.enum'
-import { User } from '../users/user.entity'
+import { OtpType } from './otps.enum'
+import { User } from '@/users/users.entity'
 
 @Entity()
 export class Otp {

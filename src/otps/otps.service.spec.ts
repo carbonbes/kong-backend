@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { OtpsService } from './otps.service'
 import { Repository } from 'typeorm'
-import { Otp } from './otp.entity'
+import { Otp } from './otps.entity'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { CreateOtpOptions } from './otp.types'
-import { OtpType } from './otp.enum'
-import { User } from '../users/user.entity'
-import { UserGender } from '../users/user.enum'
+import { CreateOtpOptions } from './otps.types'
+import { OtpType } from './otps.enum'
+import { User } from '../users/users.entity'
+import { UserGender } from '../users/users.enum'
 
 describe('OtpsService', () => {
   let service: OtpsService

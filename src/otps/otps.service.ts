@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common'
-import { Otp } from './otp.entity'
+import { Otp } from './otps.entity'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { CreateOtpOptions, VerifyOtpOptions } from './otp.types'
+import {
+  CreateOtpOptions,
+  CreateOtpReturn,
+  VerifyOtpOptions,
+  VerifyOtpReturn,
+} from './otps.types'
 
 @Injectable()
 export class OtpsService {
@@ -10,11 +15,11 @@ export class OtpsService {
     @InjectRepository(Otp) private readonly otpsRepository: Repository<Otp>,
   ) {}
 
-  async create(data: CreateOtpOptions) {
+  async create(data: CreateOtpOptions): CreateOtpReturn {
     return this.otpsRepository.save(data)
   }
 
-  async verify(data: VerifyOtpOptions) {
+  async verify(data: VerifyOtpOptions): VerifyOtpReturn {
     const otp = await this.otpsRepository.findOneBy({
       otp: data.otp,
       type: data.type,

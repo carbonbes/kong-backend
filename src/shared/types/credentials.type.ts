@@ -1,7 +1,3 @@
-import { EncodedJwt } from './jwt.type'
-import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '../consts'
+import { CredentialDto } from '@/shared/dtos/credential.dto'
 
-export type Credentials = {
-  [ACCESS_TOKEN_NAME]: EncodedJwt
-  [REFRESH_TOKEN_NAME]: EncodedJwt
-}
+export type Credentials = CredentialDto

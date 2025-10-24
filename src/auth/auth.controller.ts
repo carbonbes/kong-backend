@@ -1,20 +1,15 @@
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
 import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common'
-import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dto'
+  LogoutDto,
+  RotateDto,
+  SignInDto,
+  SignUpDto,
+  VerifyOtpDto,
+} from './auth.dto'
 import { AuthService } from './auth.service'
-import { Request, Response } from 'express'
-import { AccessJwtAuthGuard } from '../shared/guards/access-jwt.guard'
-import { RefreshJwtAuthGuard } from '../shared/guards/refresh-jwt.guard'
-import { Cookies } from '../shared/decorators/cookies.decorator'
-import { CREDENTIALS } from './auth.consts'
-import { Credentials } from '../shared/types/credentials.type'
+import { Request } from 'express'
+import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'
+import { RefreshJwtAuthGuard } from '@/shared/guards/refresh-jwt.guard'
 
 @Controller('auth')
 export class AuthController {
@@ -31,12 +26,8 @@ export class AuthController {
   }
 
   @Post('verify-otp')
-  async verifyOtp(
-    @Body() data: VerifyOtpDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const credentials = await this.authService.verifyOtp(data)
-    this.authService.setCredentialCookies({ res, credentials })
+  async verifyOtp(@Body() data: VerifyOtpDto) {
+    return this.authService.verifyOtp(data)
   }
 
   @UseGuards(AccessJwtAuthGuard)
@@ -47,21 +38,13 @@ export class AuthController {
 
   @UseGuards(RefreshJwtAuthGuard)
   @Post('rotate')
-  async rotate(
-    @Cookies(CREDENTIALS) credentials: Credentials,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const newCredentials = await this.authService.rotate(credentials)
-    this.authService.setCredentialCookies({ res, credentials: newCredentials })
+  rotate(@Body() data: RotateDto) {
+    return this.authService.rotate(data)
   }
 
   @UseGuards(AccessJwtAuthGuard)
   @Post('logout')
-  async logout(
-    @Cookies(CREDENTIALS) credentials: Credentials,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    this.authService.logout(credentials)
-    this.authService.removeCredentialCookies(res)
+  async logout(@Body() data: LogoutDto) {
+    return this.authService.logout(data)
   }
 }
