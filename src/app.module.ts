@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
-import { ConfigModule, ConfigService } from '@nestjs/config'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { addTransactionalDataSource } from 'typeorm-transactional'
-import { DataSource } from 'typeorm'
+import { ConfigModule } from '@nestjs/config'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { OtpsModule } from './otps/otps.module'
 import { JwtsModule } from './jwts/jwts.module'
+import {
+  TransactionModule,
+  txExtension,
+} from '@takeny1998/nestjs-prisma-transactional'
+import { PrismaService } from '@/prisma/prisma.service'
 
 @Module({
   imports: [
@@ -16,25 +18,7 @@ import { JwtsModule } from './jwts/jwts.module'
       isGlobal: true,
     }),
 
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-
-      useFactory: async (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        autoLoadEntities: true,
-        synchronize: configService.get<boolean>('TYPEORM_OPTIONS_SYNCHRONIZE'),
-      }),
-
-      async dataSourceFactory(options) {
-        if (!options) {
-          throw new Error('Invalid options passed')
-        }
-
-        return addTransactionalDataSource(new DataSource(options))
-      },
-    }),
-
+    TransactionModule,
     AuthModule,
     UsersModule,
     OtpsModule,
@@ -42,8 +26,13 @@ import { JwtsModule } from './jwts/jwts.module'
   ],
 
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: 'PrismaService',
+      useValue: new PrismaService().$extends(txExtension),
+    },
+  ],
+  exports: ['PrismaService'],
 })
-export class AppModule {
-  constructor(private dataSource: DataSource) {}
-}
+export class AppModule {}
