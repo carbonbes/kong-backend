@@ -1,5 +1,3 @@
-import { User } from './users.entity'
-import { UserGender } from './users.enum'
 import {
   IsBoolean,
   IsDate,
@@ -8,7 +6,7 @@ import {
   IsNumber,
   IsString,
 } from 'class-validator'
-import { PickType } from '@nestjs/mapped-types'
+import { User, UserGender } from 'generated/prisma'
 
 export class BaseUserDto implements User {
   @IsNumber()
@@ -29,9 +27,3 @@ export class BaseUserDto implements User {
   @IsDate()
   createdAt: Date
 }
-
-export class CreateUserDto extends PickType(BaseUserDto, [
-  'email',
-  'name',
-  'gender',
-] as const) {}

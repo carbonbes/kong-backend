@@ -1,34 +1,24 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { User } from './users.entity'
 import {
   CreateUserOptions,
-  CreateUserReturn,
-  FindOneUserByOptions,
-  FindOneUserByReturn,
+  FindOneUserOptions,
   UpdateUserOptions,
-  UpdateUserReturn,
 } from './users.types'
+import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
-  create(data: CreateUserOptions): CreateUserReturn {
-    return this.usersRepository.save(data)
+  create(data: CreateUserOptions) {
+    return this.prismaService.user.create({ data })
   }
 
-  findOneBy(where: FindOneUserByOptions): FindOneUserByReturn {
-    return this.usersRepository.findOneBy(where)
+  findOne(opts: FindOneUserOptions) {
+    return this.prismaService.user.findUnique(opts)
   }
 
-  async update({ where, data }: UpdateUserOptions): UpdateUserReturn {
-    const user = await this.findOneBy(where)
-
-    return this.usersRepository.save({ ...user, ...data })
+  update(opts: UpdateUserOptions) {
+    return this.prismaService.user.update(opts)
   }
 }

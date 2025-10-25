@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
-import { RevokedJwtsService } from './revoked-jwts.service'
+import { RevokedJwtsSchema } from './revoked-jwts.schema'
 import { RedisClient } from '@/redis/redis.types'
 import { REDIS_CLIENT } from '@/redis/redis.consts'
 import { AddOptions, GetOptions, HasOptions } from './revoked-jwts.types'
 
 describe('RevokedJwtsService', () => {
-  let service: RevokedJwtsService
+  let service: RevokedJwtsSchema
   let redis: Pick<RedisClient, 'set' | 'get'>
 
   redis = {
@@ -17,12 +17,12 @@ describe('RevokedJwtsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        RevokedJwtsService,
+        RevokedJwtsSchema,
         { provide: REDIS_CLIENT, useValue: redis },
       ],
     }).compile()
 
-    service = module.get<RevokedJwtsService>(RevokedJwtsService)
+    service = module.get<RevokedJwtsSchema>(RevokedJwtsSchema)
     redis = module.get<RedisClient>(REDIS_CLIENT)
   })
 

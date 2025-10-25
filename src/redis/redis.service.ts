@@ -15,7 +15,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @Inject(MODULE_OPTIONS_TOKEN) private readonly options: ConfigModuleOptions,
   ) {
-    this.redis = createClient(this.options)
+    this.redis = createClient(this.options) as RedisClient
   }
 
   async onModuleInit() {

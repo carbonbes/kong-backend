@@ -8,12 +8,10 @@ import {
   LogoutOptions,
   RotateOptions,
   SignInOptions,
-  SignInReturn,
   SignUpOptions,
-  SignUpReturn,
   VerifyOtpOptions,
 } from './auth.types'
-import { Transactional } from 'typeorm-transactional'
+import { Transactional } from '@takeny1998/nestjs-prisma-transactional'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enum'
 import { JwtsService } from '@/jwts/jwts.service'
@@ -28,18 +26,17 @@ export class AuthService {
   ) {}
 
   @Transactional()
-  async signUp(data: SignUpOptions): SignUpReturn {
-    const existingUser = await this.usersService.findOneBy({
-      email: data.email,
+  async signUp(data: SignUpOptions) {
+    const isExist = await this.usersService.findOne({
+      where: { email: data.email },
     })
 
-    if (existingUser) {
+    if (isExist) {
       return
     }
 
-    const user = await this.usersService.create(data)
-
     const code = getCode()
+    const user = await this.usersService.create(data)
     const expiresAt = new Date(Date.now() + 300 * 1000)
 
     return this.otpsService.create({
@@ -51,8 +48,8 @@ export class AuthService {
   }
 
   @Transactional()
-  async signIn({ email }: SignInOptions): SignInReturn {
-    const user = await this.usersService.findOneBy({ email })
+  async signIn({ email }: SignInOptions) {
+    const user = await this.usersService.findOne({ where: { email } })
 
     if (!user) {
       throw new NotFoundException()
@@ -90,7 +87,7 @@ export class AuthService {
       })
     }
 
-    const { id } = await this.usersService.findOneBy({ email })
+    const { id } = await this.usersService.findOne({ where: { email } })
 
     return this.jwtsService.sign(id)
   }

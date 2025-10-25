@@ -15,7 +15,7 @@ import {
 } from './jwts.types'
 import { EncodedJwt, JwtPayload } from '@/shared/types/jwt.type'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
-import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
+import { RevokedJwtsSchema } from '@/revoked-jwts/revoked-jwts.schema'
 
 @Injectable()
 export class JwtsService {
@@ -23,7 +23,7 @@ export class JwtsService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly signedJwtsService: SignedJwtsService,
-    private readonly revokedJwtsService: RevokedJwtsService,
+    private readonly revokedJwtsService: RevokedJwtsSchema,
   ) {}
 
   async sign(sub: SignOptions): SignReturn {

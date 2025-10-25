@@ -1,5 +1,4 @@
-import { createClient, RedisClientOptions } from 'redis'
+import { RedisClientOptions, RedisClientType } from 'redis'
 
 export type ConfigModuleOptions = RedisClientOptions
-
-export type RedisClient = ReturnType<typeof createClient>
+export type RedisClient = RedisClientType
