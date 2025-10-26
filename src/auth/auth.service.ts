@@ -13,9 +13,8 @@ import {
 } from './auth.types'
 import { Transactional } from '@takeny1998/nestjs-prisma-transactional'
 import { OtpsService } from '@/otps/otps.service'
-import { OtpType } from '@/otps/otps.enum'
+import { OtpType } from '@/otps/enums'
 import { JwtsService } from '@/jwts/jwts.service'
-import getCode from '@/shared/utils/getCode'
 
 @Injectable()
 export class AuthService {
@@ -35,15 +34,9 @@ export class AuthService {
       return
     }
 
-    const code = getCode()
-    const user = await this.usersService.create(data)
-    const expiresAt = new Date(Date.now() + 300 * 1000)
-
     return this.otpsService.create({
-      otp: code,
       type: OtpType.SIGN_UP,
-      user,
-      expiresAt,
+      email: data.email,
     })
   }
 
@@ -59,14 +52,9 @@ export class AuthService {
       throw new ForbiddenException()
     }
 
-    const code = getCode()
-    const expiresAt = new Date(Date.now() + 300 * 1000)
-
     return this.otpsService.create({
-      otp: code,
       type: OtpType.SIGN_IN,
-      user,
-      expiresAt,
+      email,
     })
   }
 
@@ -96,9 +84,7 @@ export class AuthService {
     return this.jwtsService.rotate(jwts)
   }
 
-  logout(credentials: LogoutOptions) {
-    Object.values(credentials).forEach((credential) =>
-      this.jwtsService.revoke(credential),
-    )
+  logout(jwts: LogoutOptions) {
+    Object.values(jwts).forEach((jwt) => this.jwtsService.revoke(jwt))
   }
 }

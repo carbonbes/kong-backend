@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common'
 import { createClient } from 'redis'
-import { ConfigModuleOptions, RedisClient } from './redis.types'
+import { ConfigModuleOptions, RedisClient } from './types'
 import { MODULE_OPTIONS_TOKEN } from './redis.module-definition'
 
 @Injectable()

@@ -1,8 +1,8 @@
 import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dto'
-import { Credentials } from '@/shared/types/credentials.type'
+import { Jwts } from '@/shared/types/jwts'
 
 export type SignUpOptions = SignUpDto
 export type SignInOptions = SignInDto
 export type VerifyOtpOptions = VerifyOtpDto
-export type RotateOptions = Credentials
-export type LogoutOptions = Credentials
+export type RotateOptions = Jwts
+export type LogoutOptions = Jwts

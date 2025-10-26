@@ -2,10 +2,11 @@ import { DynamicModule, Module, Provider } from '@nestjs/common'
 import { RedisService } from './redis.service'
 import { ConfigurableModuleClass } from '@/redis/redis.module-definition'
 import { Repository, Schema } from 'redis-om'
-import { getRepositoryToken } from '@/redis/redis.utils'
+import getRepositoryToken from '@/shared/utils/getRepositoryToken'
 
 @Module({
   providers: [RedisService],
+  exports: [RedisService],
 })
 export class RedisModule extends ConfigurableModuleClass {
   static forFeature(schemas: Schema[]): DynamicModule {
@@ -15,6 +16,7 @@ export class RedisModule extends ConfigurableModuleClass {
       useFactory: async (redisService: RedisService) => {
         const redis = redisService.getClient()
 
+        // @ts-ignore
         const repository = new Repository(schema, redis)
         await repository.createIndex()
 

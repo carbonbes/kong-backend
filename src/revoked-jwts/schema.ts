@@ -1,12 +1,11 @@
 import { Schema } from 'redis-om'
-import { RevokedJwt } from '@/revoked-jwts/revoked-jwts.types'
+import { StorageJwt } from '@/shared/jwt-storage/types'
 
-export const revokedJwtSchema = new Schema<RevokedJwt>(
+export const revokedJwtSchema = new Schema<StorageJwt>(
   'revoked-jwt',
   {
     jti: { type: 'string' },
     sub: { type: 'number' },
-    exp: { type: 'number' },
   },
   { dataStructure: 'HASH' },
 )

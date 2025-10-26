@@ -3,7 +3,7 @@ import {
   CreateUserOptions,
   FindOneUserOptions,
   UpdateUserOptions,
-} from './users.types'
+} from './types'
 import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()

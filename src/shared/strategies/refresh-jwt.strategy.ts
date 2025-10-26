@@ -30,7 +30,7 @@ export class RefreshJwtStrategy extends PassportStrategy(
   }
 
   async validate({ jti }: JwtPayload) {
-    const isRevoked = await this.jwtsService.isRevoked(jti)
+    const isRevoked = await this.jwtsService.isRevoked({ jti })
 
     if (isRevoked) {
       throw new UnauthorizedException()

@@ -6,3 +6,4 @@ import UserUpdateArgs = Prisma.UserUpdateArgs
 export type CreateUserOptions = UserCreateInput
 export type FindOneUserOptions = UserFindUniqueArgs
 export type UpdateUserOptions = UserUpdateArgs
+export { User } from 'generated/prisma'

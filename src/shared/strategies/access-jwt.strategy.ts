@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '../types/jwt.type'
-import { User } from '@/users/users.entity'
+import { User } from '@/users/types'
 import { UsersService } from '@/users/users.service'
 import { JwtsService } from '@/jwts/jwts.service'
 import { Request } from 'express'
@@ -39,12 +39,12 @@ export class AccessJwtStrategy extends PassportStrategy(
   }
 
   async validate({ jti, sub }: JwtPayload) {
-    const isRevoked = await this.jwtsService.isRevoked(jti)
+    const isRevoked = await this.jwtsService.isRevoked({ jti })
 
     if (isRevoked) {
       throw new UnauthorizedException()
     }
 
-    return await this.usersService.findOneBy({ id: sub })
+    return this.usersService.findOne({ where: { id: sub } })
   }
 }

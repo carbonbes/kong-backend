@@ -19,18 +19,18 @@ import { RedisModule } from '@/redis/redis.module'
       isGlobal: true,
     }),
 
-    TransactionModule,
-    AuthModule,
-    UsersModule,
-    OtpsModule,
-    JwtsModule,
-
     RedisModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         url: configService.get<string>('REDIS_URL'),
       }),
     }),
+
+    TransactionModule,
+    AuthModule,
+    UsersModule,
+    OtpsModule,
+    JwtsModule,
   ],
 
   controllers: [AppController],

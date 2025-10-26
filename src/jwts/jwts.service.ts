@@ -11,11 +11,10 @@ import {
   RotateOptions,
   SignJwtOptions,
   SignOptions,
-  SignReturn,
-} from './jwts.types'
+} from './types'
 import { EncodedJwt, JwtPayload } from '@/shared/types/jwt.type'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
-import { RevokedJwtsSchema } from '@/revoked-jwts/revoked-jwts.schema'
+import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 
 @Injectable()
 export class JwtsService {
@@ -23,10 +22,10 @@ export class JwtsService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly signedJwtsService: SignedJwtsService,
-    private readonly revokedJwtsService: RevokedJwtsSchema,
+    private readonly revokedJwtsService: RevokedJwtsService,
   ) {}
 
-  async sign(sub: SignOptions): SignReturn {
+  async sign(sub: SignOptions) {
     const access_token = await this.signJwt({ sub, type: 'access' })
     const refresh_token = await this.signJwt({ sub, type: 'refresh' })
 
@@ -34,23 +33,23 @@ export class JwtsService {
   }
 
   revoke(jwt: RevokeOptions) {
-    const { jti, exp } = this.decode(jwt)
+    const { jti, sub, exp } = this.decode(jwt)
 
-    this.revokedJwtsService.add({ jti, exp })
+    return this.revokedJwtsService.add({ jti, sub, exp })
   }
 
-  isRevoked(jti: IsRevokedOptions) {
-    return this.revokedJwtsService.has(jti)
+  isRevoked({ jti }: IsRevokedOptions) {
+    return this.revokedJwtsService.has({ jti })
   }
 
-  rotate(credentials: RotateOptions) {
-    Object.values(credentials).forEach((credential) => {
-      if (!credential) return
+  rotate(jwts: RotateOptions) {
+    Object.values(jwts).forEach(async (jwt) => {
+      if (!jwt) return
 
-      this.revoke(credential)
+      await this.revoke(jwt)
     })
 
-    const { refresh_token } = credentials
+    const { refresh_token } = jwts
     const { sub } = this.decode(refresh_token)
 
     return this.sign(sub)
