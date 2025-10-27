@@ -16,7 +16,7 @@ export class RedisModule extends ConfigurableModuleClass {
     const moduleOptionsProvider: Provider = {
       provide: MODULE_OPTIONS_TOKEN,
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: async (configService: ConfigService) => ({
         url: configService.get<string>('REDIS_URL'),
       }),
     }
