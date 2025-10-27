@@ -8,23 +8,20 @@ import {
 } from '@/redis/redis.module-definition'
 import { ConfigService } from '@nestjs/config'
 
-@Module({
-  providers: [
-    RedisService,
-    {
+@Module({})
+export class RedisModule extends ConfigurableModuleClass {
+  static forFeature(schemas: Schema[]): DynamicModule {
+    const module = RedisModule
+
+    const moduleOptionsProvider: Provider = {
       provide: MODULE_OPTIONS_TOKEN,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         url: configService.get<string>('REDIS_URL'),
       }),
-    },
-  ],
-})
-export class RedisModule extends ConfigurableModuleClass {
-  static forFeature(schemas: Schema[]): DynamicModule {
-    const module = RedisModule
+    }
 
-    const providers: Provider[] = schemas.map((schema) => ({
+    const schemasProviders: Provider[] = schemas.map((schema) => ({
       provide: getRepositoryToken(schema),
       inject: [RedisService],
       useFactory: async (redisService: RedisService) => {
@@ -37,6 +34,12 @@ export class RedisModule extends ConfigurableModuleClass {
         return repository
       },
     }))
+
+    const providers: Provider[] = [
+      RedisService,
+      moduleOptionsProvider,
+      ...schemasProviders,
+    ]
 
     const exports = providers
 
