@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { RedisService } from './redis.service'
 
-describe('RedisOmService', () => {
+describe('RedisService', () => {
   let service: RedisService
 
   beforeEach(async () => {

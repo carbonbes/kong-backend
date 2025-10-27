@@ -1,4 +1,4 @@
-import { Strategy } from 'passport-jwt'
+import { ExtractJwt, Strategy } from 'passport-jwt'
 import { PassportStrategy } from '@nestjs/passport'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -6,17 +6,11 @@ import { JwtPayload } from '../types/jwt.type'
 import { User } from '@/users/types'
 import { UsersService } from '@/users/users.service'
 import { JwtsService } from '@/jwts/jwts.service'
-import { Request } from 'express'
-import { ACCESS_TOKEN_NAME } from '../consts'
 
 declare module 'express-serve-static-core' {
   interface Request {
     user: User
   }
-}
-
-const jwtCookieExtractor = (req: Request) => {
-  return req.cookies[ACCESS_TOKEN_NAME]
 }
 
 @Injectable()
@@ -30,7 +24,7 @@ export class AccessJwtStrategy extends PassportStrategy(
     private readonly jwtsService: JwtsService,
   ) {
     super({
-      jwtFromRequest: jwtCookieExtractor,
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get(
         'JWT_SIGN_OPTIONS_ACCESS_TOKEN_SECRET_KEY',

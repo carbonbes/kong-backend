@@ -1,17 +1,13 @@
 import { Module } from '@nestjs/common'
-import { AppController } from './app.controller'
-import { AppService } from './app.service'
+import { AppController } from '@/app.controller'
+import { AppService } from '@/app.service'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import { AuthModule } from './auth/auth.module'
-import { UsersModule } from './users/users.module'
-import { OtpsModule } from './otps/otps.module'
-import { JwtsModule } from './jwts/jwts.module'
-import {
-  TransactionModule,
-  txExtension,
-} from '@takeny1998/nestjs-prisma-transactional'
-import { PrismaService } from '@/prisma/prisma.service'
+import { AuthModule } from '@/auth/auth.module'
+import { UsersModule } from '@/users/users.module'
+import { OtpsModule } from '@/otps/otps.module'
+import { JwtsModule } from '@/jwts/jwts.module'
 import { RedisModule } from '@/redis/redis.module'
+import { PrismaModule } from '@/prisma/prisma.module'
 
 @Module({
   imports: [
@@ -19,14 +15,14 @@ import { RedisModule } from '@/redis/redis.module'
       isGlobal: true,
     }),
 
-    RedisModule.registerAsync({
+    RedisModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         url: configService.get<string>('REDIS_URL'),
       }),
     }),
 
-    TransactionModule,
+    PrismaModule,
     AuthModule,
     UsersModule,
     OtpsModule,
@@ -34,13 +30,6 @@ import { RedisModule } from '@/redis/redis.module'
   ],
 
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: 'PrismaService',
-      useValue: new PrismaService().$extends(txExtension),
-    },
-  ],
-  exports: ['PrismaService'],
+  providers: [AppService],
 })
 export class AppModule {}

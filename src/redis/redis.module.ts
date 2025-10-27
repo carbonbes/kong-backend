@@ -1,15 +1,25 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common'
 import { RedisService } from './redis.service'
-import { ConfigurableModuleClass } from '@/redis/redis.module-definition'
 import { Repository, Schema } from 'redis-om'
 import getRepositoryToken from '@/shared/utils/getRepositoryToken'
+import {
+  ConfigurableModuleClass,
+  MODULE_OPTIONS_TOKEN,
+} from '@/redis/redis.module-definition'
 
 @Module({
-  providers: [RedisService],
-  exports: [RedisService],
+  providers: [
+    RedisService,
+    {
+      provide: MODULE_OPTIONS_TOKEN,
+      useValue: { url: 'redis://localhost:6379/0' },
+    },
+  ],
 })
 export class RedisModule extends ConfigurableModuleClass {
   static forFeature(schemas: Schema[]): DynamicModule {
+    const module = RedisModule
+
     const providers: Provider[] = schemas.map((schema) => ({
       provide: getRepositoryToken(schema),
       inject: [RedisService],
@@ -24,10 +34,12 @@ export class RedisModule extends ConfigurableModuleClass {
       },
     }))
 
+    const exports = providers
+
     return {
-      module: RedisModule,
+      module,
       providers,
-      exports: providers,
+      exports,
     }
   }
 }

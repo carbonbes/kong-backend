@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import {
   CreateUserOptions,
   FindOneUserOptions,
   UpdateUserOptions,
 } from './types'
 import { PrismaService } from '@/prisma/prisma.service'
+import { PRISMA_SERVICE } from '@/prisma/consts'
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    @Inject(PRISMA_SERVICE) private readonly prismaService: PrismaService,
+  ) {}
 
   create(data: CreateUserOptions) {
     return this.prismaService.user.create({ data })
