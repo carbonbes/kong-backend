@@ -1,11 +1,11 @@
-import { IsUUID } from 'class-validator'
+import { IsString } from 'class-validator'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { EncodedJwt } from '@/shared/types/jwt.type'
 
 export class JwtsDto {
-  @IsUUID()
+  @IsString()
   [ACCESS_TOKEN_NAME]: EncodedJwt;
 
-  @IsUUID()
+  @IsString()
   [REFRESH_TOKEN_NAME]: EncodedJwt
 }

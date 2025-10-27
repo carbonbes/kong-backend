@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 import {
-  CreateUserOptions,
-  FindOneUserOptions,
-  UpdateUserOptions,
+  CreateOptions,
+  FindOneOptions,
+  IsExistOptions,
+  UpdateOptions,
 } from './types'
 import { PrismaService } from '@/prisma/prisma.service'
 import { PRISMA_SERVICE } from '@/prisma/consts'
@@ -13,15 +14,19 @@ export class UsersService {
     @Inject(PRISMA_SERVICE) private readonly prismaService: PrismaService,
   ) {}
 
-  create(data: CreateUserOptions) {
+  create(data: CreateOptions) {
     return this.prismaService.user.create({ data })
   }
 
-  findOne(opts: FindOneUserOptions) {
+  findOne(opts: FindOneOptions) {
     return this.prismaService.user.findUnique(opts)
   }
 
-  update(opts: UpdateUserOptions) {
+  update(opts: UpdateOptions) {
     return this.prismaService.user.update(opts)
+  }
+
+  async isExist(opts: IsExistOptions) {
+    return !!this.prismaService.user.count(opts)
   }
 }

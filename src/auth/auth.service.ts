@@ -26,7 +26,7 @@ export class AuthService {
 
   @Transactional()
   async signUp(data: SignUpOptions) {
-    const isExist = await this.usersService.findOne({
+    const isExist = await this.usersService.isExist({
       where: { email: data.email },
     })
 
@@ -34,9 +34,11 @@ export class AuthService {
       return
     }
 
+    const { email } = await this.usersService.create(data)
+
     return this.otpsService.create({
       type: OtpType.SIGN_UP,
-      email: data.email,
+      email,
     })
   }
 

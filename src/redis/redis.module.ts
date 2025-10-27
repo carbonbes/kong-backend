@@ -1,18 +1,22 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common'
 import { RedisService } from './redis.service'
 import { Repository, Schema } from 'redis-om'
-import getRepositoryToken from '@/shared/utils/getRepositoryToken'
+import { getRepositoryToken } from './utils'
 import {
   ConfigurableModuleClass,
   MODULE_OPTIONS_TOKEN,
 } from '@/redis/redis.module-definition'
+import { ConfigService } from '@nestjs/config'
 
 @Module({
   providers: [
     RedisService,
     {
       provide: MODULE_OPTIONS_TOKEN,
-      useValue: { url: 'redis://localhost:6379/0' },
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        url: configService.get<string>('REDIS_URL'),
+      }),
     },
   ],
 })

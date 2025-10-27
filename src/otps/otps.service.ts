@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@/shared/decorators/repository.decorator'
+import { InjectRepository } from '@/redis/utils'
 import { otpSchema } from '@/otps/schema'
 import { EntityId, Repository } from 'redis-om'
 import { CreateOptions, Otp, VerifyOptions } from '@/otps/types'

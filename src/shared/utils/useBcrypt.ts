@@ -4,7 +4,7 @@ export type GetHashOptions = { value: string }
 export type CompareOptions = { value: string; hash: string }
 
 export const getHash = ({ value }: GetHashOptions) => {
-  const rounds = process.env.BCRYPT_SALT_ROUNDS
+  const rounds = Number(process.env.BCRYPT_SALT_ROUNDS)
 
   return bcrypt.hash(value, rounds)
 }
