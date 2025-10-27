@@ -11,7 +11,7 @@ import {
   SignUpOptions,
   VerifyOtpOptions,
 } from './auth.types'
-import { Transactional } from '@takeny1998/nestjs-prisma-transactional'
+import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/enums'
 import { JwtsService } from '@/jwts/jwts.service'

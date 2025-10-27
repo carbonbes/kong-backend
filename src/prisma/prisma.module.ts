@@ -1,19 +1,14 @@
 import { Global, Module } from '@nestjs/common'
-import {
-  TransactionModule,
-  txExtension,
-} from '@takeny1998/nestjs-prisma-transactional'
 import { PRISMA_SERVICE } from '@/prisma/consts'
 import { PrismaService } from '@/prisma/prisma.service'
+import { prismaTransactional } from '@transactional/prisma'
 
 @Global()
 @Module({
-  imports: [TransactionModule],
-
   providers: [
     {
       provide: PRISMA_SERVICE,
-      useValue: new PrismaService().$extends(txExtension),
+      useValue: new PrismaService().$extends(prismaTransactional),
     },
   ],
 
