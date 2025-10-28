@@ -16,27 +16,34 @@ export class OtpsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create({ type, email }: CreateOptions) {
+  async create({ type, userId }: CreateOptions) {
     const id = getUuid()
     const code = getCode()
-    const hash = await getHash({ value: code })
+    const codeHash = await getHash({ value: code })
+
+    const otp = await this.repository.save({
+      id,
+      code: codeHash,
+      type,
+      userId,
+    })
+
+    const entityId = otp[EntityId]
     const expiresAt = this.getExpiresAt()
+    await this.repository.expireAt(entityId, expiresAt)
 
-    const otp = await this.repository.save({ id, code: hash, type, email })
-    await this.repository.expireAt(otp[EntityId], expiresAt)
-
-    return { id, code } as Otp
+    return { ...otp, code } as Otp
   }
 
-  async verify({ id, code, type, email }: VerifyOptions) {
+  async verify({ id, code, type, userId }: VerifyOptions) {
     const otp = await this.repository
       .search()
       .where('id')
       .eq(id)
       .and('type')
       .eq(type)
-      .and('email')
-      .eq(email)
+      .and('userId')
+      .eq(userId)
       .returnFirst()
 
     if (!otp) {
@@ -44,12 +51,12 @@ export class OtpsService {
     }
 
     const isVerify = await compare({ value: code, hash: otp.code })
-
     if (!isVerify) {
       return false
     }
 
-    await this.repository.remove(otp[EntityId])
+    const entityId = otp[EntityId]
+    await this.repository.remove(entityId)
 
     return true
   }

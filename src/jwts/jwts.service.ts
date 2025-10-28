@@ -15,6 +15,7 @@ import {
 import { EncodedJwt, JwtPayload } from '@/shared/types/jwt.type'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
+import { Jwts } from '@/shared/types/jwts'
 
 @Injectable()
 export class JwtsService {
@@ -29,7 +30,7 @@ export class JwtsService {
     const access_token = await this.signJwt({ sub, type: 'access' })
     const refresh_token = await this.signJwt({ sub, type: 'refresh' })
 
-    return { access_token, refresh_token }
+    return { access_token, refresh_token } as Jwts
   }
 
   revoke(jwt: RevokeOptions) {

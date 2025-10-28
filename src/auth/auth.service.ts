@@ -15,31 +15,37 @@ import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/enums'
 import { JwtsService } from '@/jwts/jwts.service'
+import { MailService } from '@/mail/mail.service'
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
+    private readonly mailService: MailService,
     private readonly otpsService: OtpsService,
     private readonly jwtsService: JwtsService,
   ) {}
 
   @Transactional()
   async signUp(data: SignUpOptions) {
+    const { email } = data
+
     const isExist = await this.usersService.isExist({
-      where: { email: data.email },
+      where: { email },
     })
 
     if (isExist) {
       return
     }
 
-    const { email } = await this.usersService.create(data)
+    const { id: userId } = await this.usersService.create(data)
 
-    return this.otpsService.create({
+    const { code, type } = await this.otpsService.create({
       type: OtpType.SIGN_UP,
-      email,
+      userId,
     })
+
+    return this.mailService.sendOtp({ email, code, type })
   }
 
   @Transactional()
@@ -54,10 +60,14 @@ export class AuthService {
       throw new ForbiddenException()
     }
 
-    return this.otpsService.create({
+    const { id: userId } = user
+
+    const { code, type } = await this.otpsService.create({
       type: OtpType.SIGN_IN,
-      email,
+      userId,
     })
+
+    return this.mailService.sendOtp({ email, code, type })
   }
 
   @Transactional()
@@ -68,18 +78,16 @@ export class AuthService {
       throw new NotFoundException()
     }
 
-    const { type, email } = data
+    const { type, userId } = data
 
     if (type === 'SIGN_UP') {
       await this.usersService.update({
-        where: { email },
+        where: { id: userId },
         data: { isActive: true },
       })
     }
 
-    const { id } = await this.usersService.findOne({ where: { email } })
-
-    return this.jwtsService.sign(id)
+    return this.jwtsService.sign(userId)
   }
 
   rotate(jwts: RotateOptions) {

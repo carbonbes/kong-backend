@@ -7,9 +7,10 @@ import { PassportModule } from '@nestjs/passport'
 import { AccessJwtStrategy } from '@/shared/strategies/access-jwt.strategy'
 import { JwtsModule } from '@/jwts/jwts.module'
 import { RefreshJwtStrategy } from '@/shared/strategies/refresh-jwt.strategy'
+import { MailModule } from '@/mail/mail.module'
 
 @Module({
-  imports: [UsersModule, OtpsModule, JwtsModule, PassportModule],
+  imports: [UsersModule, MailModule, OtpsModule, JwtsModule, PassportModule],
   providers: [AuthService, AccessJwtStrategy, RefreshJwtStrategy],
   controllers: [AuthController],
 })

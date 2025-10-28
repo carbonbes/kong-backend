@@ -1,15 +1,15 @@
 import { Entity } from 'redis-om'
-import { Uuid } from '@/shared/types/uuid.type'
 import { OtpType } from '@/otps/enums'
+import { User } from '@/users/types'
 
 export type Otp = {
-  id: Uuid
+  id: string
   code: string
   type: OtpType
-  email: string
+  userId: User['id']
 }
 
 export interface OtpSchema extends Entity, Otp {}
 
-export type CreateOptions = Pick<Otp, 'type' | 'email'>
-export type VerifyOptions = Pick<Otp, 'id' | 'code' | 'type' | 'email'>
+export type CreateOptions = Pick<Otp, 'type' | 'userId'>
+export type VerifyOptions = Pick<Otp, 'id' | 'code' | 'type' | 'userId'>

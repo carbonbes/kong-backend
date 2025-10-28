@@ -7,7 +7,7 @@ export const otpSchema = new Schema<OtpSchema>(
     id: { type: 'string' },
     code: { type: 'string' },
     type: { type: 'string' },
-    email: { type: 'string' },
+    userId: { type: 'number' },
   },
   { dataStructure: 'HASH' },
 )

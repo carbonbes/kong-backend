@@ -27,6 +27,6 @@ export class UsersService {
   }
 
   async isExist(opts: IsExistOptions) {
-    return !!this.prismaService.user.count(opts)
+    return !!(await this.findOne(opts))
   }
 }
