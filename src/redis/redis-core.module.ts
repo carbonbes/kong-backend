@@ -28,7 +28,7 @@ export class RedisCoreModule implements OnApplicationShutdown {
       },
     }
 
-    const providers = [redisClientProvider]
+    const providers: Provider[] = [redisClientProvider]
     const exports = providers
 
     return {
