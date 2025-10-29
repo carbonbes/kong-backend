@@ -17,7 +17,7 @@ export class RedisModule {
   static forFeature(schemas: Schema[]): DynamicModule {
     const module = RedisModule
 
-    const providers: Provider[] = schemas.map((schema) => ({
+    const repositoryProviders: Provider[] = schemas.map((schema) => ({
       provide: getRepositoryToken(schema),
       inject: [REDIS_CLIENT],
       useFactory: async (redis: RedisClient) => {
@@ -29,6 +29,7 @@ export class RedisModule {
       },
     }))
 
+    const providers = repositoryProviders
     const exports = providers
 
     return {
