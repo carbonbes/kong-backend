@@ -5,7 +5,7 @@ import {
   SignInDto,
   SignUpDto,
   VerifyOtpDto,
-} from './auth.dto'
+} from './dto'
 import { AuthService } from './auth.service'
 import { Request } from 'express'
 import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'

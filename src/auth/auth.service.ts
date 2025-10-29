@@ -10,7 +10,7 @@ import {
   SignInOptions,
   SignUpOptions,
   VerifyOtpOptions,
-} from './auth.types'
+} from './types'
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/enums'
@@ -40,12 +40,18 @@ export class AuthService {
 
     const { id: userId } = await this.usersService.create(data)
 
-    const { code, type } = await this.otpsService.create({
+    const {
+      id: otpId,
+      code,
+      type,
+    } = await this.otpsService.create({
       type: OtpType.SIGN_UP,
       userId,
     })
 
-    return this.mailService.sendOtp({ email, code, type })
+    await this.mailService.sendOtp({ email, code, type })
+
+    return { id: otpId, userId }
   }
 
   @Transactional()
@@ -53,7 +59,7 @@ export class AuthService {
     const user = await this.usersService.findOne({ where: { email } })
 
     if (!user) {
-      throw new NotFoundException()
+      return
     }
 
     if (!user.isActive) {
@@ -62,12 +68,18 @@ export class AuthService {
 
     const { id: userId } = user
 
-    const { code, type } = await this.otpsService.create({
+    const {
+      id: otpId,
+      code,
+      type,
+    } = await this.otpsService.create({
       type: OtpType.SIGN_IN,
       userId,
     })
 
-    return this.mailService.sendOtp({ email, code, type })
+    await this.mailService.sendOtp({ email, code, type })
+
+    return { id: otpId, userId }
   }
 
   @Transactional()

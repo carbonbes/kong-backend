@@ -1,4 +1,11 @@
 import { RedisClientOptions, RedisClientType } from 'redis'
+import { FactoryProvider } from '@nestjs/common'
 
-export type RedisModuleOptions = RedisClientOptions
+export interface RedisModuleOptions extends RedisClientOptions {
+  useFactory?: (
+    ...args: any[]
+  ) => Promise<RedisModuleOptions> | RedisModuleOptions
+  inject?: FactoryProvider['inject']
+}
+
 export type RedisClient = RedisClientType

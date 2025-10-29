@@ -1,32 +1,26 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common'
-import { RedisService } from './redis.service'
 import { Repository, Schema } from 'redis-om'
 import { getRepositoryToken } from './utils'
-import {
-  ConfigurableModuleClass,
-  MODULE_OPTIONS_TOKEN,
-} from '@/redis/redis.module-definition'
-import { ConfigService } from '@nestjs/config'
+import { RedisCoreModule } from '@/redis/redis-core.module'
+import { RedisClient, RedisModuleOptions } from '@/redis/types'
+import { REDIS_CLIENT } from '@/redis/consts'
 
 @Module({})
-export class RedisModule extends ConfigurableModuleClass {
+export class RedisModule {
+  static forRootAsync(options: RedisModuleOptions): DynamicModule {
+    return {
+      module: RedisModule,
+      imports: [RedisCoreModule.forRootAsync(options)],
+    }
+  }
+
   static forFeature(schemas: Schema[]): DynamicModule {
     const module = RedisModule
 
-    const moduleOptionsProvider: Provider = {
-      provide: MODULE_OPTIONS_TOKEN,
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        url: configService.get<string>('REDIS_URL'),
-      }),
-    }
-
-    const schemasProviders: Provider[] = schemas.map((schema) => ({
+    const providers: Provider[] = schemas.map((schema) => ({
       provide: getRepositoryToken(schema),
-      inject: [RedisService],
-      useFactory: async (redisService: RedisService) => {
-        const redis = redisService.getClient()
-
+      inject: [REDIS_CLIENT],
+      useFactory: async (redis: RedisClient) => {
         // @ts-ignore
         const repository = new Repository(schema, redis)
         await repository.createIndex()
@@ -34,12 +28,6 @@ export class RedisModule extends ConfigurableModuleClass {
         return repository
       },
     }))
-
-    const providers: Provider[] = [
-      RedisService,
-      moduleOptionsProvider,
-      ...schemasProviders,
-    ]
 
     const exports = providers
 

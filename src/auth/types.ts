@@ -1,4 +1,4 @@
-import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dto'
+import { SignInDto, SignUpDto, VerifyOtpDto } from './dto'
 import { Jwts } from '@/shared/types/jwts'
 
 export type SignUpOptions = SignUpDto
