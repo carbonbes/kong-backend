@@ -9,3 +9,6 @@ export type CreateOptions = UserCreateInput
 export type FindOneOptions = UserFindUniqueArgs
 export type UpdateOptions = UserUpdateArgs
 export type IsExistOptions = UserFindUniqueArgs
+export type SetActiveOptions = Pick<UserFindUniqueArgs, 'where'> & {
+  value: boolean
+}

@@ -3,7 +3,9 @@ import {
   CreateOptions,
   FindOneOptions,
   IsExistOptions,
+  SetActiveOptions,
   UpdateOptions,
+  User,
 } from './types'
 import { PrismaService } from '@/prisma/prisma.service'
 import { PRISMA_SERVICE } from '@/prisma/consts'
@@ -14,19 +16,23 @@ export class UsersService {
     @Inject(PRISMA_SERVICE) private readonly prismaService: PrismaService,
   ) {}
 
-  create(data: CreateOptions) {
+  create(data: CreateOptions): Promise<User> {
     return this.prismaService.user.create({ data })
   }
 
-  findOne(opts: FindOneOptions) {
+  findOne(opts: FindOneOptions): Promise<User> {
     return this.prismaService.user.findUnique(opts)
   }
 
-  update(opts: UpdateOptions) {
+  update(opts: UpdateOptions): Promise<User> {
     return this.prismaService.user.update(opts)
   }
 
-  async isExist(opts: IsExistOptions) {
+  async isExist(opts: IsExistOptions): Promise<boolean> {
     return !!(await this.findOne(opts))
+  }
+
+  setActive({ where, value }: SetActiveOptions): Promise<User> {
+    return this.update({ where, data: { isActive: value } })
   }
 }

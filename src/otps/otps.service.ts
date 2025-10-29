@@ -16,7 +16,7 @@ export class OtpsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create({ type, userId }: CreateOptions) {
+  async create({ type, userId }: CreateOptions): Promise<Otp> {
     const id = getUuid()
     const code = getCode()
     const codeHash = await getHash({ value: code })
@@ -32,10 +32,10 @@ export class OtpsService {
     const expiresAt = this.getExpiresAt()
     await this.repository.expireAt(entityId, expiresAt)
 
-    return { ...otp, code } as Otp
+    return { ...otp, code }
   }
 
-  async verify({ id, code, type, userId }: VerifyOptions) {
+  async verify({ id, code, type, userId }: VerifyOptions): Promise<boolean> {
     const otp = await this.repository
       .search()
       .where('id')
@@ -61,7 +61,7 @@ export class OtpsService {
     return true
   }
 
-  private getExpiresAt() {
+  private getExpiresAt(): Date {
     const seconds = Number(this.configService.get('OTP_EXPIRES_IN'))
 
     return new Date(Date.now() + seconds * 1000)

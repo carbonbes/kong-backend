@@ -93,13 +93,13 @@ export class AuthService {
     const { type, userId } = data
 
     if (type === 'SIGN_UP') {
-      await this.usersService.update({
+      await this.usersService.setActive({
         where: { id: userId },
-        data: { isActive: true },
+        value: true,
       })
     }
 
-    return this.jwtsService.sign(userId)
+    return this.jwtsService.sign({ sub: userId })
   }
 
   rotate(jwts: RotateOptions) {
@@ -107,6 +107,6 @@ export class AuthService {
   }
 
   logout(jwts: LogoutOptions) {
-    Object.values(jwts).forEach((jwt) => this.jwtsService.revoke(jwt))
+    Object.values(jwts).forEach((jwt) => this.jwtsService.revoke({ jwt }))
   }
 }

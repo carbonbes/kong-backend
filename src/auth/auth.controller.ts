@@ -1,11 +1,5 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
-import {
-  LogoutDto,
-  RotateDto,
-  SignInDto,
-  SignUpDto,
-  VerifyOtpDto,
-} from './dto'
+import { LogoutDto, RotateDto, SignInDto, SignUpDto, VerifyOtpDto } from './dto'
 import { AuthService } from './auth.service'
 import { Request } from 'express'
 import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'

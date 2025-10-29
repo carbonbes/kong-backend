@@ -6,16 +6,22 @@ import { SendOtpOptions } from './types'
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
 
-  sendOtp({ email, code, type }: SendOtpOptions) {
-    return this.mailerService.sendMail({
-      to: email,
+  async sendOtp({ email, code, type }: SendOtpOptions) {
+    try {
+      await this.mailerService.sendMail({
+        to: email,
 
-      subject:
-        type === 'SIGN_IN'
-          ? 'Подтверждение входа'
-          : 'Подтверждение регистрации',
+        subject:
+          type === 'SIGN_IN'
+            ? 'Подтверждение входа'
+            : 'Подтверждение регистрации',
 
-      html: `<p>Ваш код подтверждения: ${code}</p>`,
-    })
+        html: `<p>Ваш код подтверждения: ${code}</p>`,
+      })
+
+      return true
+    } catch (e: any) {
+      return false
+    }
   }
 }

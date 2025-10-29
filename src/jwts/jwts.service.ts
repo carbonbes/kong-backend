@@ -1,40 +1,47 @@
 import { Injectable } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
-import { ConfigService } from '@nestjs/config'
-import getUuid from '../shared/utils/getUuid'
 import {
   DecodeOptions,
-  GetPayloadOptions,
-  GetSignOptionsOptions,
   IsRevokedOptions,
   RevokeOptions,
   RotateOptions,
-  SignJwtOptions,
   SignOptions,
 } from './types'
-import { EncodedJwt, JwtPayload } from '@/shared/types/jwt.type'
-import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
+import { JwtPayload } from '@/shared/types/jwt.type'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 import { Jwts } from '@/shared/types/jwts'
+import { AccessJwtsService } from '@/access-jwts/access-jwts.service'
+import { RefreshJwtsService } from '@/refresh-jwts/refresh-jwts.service'
+import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
+import { JwtPayload as OriginalJwtPayload } from 'jsonwebtoken'
 
 @Injectable()
 export class JwtsService {
   constructor(
-    private readonly configService: ConfigService,
-    private readonly jwtService: JwtService,
+    private readonly accessJwtsService: AccessJwtsService,
+    private readonly refreshJwtsService: RefreshJwtsService,
     private readonly signedJwtsService: SignedJwtsService,
     private readonly revokedJwtsService: RevokedJwtsService,
   ) {}
 
-  async sign(sub: SignOptions) {
-    const access_token = await this.signJwt({ sub, type: 'access' })
-    const refresh_token = await this.signJwt({ sub, type: 'refresh' })
+  async sign({ sub }: SignOptions): Promise<Jwts> {
+    const jwts = {
+      access_token: this.accessJwtsService.sign({ sub }),
+      refresh_token: this.refreshJwtsService.sign({ sub }),
+    }
 
-    return { access_token, refresh_token } as Jwts
+    await Promise.all([
+      Object.values(jwts).map(async (jwt) => {
+        const { jti, sub, exp } = this.decode({ jwt })
+
+        await this.signedJwtsService.add({ jti, sub, exp })
+      }),
+    ])
+
+    return jwts
   }
 
-  revoke(jwt: RevokeOptions) {
-    const { jti, sub, exp } = this.decode(jwt)
+  revoke({ jwt }: RevokeOptions) {
+    const { jti, sub, exp } = this.decode({ jwt })
 
     return this.revokedJwtsService.add({ jti, sub, exp })
   }
@@ -43,52 +50,32 @@ export class JwtsService {
     return this.revokedJwtsService.has({ jti })
   }
 
-  rotate(jwts: RotateOptions) {
-    Object.values(jwts).forEach(async (jwt) => {
-      if (!jwt) return
+  async rotate(jwts: RotateOptions) {
+    await Promise.all([
+      Object.values(jwts).map(async (jwt) => {
+        if (!jwt) return
 
-      await this.revoke(jwt)
-    })
+        await this.revoke({ jwt })
+      }),
+    ])
 
     const { refresh_token } = jwts
-    const { sub } = this.decode(refresh_token)
+    const { sub } = this.decode({ jwt: refresh_token })
 
-    return this.sign(sub)
+    return this.sign({ sub })
   }
 
-  decode(jwt: DecodeOptions) {
-    return this.jwtService.decode<JwtPayload>(jwt)
-  }
+  decode({ jwt }: DecodeOptions): JwtPayload {
+    const base64Payload = jwt.split('.')[1]
+    const payloadBuffer = Buffer.from(base64Payload, 'base64')
+    const originalPayload = JSON.parse(
+      payloadBuffer.toString(),
+    ) as OriginalJwtPayload
 
-  private getPayload(sub: GetPayloadOptions) {
-    const jti = getUuid()
-
-    return { jti, sub }
-  }
-
-  private getSignOptions(type: GetSignOptionsOptions) {
-    const key = type.toUpperCase()
-
-    const secret = this.configService.get<string>(
-      `JWT_SIGN_OPTIONS_${key}_TOKEN_SECRET_KEY`,
-    )
-
-    const expiresIn = Number(
-      this.configService.get(`JWT_SIGN_OPTIONS_${key}_TOKEN_EXPIRES_IN`),
-    )
-
-    return { secret, expiresIn }
-  }
-
-  private async signJwt({ sub, type }: SignJwtOptions) {
-    const payload = this.getPayload(sub)
-    const options = this.getSignOptions(type)
-
-    const jwt = this.jwtService.sign(payload, options) as EncodedJwt
-    const { jti, exp } = this.decode(jwt)
-
-    await this.signedJwtsService.add({ jti, sub, exp })
-
-    return jwt
+    return {
+      ...originalPayload.payload,
+      iat: originalPayload.iat,
+      exp: originalPayload.options.expiresIn,
+    }
   }
 }
