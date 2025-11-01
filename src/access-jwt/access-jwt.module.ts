@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { AccessJwtsService } from './access-jwts.service'
+import { AccessJwtService } from './access-jwt.service'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 
@@ -11,11 +11,16 @@ import { ConfigService } from '@nestjs/config'
         secret: configService.get<string>(
           'JWT_SIGN_OPTIONS_ACCESS_TOKEN_SECRET_KEY',
         ),
+        signOptions: {
+          expiresIn: Number(
+            configService.get('JWT_SIGN_OPTIONS_ACCESS_TOKEN_EXPIRES_IN'),
+          ),
+        },
       }),
     }),
   ],
 
-  providers: [AccessJwtsService],
-  exports: [AccessJwtsService],
+  providers: [AccessJwtService],
+  exports: [AccessJwtService],
 })
-export class AccessJwtsModule {}
+export class AccessJwtModule {}

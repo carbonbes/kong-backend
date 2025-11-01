@@ -4,26 +4,27 @@ import {
   GetAllOptions,
   GetOptions,
   HasOptions,
-  StorageJwt,
+  StoragedJwt,
 } from './types'
 
 export abstract class JwtStorageService {
-  protected constructor(private readonly repository: Repository<StorageJwt>) {}
+  protected constructor(private readonly repository: Repository<StoragedJwt>) {}
 
   async add({ jti, sub, exp }: AddOptions) {
-    const storageJwt = await this.repository.save({ jti, sub })
+    const jwt = await this.repository.save({ jti, sub })
+    const jwtId = jwt[EntityId]
 
-    await this.repository.expire(storageJwt[EntityId], exp)
+    await this.repository.expire(jwtId, exp)
 
-    return storageJwt
+    return jwt
   }
 
   get({ jti }: GetOptions) {
-    return this.repository.search().where('jti').equals(jti).returnFirst()
+    return this.repository.search().where('jti').eq(jti).returnFirst()
   }
 
   getAll({ sub }: GetAllOptions) {
-    return this.repository.search().where('sub').equals(sub).returnAll()
+    return this.repository.search().where('sub').eq(sub).returnAll()
   }
 
   async has({ jti }: HasOptions) {

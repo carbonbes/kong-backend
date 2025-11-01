@@ -3,13 +3,13 @@ import { InjectRepository } from '@/redis/utils'
 import { Repository } from 'redis-om'
 import { signedJwtSchema } from '@/signed-jwts/schema'
 import { JwtStorageService } from '@/shared/jwt-storage/jwt-storage.service'
-import { StorageJwt } from '@/shared/jwt-storage/types'
+import { StoragedJwt } from '@/shared/jwt-storage/types'
 
 @Injectable()
 export class SignedJwtsService extends JwtStorageService {
   constructor(
     @InjectRepository(signedJwtSchema)
-    repository: Repository<StorageJwt>,
+    repository: Repository<StoragedJwt>,
   ) {
     super(repository)
   }

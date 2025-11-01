@@ -2,7 +2,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt'
 import { PassportStrategy } from '@nestjs/passport'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { JwtPayload } from '../types/jwt.type'
+import { JwtPayload } from '@/shared/types/jwt.type'
 import { User } from '@/users/types'
 import { UsersService } from '@/users/users.service'
 import { JwtsService } from '@/jwts/jwts.service'
@@ -16,7 +16,7 @@ declare module 'express-serve-static-core' {
 @Injectable()
 export class AccessJwtStrategy extends PassportStrategy(
   Strategy,
-  'access-jwt',
+  'access-jwt-strategy',
 ) {
   constructor(
     readonly configService: ConfigService,

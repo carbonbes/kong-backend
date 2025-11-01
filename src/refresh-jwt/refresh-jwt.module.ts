@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { RefreshJwtsService } from './refresh-jwts.service'
+import { RefreshJwtService } from './refresh-jwt.service'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
 
@@ -11,11 +11,16 @@ import { ConfigService } from '@nestjs/config'
         secret: configService.get<string>(
           'JWT_SIGN_OPTIONS_REFRESH_TOKEN_SECRET_KEY',
         ),
+        signOptions: {
+          expiresIn: Number(
+            configService.get('JWT_SIGN_OPTIONS_REFRESH_TOKEN_EXPIRES_IN'),
+          ),
+        },
       }),
     }),
   ],
 
-  providers: [RefreshJwtsService],
-  exports: [RefreshJwtsService],
+  providers: [RefreshJwtService],
+  exports: [RefreshJwtService],
 })
-export class RefreshJwtsModule {}
+export class RefreshJwtModule {}
