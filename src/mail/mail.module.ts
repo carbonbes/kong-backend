@@ -2,22 +2,20 @@ import { Module } from '@nestjs/common'
 import { MailService } from './mail.service'
 import { MailerModule } from '@nestjs-modules/mailer'
 import { ConfigService } from '@nestjs/config'
+import { MailerConfig } from '@/config/types'
 
 @Module({
   imports: [
     MailerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        defaults: {
-          from: 'Kong',
-        },
+      useFactory: async (configService: ConfigService<MailerConfig>) => ({
         transport: {
-          host: configService.get<string>('MAILER_HOST'),
-          port: Number(configService.get('MAILER_PORT')),
+          host: configService.get('host'),
+          port: configService.get('port'),
           secure: !!process.env.PROD,
           auth: {
-            user: configService.get<string>('MAILER_USER'),
-            pass: configService.get<string>('MAILER_PASS'),
+            user: configService.get('user'),
+            pass: configService.get('pass'),
           },
         },
       }),

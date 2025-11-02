@@ -8,17 +8,28 @@ import { OtpsModule } from '@/otps/otps.module'
 import { JwtsModule } from '@/jwts/jwts.module'
 import { RedisModule } from '@/redis/redis.module'
 import { PrismaModule } from '@/prisma/prisma.module'
+import validationSchema from '@/config/validationSchema'
+import { RedisConfig } from '@/config/types'
+import bcrypt from './config/bcrypt'
+import database from '@/config/database'
+import jwtSignOptions from '@/config/jwt-sign-options'
+import mailer from './config/mailer'
+import otp from '@/config/otp'
+import redis from '@/config/redis'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [bcrypt, database, jwtSignOptions, mailer, otp, redis],
+      skipProcessEnv: true,
+      validationSchema,
     }),
 
     RedisModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        url: configService.get<string>('REDIS_URL'),
+      useFactory: async (configService: ConfigService<RedisConfig>) => ({
+        url: configService.get('url'),
       }),
     }),
 

@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@/redis/utils'
 import { Repository } from 'redis-om'
 import { signedJwtSchema } from '@/signed-jwts/schema'
-import { JwtStorageService } from '@/shared/jwt-storage/jwt-storage.service'
-import { StoragedJwt } from '@/shared/jwt-storage/types'
+import { JwtStorageService } from '@/shared/services/jwt-storage/jwt-storage.service'
+import { StoragedJwt } from '@/shared/services/jwt-storage/types'
 
 @Injectable()
 export class SignedJwtsService extends JwtStorageService {

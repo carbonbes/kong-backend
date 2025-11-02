@@ -2,19 +2,18 @@ import { Module } from '@nestjs/common'
 import { AccessJwtService } from './access-jwt.service'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
+import { JwtSignOptionsConfig } from '@/config/types'
 
 @Module({
   imports: [
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>(
-          'JWT_SIGN_OPTIONS_ACCESS_TOKEN_SECRET_KEY',
-        ),
+      useFactory: async (
+        configService: ConfigService<JwtSignOptionsConfig, true>,
+      ) => ({
+        secret: configService.get('accessJwtSecret'),
         signOptions: {
-          expiresIn: Number(
-            configService.get('JWT_SIGN_OPTIONS_ACCESS_TOKEN_EXPIRES_IN'),
-          ),
+          expiresIn: configService.get('accessJwtExpiresIn'),
         },
       }),
     }),

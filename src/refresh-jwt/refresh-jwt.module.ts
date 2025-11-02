@@ -2,19 +2,18 @@ import { Module } from '@nestjs/common'
 import { RefreshJwtService } from './refresh-jwt.service'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
+import { JwtSignOptionsConfig } from '@/config/types'
 
 @Module({
   imports: [
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>(
-          'JWT_SIGN_OPTIONS_REFRESH_TOKEN_SECRET_KEY',
-        ),
+      useFactory: async (
+        configService: ConfigService<JwtSignOptionsConfig, true>,
+      ) => ({
+        secret: configService.get('refreshJwtSecret'),
         signOptions: {
-          expiresIn: Number(
-            configService.get('JWT_SIGN_OPTIONS_REFRESH_TOKEN_EXPIRES_IN'),
-          ),
+          expiresIn: configService.get('refreshJwtExpiresIn'),
         },
       }),
     }),
