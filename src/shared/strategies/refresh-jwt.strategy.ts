@@ -4,7 +4,6 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '@/shared/types/jwt.type'
 import { JwtsService } from '@/jwts/jwts.service'
-import { JwtSignOptionsConfig } from '@/config/types'
 
 @Injectable()
 export class RefreshJwtStrategy extends PassportStrategy(
@@ -12,13 +11,13 @@ export class RefreshJwtStrategy extends PassportStrategy(
   'refresh-jwt-strategy',
 ) {
   constructor(
-    private readonly configService: ConfigService<JwtSignOptionsConfig, true>,
+    private readonly configService: ConfigService,
     private readonly jwtsService: JwtsService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get('refreshJwtSecret'),
+      secretOrKey: configService.get('jwt-sign-options.refreshJwtSecret')!,
     })
   }
 

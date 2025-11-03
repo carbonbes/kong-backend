@@ -12,4 +12,4 @@ export type Otp = {
 export interface OtpSchema extends Entity, Otp {}
 
 export type CreateOptions = Pick<Otp, 'type' | 'userId'>
-export type VerifyOptions = Pick<Otp, 'id' | 'code' | 'type' | 'userId'>
+export type VerifyOptions = Otp

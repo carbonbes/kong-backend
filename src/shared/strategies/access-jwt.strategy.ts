@@ -6,7 +6,6 @@ import { JwtPayload } from '@/shared/types/jwt.type'
 import { User } from '@/users/types'
 import { UsersService } from '@/users/users.service'
 import { JwtsService } from '@/jwts/jwts.service'
-import { JwtSignOptionsConfig } from '@/config/types'
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -20,14 +19,14 @@ export class AccessJwtStrategy extends PassportStrategy(
   'access-jwt-strategy',
 ) {
   constructor(
-    private readonly configService: ConfigService<JwtSignOptionsConfig, true>,
+    private readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly jwtsService: JwtsService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get('accessJwtSecret'),
+      secretOrKey: configService.get('jwt-sign-options.accessJwtSecret')!,
     })
   }
 

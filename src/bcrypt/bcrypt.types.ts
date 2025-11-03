@@ -1,12 +1,12 @@
 import { FactoryProvider } from '@nestjs/common'
 
 export interface BcryptModuleOptions {
-  saltOrRounds: number
+  rounds: number
 }
 
 export interface BcryptModuleAsyncOptions {
-  inject?: FactoryProvider['inject']
-  useFactory?: (
+  inject: FactoryProvider['inject']
+  useFactory: (
     ...args: any[]
   ) => Promise<BcryptModuleOptions> | BcryptModuleOptions
 }

@@ -1,7 +1,7 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common'
 import { BcryptService } from './bcrypt.service'
-import { BcryptModuleAsyncOptions } from '@/bcrypt/types'
-import { BCRYPT_MODULE_OPTIONS } from '@/bcrypt/consts'
+import { BcryptModuleAsyncOptions } from '@/bcrypt/bcrypt.types'
+import { BCRYPT_MODULE_OPTIONS } from '@/bcrypt/bcrypt.consts'
 
 @Module({})
 export class BcryptModule {
@@ -12,7 +12,8 @@ export class BcryptModule {
       BcryptService,
       {
         provide: BCRYPT_MODULE_OPTIONS,
-        useValue: options,
+        inject: options.inject,
+        useFactory: options.useFactory,
       },
     ]
 

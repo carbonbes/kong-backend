@@ -3,24 +3,24 @@ import { InjectRepository } from '@/redis/utils'
 import { otpSchema } from '@/otps/schema'
 import { EntityId, Repository } from 'redis-om'
 import { CreateOptions, Otp, VerifyOptions } from '@/otps/types'
-import getCode from '@/shared/utils/getCode'
 import { ConfigService } from '@nestjs/config'
 import getUuid from '@/shared/utils/getUuid'
-import { OtpConfig } from '@/config/types'
 import { BcryptService } from '@/bcrypt/bcrypt.service'
+import { NanoidService } from '@/nanoid/nanoid.service'
 
 @Injectable()
 export class OtpsService {
   constructor(
     @InjectRepository(otpSchema)
     private readonly repository: Repository<Otp>,
+    private readonly nanoidService: NanoidService,
     private readonly bcryptService: BcryptService,
-    private readonly configService: ConfigService<OtpConfig, true>,
+    private readonly configService: ConfigService,
   ) {}
 
   async create({ type, userId }: CreateOptions) {
     const id = getUuid()
-    const code = getCode()
+    const code = this.nanoidService.customAlphabet()
     const codeHash = await this.bcryptService.hash({ value: code })
 
     const otp = await this.repository.save({
@@ -68,7 +68,7 @@ export class OtpsService {
   }
 
   private getExpiresAt() {
-    const seconds = this.configService.get('expiresIn', { infer: true })
+    const seconds = this.configService.get<number>('otp.expiresIn')!
 
     return new Date(Date.now() + seconds * 1000)
   }

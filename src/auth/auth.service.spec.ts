@@ -73,7 +73,7 @@ describe('AuthService', () => {
     name: 'Test',
     gender: 'MALE',
     isActive: true,
-    createdAt: vi.getMockedSystemTime(),
+    createdAt: new Date(),
   }
 
   const otp: Otp = {
