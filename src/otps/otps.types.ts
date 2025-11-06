@@ -1,6 +1,6 @@
 import { Entity } from 'redis-om'
-import { OtpType } from '@/otps/enums'
-import { User } from '@/users/types'
+import { OtpType } from '@/otps/otps.enums'
+import { User } from '@/users/users.types'
 
 export type Otp = {
   id: string

@@ -1,33 +1,24 @@
-import { ExtractJwt, Strategy } from 'passport-jwt'
-import { PassportStrategy } from '@nestjs/passport'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '@/shared/types/jwt.type'
-import { User } from '@/users/types'
 import { UsersService } from '@/users/users.service'
 import { JwtsService } from '@/jwts/jwts.service'
-
-declare module 'express-serve-static-core' {
-  interface Request {
-    user: User
-  }
-}
+import { CreateJwtStrategy } from '@/shared/strategies/passport/utils/createJwtStrategy'
+import { ACCESS_TOKEN_NAME } from '@/shared/consts'
 
 @Injectable()
-export class AccessJwtStrategy extends PassportStrategy(
-  Strategy,
-  'access-jwt-strategy',
-) {
+export class AccessJwtStrategy extends CreateJwtStrategy({
+  name: 'access-jwt-strategy',
+  cookieName: ACCESS_TOKEN_NAME,
+}) {
   constructor(
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly jwtsService: JwtsService,
   ) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: configService.get('jwt-sign-options.accessJwtSecret')!,
-    })
+    const secret = configService.get('jwt-sign-options.accessJwtSecret')
+
+    super(secret)
   }
 
   async validate({ jti, sub }: JwtPayload) {

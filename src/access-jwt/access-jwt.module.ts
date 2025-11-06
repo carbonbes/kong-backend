@@ -10,7 +10,9 @@ import { ConfigService } from '@nestjs/config'
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('jwt-sign-options.accessJwtSecret')!,
         signOptions: {
-          expiresIn: configService.get('jwt-sign-options.accessJwtExpiresIn')!,
+          expiresIn: Number(
+            configService.get('jwt-sign-options.accessJwtExpiresIn'),
+          ),
         },
       }),
     }),

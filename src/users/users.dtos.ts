@@ -6,7 +6,7 @@ import {
   IsNumber,
   IsString,
 } from 'class-validator'
-import { User, UserGender } from 'generated/prisma'
+import { User, UserGender } from './users.types'
 
 export class BaseUserDto implements User {
   @IsNumber()

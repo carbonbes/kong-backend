@@ -4,9 +4,9 @@ import { AuthController } from './auth.controller'
 import { UsersModule } from '@/users/users.module'
 import { OtpsModule } from '@/otps/otps.module'
 import { PassportModule } from '@nestjs/passport'
-import { AccessJwtStrategy } from '@/shared/strategies/access-jwt.strategy'
+import { AccessJwtStrategy } from '@/shared/strategies/passport/access-jwt.strategy'
 import { JwtsModule } from '@/jwts/jwts.module'
-import { RefreshJwtStrategy } from '@/shared/strategies/refresh-jwt.strategy'
+import { RefreshJwtStrategy } from '@/shared/strategies/passport/refresh-jwt.strategy'
 import { MailModule } from '@/mail/mail.module'
 
 @Module({

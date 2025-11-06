@@ -6,12 +6,12 @@ import {
   SignInOptions,
   SignUpOptions,
   VerifyOtpOptions,
-} from './types'
+} from './auth.types'
 import { UsersService } from '@/users/users.service'
 import { MailService } from '@/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
 import { JwtsService } from '@/jwts/jwts.service'
-import { User } from '@/users/types'
+import { User } from '@/users/users.types'
 import { Otp } from '@/otps/types'
 import { OtpType } from '@/otps/enums'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'

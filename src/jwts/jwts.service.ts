@@ -5,7 +5,7 @@ import {
   RevokeOptions,
   RotateOptions,
   SignOptions,
-} from './types'
+} from './jwts.types'
 import { JwtPayload } from '@/shared/types/jwt.type'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 import { Jwts } from '@/shared/types/jwts'

@@ -5,8 +5,8 @@ import {
   OnApplicationShutdown,
   Provider,
 } from '@nestjs/common'
-import { RedisClient, RedisModuleOptions } from '@/redis/types'
-import { REDIS_CLIENT } from '@/redis/consts'
+import { RedisClient, RedisModuleOptions } from '@/redis/redis.types'
+import { REDIS_CLIENT } from '@/redis/redis.consts'
 import { createClient } from 'redis'
 import { ModuleRef } from '@nestjs/core'
 

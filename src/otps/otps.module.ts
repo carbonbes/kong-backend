@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { OtpsService } from './otps.service'
 import { RedisModule } from '@/redis/redis.module'
-import { otpSchema } from '@/otps/schema'
+import { otpSchema } from '@/otps/otps.schema'
 import { BcryptModule } from '@/bcrypt/bcrypt.module'
 import { ConfigService } from '@nestjs/config'
 import { NanoidModule } from '@/nanoid/nanoid.module'

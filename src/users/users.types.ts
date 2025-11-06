@@ -3,7 +3,7 @@ import UserCreateInput = Prisma.UserCreateInput
 import UserFindUniqueArgs = Prisma.UserFindUniqueArgs
 import UserUpdateArgs = Prisma.UserUpdateArgs
 
-export { User } from 'generated/prisma'
+export { User, UserGender } from 'generated/prisma'
 
 export type CreateOptions = UserCreateInput
 export type FindOneOptions = UserFindUniqueArgs

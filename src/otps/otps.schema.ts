@@ -1,5 +1,5 @@
 import { Schema } from 'redis-om'
-import { OtpSchema } from '@/otps/types'
+import { OtpSchema } from '@/otps/otps.types'
 
 export const otpSchema = new Schema<OtpSchema>(
   'otp',

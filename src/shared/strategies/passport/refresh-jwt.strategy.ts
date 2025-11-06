@@ -1,24 +1,22 @@
-import { ExtractJwt, Strategy } from 'passport-jwt'
-import { PassportStrategy } from '@nestjs/passport'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '@/shared/types/jwt.type'
 import { JwtsService } from '@/jwts/jwts.service'
+import { CreateJwtStrategy } from '@/shared/strategies/passport/utils/createJwtStrategy'
+import { REFRESH_TOKEN_NAME } from '@/shared/consts'
 
 @Injectable()
-export class RefreshJwtStrategy extends PassportStrategy(
-  Strategy,
-  'refresh-jwt-strategy',
-) {
+export class RefreshJwtStrategy extends CreateJwtStrategy({
+  name: 'refresh-jwt-strategy',
+  cookieName: REFRESH_TOKEN_NAME,
+}) {
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtsService: JwtsService,
   ) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: configService.get('jwt-sign-options.refreshJwtSecret')!,
-    })
+    const secret = configService.get('jwt-sign-options.refreshJwtSecret')
+
+    super(secret)
   }
 
   async validate({ jti }: JwtPayload) {

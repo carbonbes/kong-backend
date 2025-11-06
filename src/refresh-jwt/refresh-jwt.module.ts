@@ -8,9 +8,11 @@ import { ConfigService } from '@nestjs/config'
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('jwt-sign-options.refreshJwtSecret'),
+        secret: configService.get('jwt-sign-options.refreshJwtSecret')!,
         signOptions: {
-          expiresIn: configService.get('jwt-sign-options.refreshJwtExpiresIn'),
+          expiresIn: Number(
+            configService.get('jwt-sign-options.refreshJwtExpiresIn'),
+          ),
         },
       }),
     }),
