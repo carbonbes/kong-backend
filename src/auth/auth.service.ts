@@ -5,19 +5,21 @@ import {
 } from '@nestjs/common'
 import { UsersService } from '@/users/users.service'
 import {
-  ClearJwtCookiesOptions,
-  LogoutOptions,
   RotateOptions,
-  SetJwtCookiesOptions,
+  RotateReturn,
   SignInOptions,
+  SignInReturn,
   SignUpOptions,
+  SignUpReturn,
   VerifyOtpOptions,
+  VerifyOtpReturn,
 } from './auth.types'
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
 import { JwtsService } from '@/jwts/jwts.service'
 import { MailService } from '@/mail/mail.service'
+import getUuid from '@/shared/utils/getUuid'
 
 @Injectable()
 export class AuthService {
@@ -29,7 +31,7 @@ export class AuthService {
   ) {}
 
   @Transactional()
-  async signUp(data: SignUpOptions) {
+  async signUp(data: SignUpOptions): SignUpReturn {
     const { email } = data
 
     const isExist = await this.usersService.isExist({
@@ -53,11 +55,11 @@ export class AuthService {
 
     await this.mailService.sendOtp({ email, code, type })
 
-    return { id: otpId, userId }
+    return { otpId, userId }
   }
 
   @Transactional()
-  async signIn({ email }: SignInOptions) {
+  async signIn({ email }: SignInOptions): SignInReturn {
     const user = await this.usersService.findOne({ where: { email } })
 
     if (!user) {
@@ -81,11 +83,11 @@ export class AuthService {
 
     await this.mailService.sendOtp({ email, code, type })
 
-    return { id: otpId, userId }
+    return { otpId, userId }
   }
 
   @Transactional()
-  async verifyOtp({ otp, response }: VerifyOtpOptions) {
+  async verifyOtp(otp: VerifyOtpOptions): VerifyOtpReturn {
     const isVerify = await this.otpsService.verify(otp)
 
     if (!isVerify) {
@@ -101,30 +103,10 @@ export class AuthService {
       })
     }
 
-    const jwts = await this.jwtsService.sign({ sub: userId })
-
-    this.setJwtCookies({ jwts, response })
+    return this.jwtsService.sign({ sub: userId })
   }
 
-  async rotate({ jwts, response }: RotateOptions) {
-    const newJwts = await this.jwtsService.rotate(jwts)
-
-    this.setJwtCookies({ jwts: newJwts, response })
-  }
-
-  logout({ jwts, response }: LogoutOptions) {
-    this.clearJwtCookies({ jwts, response })
-  }
-
-  private setJwtCookies({ jwts, response }: SetJwtCookiesOptions) {
-    Object.entries(jwts).forEach((jwt) => {
-      const [name, value] = jwt
-
-      response.cookie(name, value)
-    })
-  }
-
-  private clearJwtCookies({ jwts, response }: ClearJwtCookiesOptions) {
-    Object.keys(jwts).forEach((name) => response.clearCookie(name))
+  rotate(jwts: RotateOptions): RotateReturn {
+    return this.jwtsService.rotate(jwts)
   }
 }

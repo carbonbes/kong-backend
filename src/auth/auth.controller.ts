@@ -9,12 +9,13 @@ import {
 } from '@nestjs/common'
 import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dtos'
 import { AuthService } from './auth.service'
-import { Request, Response } from 'express'
+import { CookieOptions, Request, Response } from 'express'
 import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
 import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
 import { Cookies } from '@/shared/decorators/cookies.decorator'
 import { Jwts } from '@/shared/types/jwts'
 import { JWTS_COOKIES } from '@/auth/auth.consts'
+import { ClearJwtCookiesOptions, SetJwtCookiesOptions } from '@/auth/auth.types'
 
 @Controller('auth')
 export class AuthController {
@@ -35,7 +36,9 @@ export class AuthController {
     @Body() otp: VerifyOtpDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.verifyOtp({ otp, response })
+    const jwts = await this.authService.verifyOtp(otp)
+
+    this.setJwtCookies({ jwts, response })
   }
 
   @UseGuards(AccessJwtAuthGuard)
@@ -46,11 +49,13 @@ export class AuthController {
 
   @UseGuards(RefreshJwtAuthGuard)
   @Post('update')
-  update(
+  async update(
     @Cookies(JWTS_COOKIES) jwts: Jwts,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.rotate({ jwts, response })
+    const newJwts = await this.authService.rotate(jwts)
+
+    this.setJwtCookies({ jwts: newJwts, response })
   }
 
   @UseGuards(AccessJwtAuthGuard)
@@ -59,6 +64,23 @@ export class AuthController {
     @Cookies(JWTS_COOKIES) jwts: Jwts,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.logout({ jwts, response })
+    this.clearJwtCookies({ jwts, response })
+  }
+
+  private setJwtCookies({ jwts, response }: SetJwtCookiesOptions) {
+    Object.entries(jwts).forEach((jwt) => {
+      const [name, value] = jwt
+      const options: CookieOptions = {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'strict',
+      }
+
+      response.cookie(name, value, options)
+    })
+  }
+
+  private clearJwtCookies({ jwts, response }: ClearJwtCookiesOptions) {
+    Object.keys(jwts).forEach((name) => response.clearCookie(name))
   }
 }

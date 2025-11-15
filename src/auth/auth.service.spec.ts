@@ -12,8 +12,8 @@ import { MailService } from '@/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
 import { JwtsService } from '@/jwts/jwts.service'
 import { User } from '@/users/users.types'
-import { Otp } from '@/otps/types'
-import { OtpType } from '@/otps/enums'
+import { Otp } from '@/otps/otps.types'
+import { OtpType } from '@/otps/otps.enums'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { Jwts } from '@/shared/types/jwts'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
@@ -77,7 +77,7 @@ describe('AuthService', () => {
   }
 
   const otp: Otp = {
-    id: '654321',
+    id: '1-2-3-4-5',
     code: '123456',
     type: OtpType.SIGN_UP,
     userId: user.id,
@@ -95,12 +95,12 @@ describe('AuthService', () => {
       gender: 'MALE',
     }
 
-    test('should return the otp ID and user ID if the specified email does not exist', async () => {
-      const createdUser: User = {
-        ...user,
-        ...signUpOptions,
-      }
+    const createdUser: User = {
+      ...user,
+      ...signUpOptions,
+    }
 
+    test('should return the otp ID and user ID if the specified email does not exist', async () => {
       const createdOtp: Otp = {
         ...otp,
         userId: createdUser.id,
@@ -114,7 +114,7 @@ describe('AuthService', () => {
       vi.spyOn(mailService, 'sendOtp').mockImplementation(async () => true)
 
       expect(await service.signUp(signUpOptions)).toEqual({
-        id: createdOtp.id,
+        otpId: createdOtp.id,
         userId: createdUser.id,
       })
     })
@@ -128,18 +128,20 @@ describe('AuthService', () => {
 
   describe('signIn', () => {
     const signInOptions: SignInOptions = { email: 'test@test.com' }
+
     const existingActivatedUser: User = user
+
     const existingDeacticatedUser: User = {
       ...user,
       isActive: false,
     }
 
-    test('should return the otp ID and user ID if the specified email exists and is active', async () => {
-      const createdOtp: Otp = {
-        ...otp,
-        userId: existingActivatedUser.id,
-      }
+    const createdOtp: Otp = {
+      ...otp,
+      userId: existingActivatedUser.id,
+    }
 
+    test('should return the otp ID and user ID if the specified email exists and is active', async () => {
       vi.spyOn(usersService, 'findOne').mockImplementation(
         async () => existingActivatedUser,
       )
@@ -147,7 +149,7 @@ describe('AuthService', () => {
       vi.spyOn(mailService, 'sendOtp').mockImplementation(async () => true)
 
       expect(await service.signIn(signInOptions)).toEqual({
-        id: createdOtp.id,
+        otpId: createdOtp.id,
         userId: existingActivatedUser.id,
       })
     })
@@ -171,7 +173,7 @@ describe('AuthService', () => {
 
   describe('verifyOtp', () => {
     const verifyOtpOptions: VerifyOtpOptions = {
-      id: '654321',
+      id: '1-2-3-4-5',
       code: '123456',
       type: OtpType.SIGN_UP,
       userId: 1,
