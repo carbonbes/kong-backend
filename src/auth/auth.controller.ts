@@ -14,29 +14,29 @@ import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
 import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
 import { Cookies } from '@/shared/decorators/cookies.decorator'
 import { Jwts } from '@/shared/types/jwts'
-import { JWTS_COOKIES } from '@/auth/auth.consts'
-import { ClearJwtCookiesOptions, SetJwtCookiesOptions } from '@/auth/auth.types'
+import { JWTS_COOKIES } from './auth.consts'
+import { ClearJwtCookiesOptions, SetJwtCookiesOptions } from './auth.types'
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
-  signUp(@Body() data: SignUpDto) {
-    return this.authService.signUp(data)
+  signUp(@Body() body: SignUpDto) {
+    return this.authService.signUp(body)
   }
 
   @Post('signin')
-  signIn(@Body() data: SignInDto) {
-    return this.authService.signIn(data)
+  signIn(@Body() body: SignInDto) {
+    return this.authService.signIn(body)
   }
 
   @Post('verify-otp')
   async verifyOtp(
-    @Body() otp: VerifyOtpDto,
+    @Body() body: VerifyOtpDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const jwts = await this.authService.verifyOtp(otp)
+    const jwts = await this.authService.verifyOtp(body)
 
     this.setJwtCookies({ jwts, response })
   }

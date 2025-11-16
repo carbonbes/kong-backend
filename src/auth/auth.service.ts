@@ -19,7 +19,6 @@ import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
 import { JwtsService } from '@/jwts/jwts.service'
 import { MailService } from '@/mail/mail.service'
-import getUuid from '@/shared/utils/getUuid'
 
 @Injectable()
 export class AuthService {
@@ -39,7 +38,7 @@ export class AuthService {
     })
 
     if (isExist) {
-      return
+      return null
     }
 
     const { id: userId } = await this.usersService.create(data)
@@ -55,7 +54,7 @@ export class AuthService {
 
     await this.mailService.sendOtp({ email, code, type })
 
-    return { otpId, userId }
+    return { otpId }
   }
 
   @Transactional()
@@ -63,7 +62,7 @@ export class AuthService {
     const user = await this.usersService.findOne({ where: { email } })
 
     if (!user) {
-      return
+      return null
     }
 
     if (!user.isActive) {
@@ -83,7 +82,7 @@ export class AuthService {
 
     await this.mailService.sendOtp({ email, code, type })
 
-    return { otpId, userId }
+    return { otpId }
   }
 
   @Transactional()
