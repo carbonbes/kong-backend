@@ -75,5 +75,8 @@
     "unplugin-swc": "^1.5.4",
     "vitest": "^3.2.2",
     "vitest-mock-express": "^2.2.0"
+  },
+  "resolutions": {
+    "vitest-mock-express/@types/express": "^5.0.0"
   }
 }
