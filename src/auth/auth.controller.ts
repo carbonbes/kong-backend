@@ -68,12 +68,12 @@ export class AuthController {
   }
 
   private setJwtCookies({ jwts, response }: SetJwtCookiesOptions) {
-    Object.entries(jwts).forEach((jwt) => {
-      const [name, value] = jwt
+    Object.entries(jwts).forEach(([name, value]) => {
       const options: CookieOptions = {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
+        expires: new Date(Date.now() + 999999999 * 1000),
       }
 
       response.cookie(name, value, options)

@@ -94,6 +94,7 @@ describe('AuthController', () => {
     httpOnly: true,
     sameSite: 'strict',
     secure: true,
+    expires: new Date(Date.now() + 999999999 * 1000),
   }
 
   describe('signup', () => {
@@ -197,12 +198,12 @@ describe('AuthController', () => {
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenCalledWith(
         ACCESS_TOKEN_NAME,
-        jwts.access_token,
+        jwts[ACCESS_TOKEN_NAME],
         jwtCookieOptions,
       )
       expect(res.cookie).toHaveBeenCalledWith(
         REFRESH_TOKEN_NAME,
-        jwts.refresh_token,
+        jwts[REFRESH_TOKEN_NAME],
         jwtCookieOptions,
       )
     })
@@ -234,19 +235,19 @@ describe('AuthController', () => {
 
       vi.spyOn(jwtsService, 'rotate').mockImplementation(async () => jwts)
 
-      expect(req.cookies).toEqual(jwts)
+      expect(req.cookies).toEqual(rotateOptions)
       await expect(
         controller.update(rotateOptions, res),
       ).resolves.toBeUndefined()
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenCalledWith(
         ACCESS_TOKEN_NAME,
-        jwts.access_token,
+        jwts[ACCESS_TOKEN_NAME],
         jwtCookieOptions,
       )
       expect(res.cookie).toHaveBeenCalledWith(
         REFRESH_TOKEN_NAME,
-        jwts.refresh_token,
+        jwts[REFRESH_TOKEN_NAME],
         jwtCookieOptions,
       )
     })
