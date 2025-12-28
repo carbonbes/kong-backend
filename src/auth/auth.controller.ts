@@ -72,7 +72,7 @@ export class AuthController {
       const [name, value] = jwt
       const options: CookieOptions = {
         httpOnly: true,
-        secure: false,
+        secure: true,
         sameSite: 'strict',
       }
 

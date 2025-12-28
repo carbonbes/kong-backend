@@ -14,6 +14,8 @@ import { Jwts } from '@/shared/types/jwts'
 import { AuthController } from './auth.controller'
 import { getMockReq, getMockRes } from 'vitest-mock-express'
 import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dtos'
+import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
+import { CookieOptions } from 'express'
 
 describe('AuthController', () => {
   let controller: AuthController
@@ -86,6 +88,12 @@ describe('AuthController', () => {
   const jwts: Jwts = {
     access_token: '1.2.3.4',
     refresh_token: '1.2.3.4',
+  }
+
+  const jwtCookieOptions: CookieOptions = {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: true,
   }
 
   describe('signup', () => {
@@ -185,7 +193,18 @@ describe('AuthController', () => {
       vi.spyOn(jwtsService, 'sign').mockImplementation(async () => jwts)
 
       expect(req.body).toEqual(body)
-      expect(await controller.verifyOtp(body, res)).resolves.toBeTruthy()
+      await expect(controller.verifyOtp(body, res)).resolves.toBeUndefined()
+      expect(res.cookie).toHaveBeenCalledTimes(2)
+      expect(res.cookie).toHaveBeenCalledWith(
+        ACCESS_TOKEN_NAME,
+        jwts.access_token,
+        jwtCookieOptions,
+      )
+      expect(res.cookie).toHaveBeenCalledWith(
+        REFRESH_TOKEN_NAME,
+        jwts.refresh_token,
+        jwtCookieOptions,
+      )
     })
 
     test('should return 404 if the otp is incorrect', async () => {
@@ -200,6 +219,13 @@ describe('AuthController', () => {
   describe('me', () => {})
 
   describe('update', () => {
+    const req = getMockReq({ cookies: jwts })
+    const { res, clearMockRes } = getMockRes()
+
+    beforeEach(() => {
+      clearMockRes()
+    })
+
     test('should return a new pair of jwts', async () => {
       const rotateOptions: RotateOptions = {
         access_token: '1.2.3.4',
@@ -208,7 +234,21 @@ describe('AuthController', () => {
 
       vi.spyOn(jwtsService, 'rotate').mockImplementation(async () => jwts)
 
-      expect(await controller.update(rotateOptions, res)).toEqual(jwts)
+      expect(req.cookies).toEqual(jwts)
+      await expect(
+        controller.update(rotateOptions, res),
+      ).resolves.toBeUndefined()
+      expect(res.cookie).toHaveBeenCalledTimes(2)
+      expect(res.cookie).toHaveBeenCalledWith(
+        ACCESS_TOKEN_NAME,
+        jwts.access_token,
+        jwtCookieOptions,
+      )
+      expect(res.cookie).toHaveBeenCalledWith(
+        REFRESH_TOKEN_NAME,
+        jwts.refresh_token,
+        jwtCookieOptions,
+      )
     })
   })
 
