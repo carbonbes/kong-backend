@@ -12,7 +12,7 @@ import { Jwts } from '@/shared/types/jwts'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
-import { getDecodedJwt } from '@/shared/utils/getDecodedJwt'
+import getDecodedJwt from '@/shared/utils/getDecodedJwt'
 
 @Injectable()
 export class JwtsService {

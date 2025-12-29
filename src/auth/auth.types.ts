@@ -2,8 +2,9 @@ import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dtos'
 import { Response } from 'express'
 import { Jwts } from '@/shared/types/jwts'
 import { Otp } from '@/otps/otps.types'
+import { User } from '@/users/users.types'
 
-export type LoginReturn = { otpId: Otp['id'] } | null
+export type LoginReturn = { otpId: Otp['id']; userId: User['id'] } | null
 export type JwtCookiesHandlerOptions = { jwts: Jwts; response: Response }
 
 export type SignUpOptions = SignUpDto

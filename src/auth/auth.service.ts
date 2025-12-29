@@ -54,7 +54,7 @@ export class AuthService {
 
     await this.mailService.sendOtp({ email, code, type })
 
-    return { otpId }
+    return { otpId, userId }
   }
 
   @Transactional()
@@ -82,7 +82,7 @@ export class AuthService {
 
     await this.mailService.sendOtp({ email, code, type })
 
-    return { otpId }
+    return { otpId, userId }
   }
 
   @Transactional()

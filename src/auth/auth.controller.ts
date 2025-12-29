@@ -16,6 +16,7 @@ import { Cookies } from '@/shared/decorators/cookies.decorator'
 import { Jwts } from '@/shared/types/jwts'
 import { JWTS_COOKIES } from './auth.consts'
 import { ClearJwtCookiesOptions, SetJwtCookiesOptions } from './auth.types'
+import getDecodedJwt from '@/shared/utils/getDecodedJwt'
 
 @Controller('auth')
 export class AuthController {
@@ -69,11 +70,13 @@ export class AuthController {
 
   private setJwtCookies({ jwts, response }: SetJwtCookiesOptions) {
     Object.entries(jwts).forEach(([name, value]) => {
+      const { exp } = getDecodedJwt(value)
+
       const options: CookieOptions = {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
-        expires: new Date(Date.now() + 999999999 * 1000),
+        expires: new Date(exp * 1000),
       }
 
       response.cookie(name, value, options)

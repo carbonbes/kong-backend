@@ -86,8 +86,10 @@ describe('AuthController', () => {
   }
 
   const jwts: Jwts = {
-    access_token: '1.2.3.4',
-    refresh_token: '1.2.3.4',
+    access_token:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0MTFmMDUwMS1mYzQxLTQ1YmItOGVkOC1lMzA4YzhlYzliOGIiLCJzdWIiOjEsImlhdCI6MTc2NzAyMTQ1MywiZXhwIjoxNzY3MDIxNzUzfQ.quzWd9pL9bs52kmljCxoggqdkvkJ9Ceb0zQ9p1Nmd18',
+    refresh_token:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNWIzZjNkNy1lYjYxLTQ5YTEtOThmMi0yY2U3NmQ3YTAwYmMiLCJzdWIiOjEsImlhdCI6MTc2NzAyMTQ1MywiZXhwIjoxNzY5NjEzNDUzfQ.Oxttqo86ZpSc028m69TTSmvEMNbn-GwYdDQYSFXTCsI',
   }
 
   const jwtCookieOptions: CookieOptions = {
@@ -115,20 +117,19 @@ describe('AuthController', () => {
         userId: createdUser.id,
       }
 
-      vi.spyOn(usersService, 'isExist').mockImplementation(async () => false)
-      vi.spyOn(usersService, 'create').mockImplementation(
-        async () => createdUser,
-      )
-      vi.spyOn(otpsService, 'create').mockImplementation(async () => createdOtp)
-      vi.spyOn(mailService, 'sendOtp').mockImplementation(async () => true)
+      vi.spyOn(usersService, 'isExist').mockResolvedValue(false)
+      vi.spyOn(usersService, 'create').mockResolvedValue(createdUser)
+      vi.spyOn(otpsService, 'create').mockResolvedValue(createdOtp)
+      vi.spyOn(mailService, 'sendOtp').mockResolvedValue(true)
 
       expect(await service.signUp(body)).toEqual({
         otpId: createdOtp.id,
+        userId: createdOtp.userId,
       })
     })
 
     test('should return null if a user with that email address exists', async () => {
-      vi.spyOn(usersService, 'isExist').mockImplementation(async () => true)
+      vi.spyOn(usersService, 'isExist').mockResolvedValue(true)
 
       expect(await controller.signUp(body)).toBeNull()
     })
@@ -148,11 +149,9 @@ describe('AuthController', () => {
     }
 
     test('should return the otp ID and user ID if the specified email exists and is active', async () => {
-      vi.spyOn(usersService, 'findOne').mockImplementation(
-        async () => existingActivatedUser,
-      )
-      vi.spyOn(otpsService, 'create').mockImplementation(async () => createdOtp)
-      vi.spyOn(mailService, 'sendOtp').mockImplementation(async () => true)
+      vi.spyOn(usersService, 'findOne').mockResolvedValue(existingActivatedUser)
+      vi.spyOn(otpsService, 'create').mockResolvedValue(createdOtp)
+      vi.spyOn(mailService, 'sendOtp').mockResolvedValue(true)
 
       expect(await controller.signIn(body)).toEqual({
         otpId: createdOtp.id,
@@ -160,14 +159,14 @@ describe('AuthController', () => {
     })
 
     test('should return null if a user with the specified email address exists', async () => {
-      vi.spyOn(usersService, 'findOne').mockImplementation(async () => null)
+      vi.spyOn(usersService, 'findOne').mockResolvedValue(null)
 
       expect(await controller.signIn(body)).toBeNull()
     })
 
     test('should return 403 if the user with the specified email exists but is not activated', async () => {
-      vi.spyOn(usersService, 'findOne').mockImplementation(
-        async () => existingDeacticatedUser,
+      vi.spyOn(usersService, 'findOne').mockResolvedValue(
+        existingDeacticatedUser,
       )
 
       await expect(controller.signIn(body)).rejects.toThrow(ForbiddenException)
@@ -190,8 +189,8 @@ describe('AuthController', () => {
     })
 
     test('should return a jwts if the otp is correct', async () => {
-      vi.spyOn(otpsService, 'verify').mockImplementation(async () => true)
-      vi.spyOn(jwtsService, 'sign').mockImplementation(async () => jwts)
+      vi.spyOn(otpsService, 'verify').mockResolvedValue(true)
+      vi.spyOn(jwtsService, 'sign').mockResolvedValue(jwts)
 
       expect(req.body).toEqual(body)
       await expect(controller.verifyOtp(body, res)).resolves.toBeUndefined()
@@ -209,8 +208,9 @@ describe('AuthController', () => {
     })
 
     test('should return 404 if the otp is incorrect', async () => {
-      vi.spyOn(otpsService, 'verify').mockImplementation(async () => false)
+      vi.spyOn(otpsService, 'verify').mockResolvedValue(false)
 
+      expect(req.body).toEqual(body)
       await expect(controller.verifyOtp(body, res)).rejects.toThrow(
         NotFoundException,
       )
@@ -233,7 +233,7 @@ describe('AuthController', () => {
         refresh_token: '1.2.3.4',
       }
 
-      vi.spyOn(jwtsService, 'rotate').mockImplementation(async () => jwts)
+      vi.spyOn(jwtsService, 'rotate').mockResolvedValue(jwts)
 
       expect(req.cookies).toEqual(rotateOptions)
       await expect(
