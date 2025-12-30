@@ -1,53 +1,38 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthService } from './auth.service'
-import { RotateOptions } from './auth.types'
+import {
+  RotateOptions,
+  SignInOptions,
+  SignUpOptions,
+  VerifyOtpOptions,
+} from './auth.types'
+import { OtpType } from '@/otps/otps.enums'
+import { ForbiddenException, NotFoundException } from '@nestjs/common'
+import { AuthController } from './auth.controller'
+import { getMockRes } from 'vitest-mock-express'
+import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
+import { CookieOptions } from 'express'
+import { createFakeJwt, createFakeOtp, createFakeUser } from '@/test/utils'
 import { UsersService } from '@/users/users.service'
 import { MailService } from '@/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
 import { JwtsService } from '@/jwts/jwts.service'
-import { User } from '@/users/users.types'
-import { Otp } from '@/otps/otps.types'
-import { OtpType } from '@/otps/otps.enums'
-import { ForbiddenException, NotFoundException } from '@nestjs/common'
-import { Jwts } from '@/shared/types/jwts'
-import { AuthController } from './auth.controller'
-import { getMockReq, getMockRes } from 'vitest-mock-express'
-import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dtos'
-import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { CookieOptions } from 'express'
+import {
+  mockedJwtsService,
+  mockedMailService,
+  mockedOtpsService,
+  mockedUsersService,
+} from '@/test/mocks'
 
 describe('AuthController', () => {
   let controller: AuthController
   let service: AuthService
-  let usersService: Omit<UsersService, 'prismaService' | 'update'>
-  let mailService: Omit<MailService, 'mailerService'>
-  let otpsService: Omit<OtpsService, 'configService'>
-  let jwtsService: Omit<JwtsService, 'signedJwtsService' | 'revokedJwtsService'>
 
-  usersService = {
-    create: vi.fn(),
-    findOne: vi.fn(),
-    isExist: vi.fn(),
-    setActive: vi.fn(),
-  }
-
-  mailService = {
-    sendOtp: vi.fn(),
-  }
-
-  otpsService = {
-    create: vi.fn(),
-    verify: vi.fn(),
-  }
-
-  jwtsService = {
-    sign: vi.fn(),
-    revoke: vi.fn(),
-    isRevoked: vi.fn(),
-    rotate: vi.fn(),
-    decode: vi.fn(),
-  }
+  const usersService = mockedUsersService
+  const mailService = mockedMailService
+  const otpsService = mockedOtpsService
+  const jwtsService = mockedJwtsService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -63,34 +48,7 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController)
     service = module.get<AuthService>(AuthService)
-    usersService = module.get<UsersService>(UsersService)
-    mailService = module.get<MailService>(MailService)
-    otpsService = module.get<OtpsService>(OtpsService)
-    jwtsService = module.get<JwtsService>(JwtsService)
   })
-
-  const user: User = {
-    id: 1,
-    email: 'test@test.com',
-    name: 'Test',
-    gender: 'MALE',
-    isActive: true,
-    createdAt: new Date(),
-  }
-
-  const otp: Otp = {
-    id: '1-2-3-4-5',
-    code: '123456',
-    type: OtpType.SIGN_UP,
-    userId: user.id,
-  }
-
-  const jwts: Jwts = {
-    access_token:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0MTFmMDUwMS1mYzQxLTQ1YmItOGVkOC1lMzA4YzhlYzliOGIiLCJzdWIiOjEsImlhdCI6MTc2NzAyMTQ1MywiZXhwIjoxNzY3MDIxNzUzfQ.quzWd9pL9bs52kmljCxoggqdkvkJ9Ceb0zQ9p1Nmd18',
-    refresh_token:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNWIzZjNkNy1lYjYxLTQ5YTEtOThmMi0yY2U3NmQ3YTAwYmMiLCJzdWIiOjEsImlhdCI6MTc2NzAyMTQ1MywiZXhwIjoxNzY5NjEzNDUzfQ.Oxttqo86ZpSc028m69TTSmvEMNbn-GwYdDQYSFXTCsI',
-  }
 
   const jwtCookieOptions: CookieOptions = {
     httpOnly: true,
@@ -100,88 +58,75 @@ describe('AuthController', () => {
   }
 
   describe('signup', () => {
-    const body: SignUpDto = {
+    const body: SignUpOptions = {
       email: 'test@test.com',
       name: 'Test',
       gender: 'MALE',
     }
 
-    const createdUser: User = {
-      ...user,
-      ...body,
-    }
-
     test('should return the otp ID and user ID if the specified email does not exist', async () => {
-      const createdOtp: Otp = {
-        ...otp,
-        userId: createdUser.id,
+      const user = createFakeUser({ ...body })
+      const otp = createFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
+
+      const result = {
+        otpId: otp.id,
+        userId: otp.userId,
       }
 
-      vi.spyOn(usersService, 'isExist').mockResolvedValue(false)
-      vi.spyOn(usersService, 'create').mockResolvedValue(createdUser)
-      vi.spyOn(otpsService, 'create').mockResolvedValue(createdOtp)
-      vi.spyOn(mailService, 'sendOtp').mockResolvedValue(true)
+      const serviceSpy = vi.spyOn(service, 'signUp').mockResolvedValue(result)
 
-      expect(await service.signUp(body)).toEqual({
-        otpId: createdOtp.id,
-        userId: createdOtp.userId,
-      })
+      expect(await service.signUp(body)).toEqual(result)
+      expect(serviceSpy).toHaveBeenCalledWith(body)
     })
 
     test('should return null if a user with that email address exists', async () => {
-      vi.spyOn(usersService, 'isExist').mockResolvedValue(true)
+      const result = null
 
-      expect(await controller.signUp(body)).toBeNull()
+      const serviceSpy = vi.spyOn(service, 'signUp').mockResolvedValue(result)
+
+      expect(await controller.signUp(body)).toBe(result)
+      expect(serviceSpy).toHaveBeenCalledWith(body)
     })
   })
 
   describe('signin', () => {
-    const body: SignInDto = { email: 'test@test.com' }
-    const existingActivatedUser: User = user
-    const existingDeacticatedUser: User = {
-      ...user,
-      isActive: false,
-    }
+    const body: SignInOptions = { email: 'test@test.com' }
 
-    const createdOtp: Otp = {
-      ...otp,
-      userId: existingActivatedUser.id,
-    }
+    const user = createFakeUser({ ...body })
+    const otp = createFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
 
     test('should return the otp ID and user ID if the specified email exists and is active', async () => {
-      vi.spyOn(usersService, 'findOne').mockResolvedValue(existingActivatedUser)
-      vi.spyOn(otpsService, 'create').mockResolvedValue(createdOtp)
-      vi.spyOn(mailService, 'sendOtp').mockResolvedValue(true)
+      const result = {
+        otpId: otp.id,
+        userId: otp.userId,
+      }
 
-      expect(await controller.signIn(body)).toEqual({
-        otpId: createdOtp.id,
-      })
+      const serviceSpy = vi.spyOn(service, 'signIn').mockResolvedValue(result)
+
+      expect(await controller.signIn(body)).toEqual(result)
+      expect(serviceSpy).toHaveBeenCalledWith(body)
     })
 
     test('should return null if a user with the specified email address exists', async () => {
-      vi.spyOn(usersService, 'findOne').mockResolvedValue(null)
+      const serviceSpy = vi.spyOn(service, 'signIn').mockResolvedValue(null)
 
       expect(await controller.signIn(body)).toBeNull()
+      expect(serviceSpy).toHaveBeenCalledWith(body)
     })
 
     test('should return 403 if the user with the specified email exists but is not activated', async () => {
-      vi.spyOn(usersService, 'findOne').mockResolvedValue(
-        existingDeacticatedUser,
-      )
+      const serviceSpy = vi
+        .spyOn(service, 'signIn')
+        .mockRejectedValue(ForbiddenException)
 
       await expect(controller.signIn(body)).rejects.toThrow(ForbiddenException)
+      expect(serviceSpy).toHaveBeenCalledWith(body)
     })
   })
 
   describe('verify-otp', () => {
-    const body: VerifyOtpDto = {
-      id: '1-2-3-4-5',
-      code: '123456',
-      type: OtpType.SIGN_UP,
-      userId: 1,
-    }
+    const body: VerifyOtpOptions = createFakeOtp()
 
-    const req = getMockReq({ body })
     const { res, clearMockRes } = getMockRes()
 
     beforeEach(() => {
@@ -189,38 +134,43 @@ describe('AuthController', () => {
     })
 
     test('should return a jwts if the otp is correct', async () => {
-      vi.spyOn(otpsService, 'verify').mockResolvedValue(true)
-      vi.spyOn(jwtsService, 'sign').mockResolvedValue(jwts)
+      const jwts = {
+        access_token: createFakeJwt({ type: 'access_token' }),
+        refresh_token: createFakeJwt({ type: 'refresh_token' }),
+      }
 
-      expect(req.body).toEqual(body)
+      const serviceSpy = vi.spyOn(service, 'verifyOtp').mockResolvedValue(jwts)
+
       await expect(controller.verifyOtp(body, res)).resolves.toBeUndefined()
+      expect(serviceSpy).toHaveBeenCalledWith(body)
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenCalledWith(
         ACCESS_TOKEN_NAME,
-        jwts[ACCESS_TOKEN_NAME],
+        jwts.access_token,
         jwtCookieOptions,
       )
       expect(res.cookie).toHaveBeenCalledWith(
         REFRESH_TOKEN_NAME,
-        jwts[REFRESH_TOKEN_NAME],
+        jwts.refresh_token,
         jwtCookieOptions,
       )
     })
 
     test('should return 404 if the otp is incorrect', async () => {
-      vi.spyOn(otpsService, 'verify').mockResolvedValue(false)
+      const serviceSpy = vi
+        .spyOn(service, 'verifyOtp')
+        .mockRejectedValue(NotFoundException)
 
-      expect(req.body).toEqual(body)
       await expect(controller.verifyOtp(body, res)).rejects.toThrow(
         NotFoundException,
       )
+      expect(serviceSpy).toHaveBeenCalledWith(body)
     })
   })
 
   describe('me', () => {})
 
   describe('update', () => {
-    const req = getMockReq({ cookies: jwts })
     const { res, clearMockRes } = getMockRes()
 
     beforeEach(() => {
@@ -229,16 +179,21 @@ describe('AuthController', () => {
 
     test('should return a new pair of jwts', async () => {
       const rotateOptions: RotateOptions = {
-        access_token: '1.2.3.4',
-        refresh_token: '1.2.3.4',
+        access_token: createFakeJwt({ type: 'access_token' }),
+        refresh_token: createFakeJwt({ type: 'refresh_token' }),
       }
 
-      vi.spyOn(jwtsService, 'rotate').mockResolvedValue(jwts)
+      const jwts = {
+        access_token: createFakeJwt({ type: 'access_token' }),
+        refresh_token: createFakeJwt({ type: 'refresh_token' }),
+      }
 
-      expect(req.cookies).toEqual(rotateOptions)
+      const serviceSpy = vi.spyOn(service, 'rotate').mockResolvedValue(jwts)
+
       await expect(
         controller.update(rotateOptions, res),
       ).resolves.toBeUndefined()
+      expect(serviceSpy).toHaveBeenCalledWith(body)
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenCalledWith(
         ACCESS_TOKEN_NAME,
