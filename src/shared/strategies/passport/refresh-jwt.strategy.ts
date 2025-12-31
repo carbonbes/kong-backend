@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { JwtPayload } from '@/shared/types/jwt.type'
+import { JwtPayload } from '@/shared/types'
 import { JwtsService } from '@/jwts/jwts.service'
 import { CreateJwtStrategy } from '@/shared/strategies/passport/utils/createJwtStrategy'
 import { REFRESH_TOKEN_NAME } from '@/shared/consts'

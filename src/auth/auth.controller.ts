@@ -13,7 +13,7 @@ import { CookieOptions, Request, Response } from 'express'
 import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
 import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
 import { Cookies } from '@/shared/decorators/cookies.decorator'
-import { Jwts } from '@/shared/types/jwts'
+import { Jwts } from '@/shared/types'
 import { JWTS_COOKIES } from './auth.consts'
 import { ClearJwtCookiesOptions, SetJwtCookiesOptions } from './auth.types'
 import getDecodedJwt from '@/shared/utils/getDecodedJwt'
@@ -51,10 +51,10 @@ export class AuthController {
   @UseGuards(RefreshJwtAuthGuard)
   @Post('update')
   async update(
-    @Cookies(JWTS_COOKIES) jwts: Jwts,
+    @Cookies(JWTS_COOKIES) currentJwts: Jwts,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const newJwts = await this.authService.rotate(jwts)
+    const newJwts = await this.authService.rotate(currentJwts)
 
     this.setJwtCookies({ jwts: newJwts, response })
   }
@@ -62,10 +62,10 @@ export class AuthController {
   @UseGuards(AccessJwtAuthGuard)
   @Post('logout')
   async logout(
-    @Cookies(JWTS_COOKIES) jwts: Jwts,
+    @Cookies(JWTS_COOKIES) currentJwts: Jwts,
     @Res({ passthrough: true }) response: Response,
   ) {
-    this.clearJwtCookies({ jwts, response })
+    this.clearJwtCookies({ jwts: currentJwts, response })
   }
 
   private setJwtCookies({ jwts, response }: SetJwtCookiesOptions) {

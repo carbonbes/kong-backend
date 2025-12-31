@@ -1,7 +1,7 @@
 import { Entity } from 'redis-om'
 import { OtpType } from '@/otps/otps.enums'
 import { User } from '@/users/users.types'
-import { Uuid } from '@/shared/types/uuid.type'
+import { Uuid } from '@/shared/types'
 
 export type Otp = {
   id: Uuid

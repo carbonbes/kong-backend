@@ -1,5 +1,5 @@
 import { Jwts } from '@/shared/types/jwts'
-import { EncodedJwt, JwtPayload } from '@/shared/types/jwt.type'
+import { EncodedJwt, JwtPayload } from '@/shared/types'
 
 type Jwt = { jwt: EncodedJwt }
 

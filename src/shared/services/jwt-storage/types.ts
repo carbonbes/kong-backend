@@ -1,4 +1,4 @@
-import { JwtPayload } from '@/shared/types/jwt.type'
+import { JwtPayload } from '@/shared/types'
 import { Entity } from 'redis-om'
 
 export type StoragedJwt = Pick<JwtPayload, 'jti' | 'sub'>

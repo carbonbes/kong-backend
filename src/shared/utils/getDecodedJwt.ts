@@ -1,4 +1,4 @@
-import { EncodedJwt, JwtPayload } from '@/shared/types/jwt.type'
+import { EncodedJwt, JwtPayload } from '@/shared/types'
 
 const getDecodedJwt = (encodedJwt: EncodedJwt): JwtPayload => {
   const base64Payload = encodedJwt.split('.')[1]

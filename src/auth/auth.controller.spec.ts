@@ -8,9 +8,13 @@ import {
   VerifyOtpOptions,
 } from './auth.types'
 import { OtpType } from '@/otps/otps.enums'
-import { ForbiddenException, NotFoundException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { AuthController } from './auth.controller'
-import { getMockRes } from 'vitest-mock-express'
+import { getMockReq, getMockRes } from 'vitest-mock-express'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { CookieOptions } from 'express'
 import { createFakeJwt, createFakeOtp, createFakeUser } from '@/test/utils'
@@ -50,13 +54,6 @@ describe('AuthController', () => {
     service = module.get<AuthService>(AuthService)
   })
 
-  const jwtCookieOptions: CookieOptions = {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: true,
-    expires: new Date(Date.now() + 999999999 * 1000),
-  }
-
   describe('signup', () => {
     const body: SignUpOptions = {
       email: 'test@test.com',
@@ -64,7 +61,7 @@ describe('AuthController', () => {
       gender: 'MALE',
     }
 
-    test('should return the otp ID and user ID if the specified email does not exist', async () => {
+    test('should return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
       const otp = createFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
 
@@ -79,7 +76,7 @@ describe('AuthController', () => {
       expect(serviceSpy).toHaveBeenCalledWith(body)
     })
 
-    test('should return null if a user with that email address exists', async () => {
+    test('should return null', async () => {
       const result = null
 
       const serviceSpy = vi.spyOn(service, 'signUp').mockResolvedValue(result)
@@ -92,10 +89,10 @@ describe('AuthController', () => {
   describe('signin', () => {
     const body: SignInOptions = { email: 'test@test.com' }
 
-    const user = createFakeUser({ ...body })
-    const otp = createFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
+    test('should return the otp ID and user ID', async () => {
+      const user = createFakeUser({ ...body })
+      const otp = createFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
 
-    test('should return the otp ID and user ID if the specified email exists and is active', async () => {
       const result = {
         otpId: otp.id,
         userId: otp.userId,
@@ -107,17 +104,17 @@ describe('AuthController', () => {
       expect(serviceSpy).toHaveBeenCalledWith(body)
     })
 
-    test('should return null if a user with the specified email address exists', async () => {
+    test('should return null', async () => {
       const serviceSpy = vi.spyOn(service, 'signIn').mockResolvedValue(null)
 
       expect(await controller.signIn(body)).toBeNull()
       expect(serviceSpy).toHaveBeenCalledWith(body)
     })
 
-    test('should return 403 if the user with the specified email exists but is not activated', async () => {
+    test('should return 403', async () => {
       const serviceSpy = vi
         .spyOn(service, 'signIn')
-        .mockRejectedValue(ForbiddenException)
+        .mockRejectedValue(new ForbiddenException())
 
       await expect(controller.signIn(body)).rejects.toThrow(ForbiddenException)
       expect(serviceSpy).toHaveBeenCalledWith(body)
@@ -133,10 +130,36 @@ describe('AuthController', () => {
       clearMockRes()
     })
 
-    test('should return a jwts if the otp is correct', async () => {
+    test('should return a jwts', async () => {
+      const date = new Date()
+
+      vi.useFakeTimers()
+      vi.setSystemTime(date)
+
+      const jwtCookieOptions: CookieOptions = {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: true,
+      }
+
+      const accessJwtExpiresIn = Number(process.env.ACCESS_JWT_EXPIRES_IN)
+      const refreshJwtExpiresIn = Number(process.env.REFRESH_JWT_EXPIRES_IN)
+
+      const currentTime = Date.now() / 1000
+
+      const accessJwtCookieOptions: CookieOptions = {
+        ...jwtCookieOptions,
+        expires: new Date((currentTime + accessJwtExpiresIn) * 1000),
+      }
+
+      const refreshJwtCookieOptions: CookieOptions = {
+        ...jwtCookieOptions,
+        expires: new Date((currentTime + refreshJwtExpiresIn) * 1000),
+      }
+
       const jwts = {
-        access_token: createFakeJwt({ type: 'access_token' }),
-        refresh_token: createFakeJwt({ type: 'refresh_token' }),
+        [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
+        [REFRESH_TOKEN_NAME]: createFakeJwt({ type: REFRESH_TOKEN_NAME }),
       }
 
       const serviceSpy = vi.spyOn(service, 'verifyOtp').mockResolvedValue(jwts)
@@ -144,22 +167,26 @@ describe('AuthController', () => {
       await expect(controller.verifyOtp(body, res)).resolves.toBeUndefined()
       expect(serviceSpy).toHaveBeenCalledWith(body)
       expect(res.cookie).toHaveBeenCalledTimes(2)
-      expect(res.cookie).toHaveBeenCalledWith(
+      expect(res.cookie).toHaveBeenNthCalledWith(
+        1,
         ACCESS_TOKEN_NAME,
-        jwts.access_token,
-        jwtCookieOptions,
+        jwts[ACCESS_TOKEN_NAME],
+        accessJwtCookieOptions,
       )
-      expect(res.cookie).toHaveBeenCalledWith(
+      expect(res.cookie).toHaveBeenNthCalledWith(
+        2,
         REFRESH_TOKEN_NAME,
-        jwts.refresh_token,
-        jwtCookieOptions,
+        jwts[REFRESH_TOKEN_NAME],
+        refreshJwtCookieOptions,
       )
+
+      vi.useRealTimers()
     })
 
-    test('should return 404 if the otp is incorrect', async () => {
+    test('should return 404', async () => {
       const serviceSpy = vi
         .spyOn(service, 'verifyOtp')
-        .mockRejectedValue(NotFoundException)
+        .mockRejectedValue(new NotFoundException())
 
       await expect(controller.verifyOtp(body, res)).rejects.toThrow(
         NotFoundException,
@@ -168,7 +195,22 @@ describe('AuthController', () => {
     })
   })
 
-  describe('me', () => {})
+  describe('me', () => {
+    test('should return a user', async () => {
+      const user = createFakeUser()
+      const req = getMockReq({ user })
+
+      expect(await controller.me(req)).toEqual(user)
+    })
+
+    test('should return 401', async () => {
+      const req = getMockReq()
+
+      vi.spyOn(controller, 'me').mockRejectedValue(new UnauthorizedException())
+
+      await expect(controller.me(req)).rejects.toThrow(UnauthorizedException)
+    })
+  })
 
   describe('update', () => {
     const { res, clearMockRes } = getMockRes()
@@ -178,14 +220,40 @@ describe('AuthController', () => {
     })
 
     test('should return a new pair of jwts', async () => {
+      const date = new Date()
+
+      vi.useFakeTimers()
+      vi.setSystemTime(date)
+
+      const jwtCookieOptions: CookieOptions = {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: true,
+      }
+
+      const accessJwtExpiresIn = Number(process.env.ACCESS_JWT_EXPIRES_IN)
+      const refreshJwtExpiresIn = Number(process.env.REFRESH_JWT_EXPIRES_IN)
+
+      const currentTime = Date.now() / 1000
+
+      const accessJwtCookieOptions: CookieOptions = {
+        ...jwtCookieOptions,
+        expires: new Date((currentTime + accessJwtExpiresIn) * 1000),
+      }
+
+      const refreshJwtCookieOptions: CookieOptions = {
+        ...jwtCookieOptions,
+        expires: new Date((currentTime + refreshJwtExpiresIn) * 1000),
+      }
+
       const rotateOptions: RotateOptions = {
-        access_token: createFakeJwt({ type: 'access_token' }),
-        refresh_token: createFakeJwt({ type: 'refresh_token' }),
+        [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
+        [REFRESH_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
       }
 
       const jwts = {
-        access_token: createFakeJwt({ type: 'access_token' }),
-        refresh_token: createFakeJwt({ type: 'refresh_token' }),
+        [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
+        [REFRESH_TOKEN_NAME]: createFakeJwt({ type: REFRESH_TOKEN_NAME }),
       }
 
       const serviceSpy = vi.spyOn(service, 'rotate').mockResolvedValue(jwts)
@@ -193,18 +261,22 @@ describe('AuthController', () => {
       await expect(
         controller.update(rotateOptions, res),
       ).resolves.toBeUndefined()
-      expect(serviceSpy).toHaveBeenCalledWith(body)
+      expect(serviceSpy).toHaveBeenCalledWith(rotateOptions)
       expect(res.cookie).toHaveBeenCalledTimes(2)
-      expect(res.cookie).toHaveBeenCalledWith(
+      expect(res.cookie).toHaveBeenNthCalledWith(
+        1,
         ACCESS_TOKEN_NAME,
         jwts[ACCESS_TOKEN_NAME],
-        jwtCookieOptions,
+        accessJwtCookieOptions,
       )
-      expect(res.cookie).toHaveBeenCalledWith(
+      expect(res.cookie).toHaveBeenNthCalledWith(
+        2,
         REFRESH_TOKEN_NAME,
         jwts[REFRESH_TOKEN_NAME],
-        jwtCookieOptions,
+        refreshJwtCookieOptions,
       )
+
+      vi.useRealTimers()
     })
   })
 

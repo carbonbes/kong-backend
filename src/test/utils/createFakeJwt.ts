@@ -1,6 +1,5 @@
-import { EncodedJwt, JwtHeader, JwtPayload } from '@/shared/types/jwt.type'
+import { EncodedJwt, JwtHeader, JwtPayload, Uuid } from '@/shared/types'
 import { faker } from '@faker-js/faker/locale/ru'
-import { Uuid } from '@/shared/types/uuid.type'
 
 type FakeJwtType = 'access_token' | 'refresh_token'
 type FakeJwtHeader = JwtHeader
@@ -15,8 +14,8 @@ type CreateFakeJwtOptions = {
 export const createFakeJwt = (
   options: CreateFakeJwtOptions = {},
 ): EncodedJwt => {
-  const accessJwtExp = Number(process.env.ACCESS_JWT_EXPIRES_IN) || 300
-  const refreshJwtExp = Number(process.env.REFRESH_JWT_EXPIRES_IN) || 2592000
+  const accessJwtExp = Number(process.env.ACCESS_JWT_EXPIRES_IN)
+  const refreshJwtExp = Number(process.env.REFRESH_JWT_EXPIRES_IN)
   const jwtType = options.type ?? 'access_token'
 
   const currentTime = Date.now() / 1000

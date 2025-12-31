@@ -6,7 +6,7 @@ import {
   RotateOptions,
   SignOptions,
 } from './jwts.types'
-import { JwtPayload } from '@/shared/types/jwt.type'
+import { JwtPayload } from '@/shared/types'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 import { Jwts } from '@/shared/types/jwts'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'

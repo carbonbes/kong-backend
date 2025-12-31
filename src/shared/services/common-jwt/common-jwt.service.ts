@@ -1,5 +1,5 @@
 import { SignOptions } from './types'
-import { EncodedJwt, JwtPayload } from '@/shared/types/jwt.type'
+import { EncodedJwt, JwtPayload } from '@/shared/types'
 import getUuid from '@/shared/utils/getUuid'
 import { JwtService } from '@nestjs/jwt'
 
