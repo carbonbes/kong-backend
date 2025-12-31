@@ -5,20 +5,23 @@ import {
 } from '@nestjs/common'
 import { UsersService } from '@/users/users.service'
 import {
+  ClearJwtCookiesOptions,
+  LogoutOptions,
   RotateOptions,
-  RotateReturn,
+  SetJwtCookiesOptions,
   SignInOptions,
   SignInReturn,
   SignUpOptions,
   SignUpReturn,
   VerifyOtpOptions,
-  VerifyOtpReturn,
 } from './auth.types'
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
 import { JwtsService } from '@/jwts/jwts.service'
 import { MailService } from '@/mail/mail.service'
+import getDecodedJwt from '@/shared/utils/getDecodedJwt'
+import { CookieOptions } from 'express'
 
 @Injectable()
 export class AuthService {
@@ -86,7 +89,7 @@ export class AuthService {
   }
 
   @Transactional()
-  async verifyOtp(otp: VerifyOtpOptions): VerifyOtpReturn {
+  async verifyOtp({ body: otp, res }: VerifyOtpOptions) {
     const isVerify = await this.otpsService.verify(otp)
 
     if (!isVerify) {
@@ -102,10 +105,37 @@ export class AuthService {
       })
     }
 
-    return this.jwtsService.sign({ sub: userId })
+    const jwts = await this.jwtsService.sign({ sub: userId })
+
+    this.setJwtCookies({ jwts, res })
   }
 
-  rotate(jwts: RotateOptions): RotateReturn {
-    return this.jwtsService.rotate(jwts)
+  async rotate({ jwts, res }: RotateOptions) {
+    const newJwts = await this.jwtsService.rotate(jwts)
+
+    this.setJwtCookies({ jwts: newJwts, res })
+  }
+
+  async logout({ jwts, res }: LogoutOptions) {
+    this.clearJwtCookies({ jwts, res })
+  }
+
+  private setJwtCookies({ jwts, res }: SetJwtCookiesOptions) {
+    Object.entries(jwts).forEach(([name, value]) => {
+      const { exp } = getDecodedJwt(value)
+
+      const options: CookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        expires: new Date(exp * 1000),
+      }
+
+      res.cookie(name, value, options)
+    })
+  }
+
+  private clearJwtCookies({ jwts, res }: ClearJwtCookiesOptions) {
+    Object.keys(jwts).forEach((name) => res.clearCookie(name))
   }
 }

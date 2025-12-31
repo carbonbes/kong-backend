@@ -16,7 +16,6 @@ import {
 import { AuthController } from './auth.controller'
 import { getMockReq, getMockRes } from 'vitest-mock-express'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { CookieOptions } from 'express'
 import { createFakeJwt, createFakeOtp, createFakeUser } from '@/test/utils'
 import { UsersService } from '@/users/users.service'
 import { MailService } from '@/mail/mail.service'
@@ -54,12 +53,9 @@ describe('AuthController', () => {
     service = module.get<AuthService>(AuthService)
   })
 
-  describe('signup', () => {
-    const body: SignUpOptions = {
-      email: 'test@test.com',
-      name: 'Test',
-      gender: 'MALE',
-    }
+  describe('signUp', () => {
+    const { email, name, gender } = createFakeUser()
+    const body: SignUpOptions = { email, name, gender }
 
     test('should return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
@@ -86,8 +82,9 @@ describe('AuthController', () => {
     })
   })
 
-  describe('signin', () => {
-    const body: SignInOptions = { email: 'test@test.com' }
+  describe('signIn', () => {
+    const { email } = createFakeUser()
+    const body: SignInOptions = { email }
 
     test('should return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
@@ -105,9 +102,11 @@ describe('AuthController', () => {
     })
 
     test('should return null', async () => {
-      const serviceSpy = vi.spyOn(service, 'signIn').mockResolvedValue(null)
+      const result = null
 
-      expect(await controller.signIn(body)).toBeNull()
+      const serviceSpy = vi.spyOn(service, 'signIn').mockResolvedValue(result)
+
+      expect(await controller.signIn(body)).toBe(result)
       expect(serviceSpy).toHaveBeenCalledWith(body)
     })
 
@@ -121,64 +120,26 @@ describe('AuthController', () => {
     })
   })
 
-  describe('verify-otp', () => {
-    const body: VerifyOtpOptions = createFakeOtp()
-
+  describe('verifyOtp', () => {
+    const body: VerifyOtpOptions['body'] = createFakeOtp()
     const { res, clearMockRes } = getMockRes()
 
     beforeEach(() => {
       clearMockRes()
     })
 
-    test('should return a jwts', async () => {
+    test('should be called with the correct arguments', async () => {
       const date = new Date()
 
       vi.useFakeTimers()
       vi.setSystemTime(date)
 
-      const jwtCookieOptions: CookieOptions = {
-        httpOnly: true,
-        sameSite: 'strict',
-        secure: true,
-      }
-
-      const accessJwtExpiresIn = Number(process.env.ACCESS_JWT_EXPIRES_IN)
-      const refreshJwtExpiresIn = Number(process.env.REFRESH_JWT_EXPIRES_IN)
-
-      const currentTime = Date.now() / 1000
-
-      const accessJwtCookieOptions: CookieOptions = {
-        ...jwtCookieOptions,
-        expires: new Date((currentTime + accessJwtExpiresIn) * 1000),
-      }
-
-      const refreshJwtCookieOptions: CookieOptions = {
-        ...jwtCookieOptions,
-        expires: new Date((currentTime + refreshJwtExpiresIn) * 1000),
-      }
-
-      const jwts = {
-        [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
-        [REFRESH_TOKEN_NAME]: createFakeJwt({ type: REFRESH_TOKEN_NAME }),
-      }
-
-      const serviceSpy = vi.spyOn(service, 'verifyOtp').mockResolvedValue(jwts)
+      const serviceSpy = vi
+        .spyOn(service, 'verifyOtp')
+        .mockResolvedValue(undefined)
 
       await expect(controller.verifyOtp(body, res)).resolves.toBeUndefined()
-      expect(serviceSpy).toHaveBeenCalledWith(body)
-      expect(res.cookie).toHaveBeenCalledTimes(2)
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        1,
-        ACCESS_TOKEN_NAME,
-        jwts[ACCESS_TOKEN_NAME],
-        accessJwtCookieOptions,
-      )
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        2,
-        REFRESH_TOKEN_NAME,
-        jwts[REFRESH_TOKEN_NAME],
-        refreshJwtCookieOptions,
-      )
+      expect(serviceSpy).toHaveBeenCalledWith({ body, res })
 
       vi.useRealTimers()
     })
@@ -191,7 +152,7 @@ describe('AuthController', () => {
       await expect(controller.verifyOtp(body, res)).rejects.toThrow(
         NotFoundException,
       )
-      expect(serviceSpy).toHaveBeenCalledWith(body)
+      expect(serviceSpy).toHaveBeenCalledWith({ body, res })
     })
   })
 
@@ -213,72 +174,60 @@ describe('AuthController', () => {
   })
 
   describe('update', () => {
-    const { res, clearMockRes } = getMockRes()
+    test('should be called with the correct arguments', async () => {
+      const { res, clearMockRes } = getMockRes()
 
-    beforeEach(() => {
-      clearMockRes()
-    })
+      beforeEach(() => {
+        clearMockRes()
+      })
 
-    test('should return a new pair of jwts', async () => {
       const date = new Date()
 
       vi.useFakeTimers()
       vi.setSystemTime(date)
 
-      const jwtCookieOptions: CookieOptions = {
-        httpOnly: true,
-        sameSite: 'strict',
-        secure: true,
-      }
-
-      const accessJwtExpiresIn = Number(process.env.ACCESS_JWT_EXPIRES_IN)
-      const refreshJwtExpiresIn = Number(process.env.REFRESH_JWT_EXPIRES_IN)
-
-      const currentTime = Date.now() / 1000
-
-      const accessJwtCookieOptions: CookieOptions = {
-        ...jwtCookieOptions,
-        expires: new Date((currentTime + accessJwtExpiresIn) * 1000),
-      }
-
-      const refreshJwtCookieOptions: CookieOptions = {
-        ...jwtCookieOptions,
-        expires: new Date((currentTime + refreshJwtExpiresIn) * 1000),
-      }
-
-      const rotateOptions: RotateOptions = {
+      const currentJwts: RotateOptions['jwts'] = {
         [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
         [REFRESH_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
       }
 
-      const jwts = {
-        [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
-        [REFRESH_TOKEN_NAME]: createFakeJwt({ type: REFRESH_TOKEN_NAME }),
-      }
+      const serviceSpy = vi
+        .spyOn(service, 'rotate')
+        .mockResolvedValue(undefined)
 
-      const serviceSpy = vi.spyOn(service, 'rotate').mockResolvedValue(jwts)
-
-      await expect(
-        controller.update(rotateOptions, res),
-      ).resolves.toBeUndefined()
-      expect(serviceSpy).toHaveBeenCalledWith(rotateOptions)
-      expect(res.cookie).toHaveBeenCalledTimes(2)
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        1,
-        ACCESS_TOKEN_NAME,
-        jwts[ACCESS_TOKEN_NAME],
-        accessJwtCookieOptions,
-      )
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        2,
-        REFRESH_TOKEN_NAME,
-        jwts[REFRESH_TOKEN_NAME],
-        refreshJwtCookieOptions,
-      )
+      await expect(controller.update(currentJwts, res)).resolves.toBeUndefined()
+      expect(serviceSpy).toHaveBeenCalledWith({ jwts: currentJwts, res })
 
       vi.useRealTimers()
     })
   })
 
-  describe('logout', () => {})
+  describe('logout', () => {
+    test('should be called with the correct arguments', async () => {
+      const { res, clearMockRes } = getMockRes()
+
+      beforeEach(() => {
+        clearMockRes()
+      })
+
+      const date = new Date()
+
+      vi.useFakeTimers()
+      vi.setSystemTime(date)
+
+      const currentJwts: RotateOptions['jwts'] = {
+        [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
+        [REFRESH_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
+      }
+
+      const serviceSpy = vi
+        .spyOn(service, 'logout')
+        .mockResolvedValue(undefined)
+
+      await expect(controller.logout(currentJwts, res)).resolves.toBeUndefined()
+      expect(serviceSpy).toHaveBeenCalledWith({ jwts: currentJwts, res })
+
+      vi.useRealTimers()
+    })
+  })
 })

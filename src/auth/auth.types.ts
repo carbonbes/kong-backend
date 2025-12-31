@@ -5,7 +5,7 @@ import { Otp } from '@/otps/otps.types'
 import { User } from '@/users/users.types'
 
 export type LoginReturn = { otpId: Otp['id']; userId: User['id'] } | null
-export type JwtCookiesHandlerOptions = { jwts: Jwts; response: Response }
+export type JwtCookiesHandlerOptions = { jwts: Jwts; res: Response }
 
 export type SignUpOptions = SignUpDto
 export type SignUpReturn = Promise<LoginReturn>
@@ -13,11 +13,11 @@ export type SignUpReturn = Promise<LoginReturn>
 export type SignInOptions = SignInDto
 export type SignInReturn = Promise<LoginReturn>
 
-export type VerifyOtpOptions = VerifyOtpDto
-export type VerifyOtpReturn = Promise<Jwts>
+export type VerifyOtpOptions = { body: VerifyOtpDto; res: Response }
 
-export type RotateOptions = Jwts
-export type RotateReturn = Promise<Jwts>
+export type RotateOptions = { jwts: Jwts; res: Response }
+
+export type LogoutOptions = { jwts: Jwts; res: Response }
 
 export type SetJwtCookiesOptions = JwtCookiesHandlerOptions
 export type ClearJwtCookiesOptions = JwtCookiesHandlerOptions
