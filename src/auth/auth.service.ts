@@ -22,6 +22,7 @@ import { JwtsService } from '@/jwts/jwts.service'
 import { MailService } from '@/mail/mail.service'
 import getDecodedJwt from '@/shared/utils/getDecodedJwt'
 import { CookieOptions } from 'express'
+import { JWT_COOKIE_OPTIONS } from '@/shared/consts'
 
 @Injectable()
 export class AuthService {
@@ -125,9 +126,7 @@ export class AuthService {
       const { exp } = getDecodedJwt(value)
 
       const options: CookieOptions = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
+        ...JWT_COOKIE_OPTIONS,
         expires: new Date(exp * 1000),
       }
 

@@ -1,5 +1,6 @@
-import { EncodedJwt, JwtHeader, JwtPayload, Uuid } from '@/shared/types'
+import { EncodedJwt, JwtHeader, JwtPayload, Jwts, Uuid } from '@/shared/types'
 import { faker } from '@faker-js/faker/locale/ru'
+import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 
 type FakeJwtType = 'access_token' | 'refresh_token'
 type FakeJwtHeader = JwtHeader
@@ -9,6 +10,11 @@ type CreateFakeJwtOptions = {
   header?: FakeJwtHeader
   payload?: FakeJwtPayload
   type?: FakeJwtType
+}
+
+type CreateFakeJwtsOptions = {
+  accessJwtOptions?: Omit<CreateFakeJwtOptions, 'type'>
+  refreshJwtOptions?: Omit<CreateFakeJwtOptions, 'type'>
 }
 
 export const createFakeJwt = (
@@ -35,4 +41,19 @@ export const createFakeJwt = (
   }
 
   return faker.internet.jwt({ header, payload }) as EncodedJwt
+}
+
+export const createFakeJwts = (options: CreateFakeJwtsOptions = {}): Jwts => {
+  const { accessJwtOptions, refreshJwtOptions } = options
+
+  return {
+    [ACCESS_TOKEN_NAME]: createFakeJwt({
+      type: ACCESS_TOKEN_NAME,
+      ...accessJwtOptions,
+    }),
+    [REFRESH_TOKEN_NAME]: createFakeJwt({
+      type: REFRESH_TOKEN_NAME,
+      ...refreshJwtOptions,
+    }),
+  }
 }
