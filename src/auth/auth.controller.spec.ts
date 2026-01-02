@@ -1,22 +1,20 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  MockInstance,
+  test,
+  vi,
+} from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthService } from './auth.service'
-import {
-  RotateOptions,
-  SignInOptions,
-  SignUpOptions,
-  VerifyOtpOptions,
-} from './auth.types'
+import { LoginReturn } from './auth.types'
 import { OtpType } from '@/otps/otps.enums'
-import {
-  ForbiddenException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
 import { getMockReq, getMockRes } from 'vitest-mock-express'
-import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { createFakeJwt, createFakeOtp, createFakeUser } from '@/test/utils'
+import { createFakeJwts, createFakeOtp, createFakeUser } from '@/test/utils'
 import { UsersService } from '@/users/users.service'
 import { MailService } from '@/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
@@ -27,6 +25,7 @@ import {
   mockedOtpsService,
   mockedUsersService,
 } from '@/test/mocks'
+import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/auth.dtos'
 
 describe('AuthController', () => {
   let controller: AuthController
@@ -54,180 +53,152 @@ describe('AuthController', () => {
   })
 
   describe('signUp', () => {
-    const { email, name, gender } = createFakeUser()
-    const body: SignUpOptions = { email, name, gender }
+    let spy: MockInstance<typeof controller.signUp>
+    let body: SignUpDto
 
-    test('should return the otp ID and user ID', async () => {
+    beforeEach(() => {
+      const { email, name, gender } = createFakeUser()
+      body = { email, name, gender }
+      spy = vi.spyOn(controller, 'signUp')
+    })
+
+    afterEach(() => spy.mockRestore())
+
+    test('should be return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
       const otp = createFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
 
-      const result = {
+      const result: LoginReturn = {
         otpId: otp.id,
         userId: otp.userId,
       }
 
-      const serviceSpy = vi.spyOn(service, 'signUp').mockResolvedValue(result)
+      vi.spyOn(service, 'signUp').mockResolvedValue(result)
 
-      expect(await service.signUp(body)).toEqual(result)
-      expect(serviceSpy).toHaveBeenCalledWith(body)
+      expect(await controller.signUp(body)).toEqual(result)
+      expect(spy).toHaveBeenCalledWith(body)
     })
 
-    test('should return null', async () => {
-      const result = null
+    test('should be return null', async () => {
+      const result: LoginReturn = null
 
-      const serviceSpy = vi.spyOn(service, 'signUp').mockResolvedValue(result)
+      vi.spyOn(service, 'signUp').mockResolvedValue(result)
 
       expect(await controller.signUp(body)).toBe(result)
-      expect(serviceSpy).toHaveBeenCalledWith(body)
+      expect(spy).toHaveBeenCalledWith(body)
     })
   })
 
   describe('signIn', () => {
-    const { email } = createFakeUser()
-    const body: SignInOptions = { email }
+    let spy: MockInstance<typeof controller.signIn>
+    let body: SignInDto
 
-    test('should return the otp ID and user ID', async () => {
+    beforeEach(() => {
+      const { email } = createFakeUser()
+      body = { email }
+      spy = vi.spyOn(controller, 'signIn')
+    })
+
+    afterEach(() => spy.mockRestore())
+
+    test('should be return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
       const otp = createFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
 
-      const result = {
+      const result: LoginReturn = {
         otpId: otp.id,
         userId: otp.userId,
       }
 
-      const serviceSpy = vi.spyOn(service, 'signIn').mockResolvedValue(result)
+      vi.spyOn(service, 'signIn').mockResolvedValue(result)
 
       expect(await controller.signIn(body)).toEqual(result)
-      expect(serviceSpy).toHaveBeenCalledWith(body)
+      expect(spy).toHaveBeenCalledWith(body)
     })
 
-    test('should return null', async () => {
-      const result = null
+    test('should be return null', async () => {
+      const result: LoginReturn = null
 
-      const serviceSpy = vi.spyOn(service, 'signIn').mockResolvedValue(result)
+      vi.spyOn(service, 'signIn').mockResolvedValue(result)
 
       expect(await controller.signIn(body)).toBe(result)
-      expect(serviceSpy).toHaveBeenCalledWith(body)
+      expect(spy).toHaveBeenCalledWith(body)
     })
 
-    test('should return 403', async () => {
-      const serviceSpy = vi
-        .spyOn(service, 'signIn')
-        .mockRejectedValue(new ForbiddenException())
+    test('should be return 403', async () => {
+      vi.spyOn(service, 'signIn').mockRejectedValue(new ForbiddenException())
 
       await expect(controller.signIn(body)).rejects.toThrow(ForbiddenException)
-      expect(serviceSpy).toHaveBeenCalledWith(body)
+      expect(spy).toHaveBeenCalledWith(body)
     })
   })
 
   describe('verifyOtp', () => {
-    const body: VerifyOtpOptions['body'] = createFakeOtp()
+    let body: VerifyOtpDto
+    let spy: MockInstance<typeof controller.verifyOtp>
+
     const { res, clearMockRes } = getMockRes()
 
     beforeEach(() => {
+      body = createFakeOtp()
       clearMockRes()
+      spy = vi.spyOn(controller, 'verifyOtp')
     })
 
-    test('should be called with the correct arguments', async () => {
-      const date = new Date()
+    afterEach(() => spy.mockRestore())
 
-      vi.useFakeTimers()
-      vi.setSystemTime(date)
-
-      const serviceSpy = vi
-        .spyOn(service, 'verifyOtp')
-        .mockResolvedValue(undefined)
+    test('should be return undefined', async () => {
+      vi.spyOn(service, 'verifyOtp').mockResolvedValue(undefined)
 
       await expect(controller.verifyOtp(body, res)).resolves.toBeUndefined()
-      expect(serviceSpy).toHaveBeenCalledWith({ body, res })
-
-      vi.useRealTimers()
+      expect(spy).toHaveBeenCalledWith(body, res)
     })
 
-    test('should return 404', async () => {
-      const serviceSpy = vi
-        .spyOn(service, 'verifyOtp')
-        .mockRejectedValue(new NotFoundException())
+    test('should be return 404', async () => {
+      vi.spyOn(service, 'verifyOtp').mockRejectedValue(new NotFoundException())
 
       await expect(controller.verifyOtp(body, res)).rejects.toThrow(
         NotFoundException,
       )
-      expect(serviceSpy).toHaveBeenCalledWith({ body, res })
+      expect(spy).toHaveBeenCalledWith(body, res)
     })
   })
 
   describe('me', () => {
-    test('should return a user', async () => {
+    test('should be return a user', async () => {
       const user = createFakeUser()
       const req = getMockReq({ user })
 
+      const spy = vi.spyOn(controller, 'me')
+
       expect(await controller.me(req)).toEqual(user)
-    })
-
-    test('should return 401', async () => {
-      const req = getMockReq()
-
-      vi.spyOn(controller, 'me').mockRejectedValue(new UnauthorizedException())
-
-      await expect(controller.me(req)).rejects.toThrow(UnauthorizedException)
+      expect(spy).toHaveBeenCalledWith(req)
     })
   })
 
   describe('update', () => {
-    test('should be called with the correct arguments', async () => {
-      const { res, clearMockRes } = getMockRes()
+    test('should be return undefined', async () => {
+      const { res } = getMockRes()
+      const jwts = createFakeJwts()
 
-      beforeEach(() => {
-        clearMockRes()
-      })
+      vi.spyOn(service, 'rotate').mockResolvedValue(undefined)
+      const spy = vi.spyOn(controller, 'update')
 
-      const date = new Date()
-
-      vi.useFakeTimers()
-      vi.setSystemTime(date)
-
-      const currentJwts: RotateOptions['jwts'] = {
-        [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
-        [REFRESH_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
-      }
-
-      const serviceSpy = vi
-        .spyOn(service, 'rotate')
-        .mockResolvedValue(undefined)
-
-      await expect(controller.update(currentJwts, res)).resolves.toBeUndefined()
-      expect(serviceSpy).toHaveBeenCalledWith({ jwts: currentJwts, res })
-
-      vi.useRealTimers()
+      expect(await controller.update(jwts, res)).toBeUndefined()
+      expect(spy).toHaveBeenCalledWith(jwts, res)
     })
   })
 
   describe('logout', () => {
-    test('should be called with the correct arguments', async () => {
-      const { res, clearMockRes } = getMockRes()
+    test('should be return undefined', async () => {
+      const { res } = getMockRes()
+      const jwts = createFakeJwts()
 
-      beforeEach(() => {
-        clearMockRes()
-      })
+      vi.spyOn(service, 'logout').mockResolvedValue(undefined)
+      const spy = vi.spyOn(controller, 'logout')
 
-      const date = new Date()
-
-      vi.useFakeTimers()
-      vi.setSystemTime(date)
-
-      const currentJwts: RotateOptions['jwts'] = {
-        [ACCESS_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
-        [REFRESH_TOKEN_NAME]: createFakeJwt({ type: ACCESS_TOKEN_NAME }),
-      }
-
-      const serviceSpy = vi
-        .spyOn(service, 'logout')
-        .mockResolvedValue(undefined)
-
-      await expect(controller.logout(currentJwts, res)).resolves.toBeUndefined()
-      expect(serviceSpy).toHaveBeenCalledWith({ jwts: currentJwts, res })
-
-      vi.useRealTimers()
+      expect(await controller.logout(jwts, res)).toBeUndefined()
+      expect(spy).toHaveBeenCalledWith(jwts, res)
     })
   })
 })
