@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  MockInstance,
+  test,
+  vi,
+} from 'vitest'
 import { AuthService } from '@/auth/auth.service'
 import { Test, TestingModule } from '@nestjs/testing'
 import {
@@ -68,15 +76,21 @@ describe('AuthService', () => {
     }
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
+  afterEach(vi.useRealTimers)
 
   describe('signUp', () => {
-    const { email, name, gender } = createFakeUser()
-    const data: SignUpOptions = { email, name, gender }
+    let data: SignUpOptions
+    let spy: MockInstance<typeof service.signUp>
 
-    test('should return a user ID and otp ID if a user with that email not exist', async () => {
+    beforeEach(() => {
+      const { email, name, gender } = createFakeUser()
+      data = { email, name, gender }
+      spy = vi.spyOn(service, 'signUp')
+    })
+
+    afterEach(() => spy.mockRestore())
+
+    test('should be return a user ID and otp ID if a user with that email not exist', async () => {
       const user = createFakeUser()
       const otp = createFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
 
@@ -85,28 +99,33 @@ describe('AuthService', () => {
       vi.spyOn(otpsService, 'create').mockResolvedValue(otp)
       vi.spyOn(mailService, 'sendOtp').mockResolvedValue(true)
 
-      const serviceSpy = vi.spyOn(service, 'signUp')
-
       const result: LoginReturn = { otpId: otp.id, userId: user.id }
 
       expect(await service.signUp(data)).toEqual(result)
-      expect(serviceSpy).toHaveBeenCalledWith(data)
+      expect(spy).toHaveBeenCalledWith(data)
     })
 
-    test('should return null if a user with that email exists', async () => {
+    test('should be return null if a user with that email exists', async () => {
       vi.spyOn(usersService, 'isExist').mockResolvedValue(true)
 
-      const result = null
+      const result: LoginReturn = null
 
       expect(await service.signUp(data)).toBe(result)
+      expect(spy).toHaveBeenCalledWith(data)
     })
   })
 
   describe('signIn', () => {
-    const { email } = createFakeUser()
-    const data: SignInOptions = { email }
+    let data: SignInOptions
+    let spy: MockInstance<typeof service.signIn>
 
-    test('should return a user ID and otp ID if a user with that email has exist and user is active', async () => {
+    beforeEach(() => {
+      const { email } = createFakeUser()
+      data = { email }
+      spy = vi.spyOn(service, 'signIn')
+    })
+
+    test('should be return a user ID and otp ID if a user with that email has exist and user is active', async () => {
       const user = createFakeUser({ isActive: true })
       const otp = createFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
 
@@ -114,46 +133,47 @@ describe('AuthService', () => {
       vi.spyOn(otpsService, 'create').mockResolvedValue(otp)
       vi.spyOn(mailService, 'sendOtp').mockResolvedValue(true)
 
-      const serviceSpy = vi.spyOn(service, 'signIn')
-
       const result: LoginReturn = { otpId: otp.id, userId: user.id }
 
       expect(await service.signIn(data)).toEqual(result)
-      expect(serviceSpy).toHaveBeenCalledWith(data)
+      expect(spy).toHaveBeenCalledWith(data)
     })
 
-    test('should return a null if a user with that email does not exist', async () => {
+    test('should be return a null if a user with that email does not exist', async () => {
       const result: LoginReturn = null
 
       vi.spyOn(usersService, 'findOne').mockResolvedValue(result)
 
-      const serviceSpy = vi.spyOn(service, 'signIn')
-
       expect(await service.signIn(data)).toBe(result)
-      expect(serviceSpy).toHaveBeenCalledWith(data)
+      expect(spy).toHaveBeenCalledWith(data)
     })
 
-    test('should return a 403 if a user with that email does not active', async () => {
+    test('should be return a 403 if a user with that email does not active', async () => {
       const user = createFakeUser({ isActive: false })
 
       vi.spyOn(usersService, 'findOne').mockResolvedValue(user)
 
-      const serviceSpy = vi.spyOn(service, 'signIn')
-
       await expect(service.signIn(data)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(serviceSpy).toHaveBeenCalledWith(data)
+      expect(spy).toHaveBeenCalledWith(data)
     })
   })
 
   describe('verifyOtp', () => {
-    const body: VerifyOtpOptions['body'] = createFakeOtp()
-
+    let body: VerifyOtpOptions['body']
+    let spy: MockInstance<typeof service.verifyOtp>
     const { res, clearMockRes } = getMockRes()
-    beforeEach(clearMockRes)
 
-    test('should set a pair of cookies with JWT if such an OTP exists', async () => {
+    beforeEach(() => {
+      body = createFakeOtp()
+      clearMockRes()
+      spy = vi.spyOn(service, 'verifyOtp')
+    })
+
+    afterEach(() => spy.mockRestore())
+
+    test('should be set a pair of cookies with JWT if such an OTP exists', async () => {
       const user = createFakeUser()
       const jwts = createFakeJwts()
 
@@ -161,10 +181,8 @@ describe('AuthService', () => {
       vi.spyOn(usersService, 'setActive').mockResolvedValue(user)
       vi.spyOn(jwtsService, 'sign').mockResolvedValue(jwts)
 
-      const serviceSpy = vi.spyOn(service, 'verifyOtp')
-
       expect(await service.verifyOtp({ body, res })).toBe(undefined)
-      expect(serviceSpy).toHaveBeenCalledWith({ body, res })
+      expect(spy).toHaveBeenCalledWith({ body, res })
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenNthCalledWith(
         1,
@@ -180,31 +198,28 @@ describe('AuthService', () => {
       )
     })
 
-    test('should return a 404 if a OTP not found', async () => {
+    test('should be return a 404 if a OTP not found', async () => {
       vi.spyOn(otpsService, 'verify').mockResolvedValue(false)
-
-      const serviceSpy = vi.spyOn(service, 'verifyOtp')
 
       await expect(service.verifyOtp({ body, res })).rejects.toThrow(
         new NotFoundException(),
       )
-      expect(serviceSpy).toHaveBeenCalledWith({ body, res })
+      expect(spy).toHaveBeenCalledWith({ body, res })
     })
   })
 
   describe('rotate', () => {
-    test('should set a pair of cookies with JWT', async () => {
-      const { res, clearMockRes } = getMockRes()
-
+    test('should be set a pair of cookies with JWT', async () => {
+      const { res } = getMockRes()
       const oldJwts = createFakeJwts()
       const newJwts = createFakeJwts()
 
       vi.spyOn(jwtsService, 'rotate').mockResolvedValue(newJwts)
 
-      const serviceSpy = vi.spyOn(service, 'rotate')
+      const spy = vi.spyOn(service, 'rotate')
 
       expect(await service.rotate({ jwts: oldJwts, res })).toBeUndefined()
-      expect(serviceSpy).toHaveBeenCalledWith({ jwts: oldJwts, res })
+      expect(spy).toHaveBeenCalledWith({ jwts: oldJwts, res })
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenNthCalledWith(
         1,
@@ -218,25 +233,21 @@ describe('AuthService', () => {
         newJwts[REFRESH_TOKEN_NAME],
         refreshJwtCookieOptions,
       )
-
-      clearMockRes()
     })
   })
 
   describe('logout', () => {
-    test('should remove a pair of JWT cookie', async () => {
-      const { res, clearMockRes } = getMockRes()
+    test('should be remove a pair of cookies with JWT', async () => {
+      const { res } = getMockRes()
       const jwts = createFakeJwts()
 
-      const serviceSpy = vi.spyOn(service, 'logout')
+      const spy = vi.spyOn(service, 'logout')
 
       expect(await service.logout({ jwts, res })).toBeUndefined()
-      expect(serviceSpy).toHaveBeenCalledWith({ jwts, res })
+      expect(spy).toHaveBeenCalledWith({ jwts, res })
       expect(res.clearCookie).toHaveBeenCalledTimes(2)
       expect(res.clearCookie).toHaveBeenNthCalledWith(1, ACCESS_TOKEN_NAME)
       expect(res.clearCookie).toHaveBeenNthCalledWith(2, REFRESH_TOKEN_NAME)
-
-      clearMockRes()
     })
   })
 })
