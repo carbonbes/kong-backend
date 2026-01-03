@@ -15,54 +15,35 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
 import { getMockReq, getMockRes } from 'vitest-mock-express'
 import { createFakeJwts, createFakeOtp, createFakeUser } from '@/test/utils'
-import { UsersService } from '@/users/users.service'
-import { MailService } from '@/mail/mail.service'
-import { OtpsService } from '@/otps/otps.service'
-import { JwtsService } from '@/jwts/jwts.service'
-import {
-  mockedJwtsService,
-  mockedMailService,
-  mockedOtpsService,
-  mockedUsersService,
-} from '@/test/mocks'
 import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/auth.dtos'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 
 describe('AuthController', () => {
   let controller: AuthController
-  let service: AuthService
-
-  const usersService = mockedUsersService
-  const mailService = mockedMailService
-  const otpsService = mockedOtpsService
-  const jwtsService = mockedJwtsService
+  let service: DeepMocked<AuthService>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        AuthService,
-        { provide: UsersService, useValue: usersService },
-        { provide: MailService, useValue: mailService },
-        { provide: OtpsService, useValue: otpsService },
-        { provide: JwtsService, useValue: jwtsService },
-      ],
-    }).compile()
+    })
+      .useMocker(createMock)
+      .compile()
 
-    controller = module.get<AuthController>(AuthController)
-    service = module.get<AuthService>(AuthService)
+    controller = module.get(AuthController)
+    service = module.get(AuthService)
   })
 
   describe('signUp', () => {
-    let spy: MockInstance<typeof controller.signUp>
+    let mockSignUp: MockInstance<typeof controller.signUp>
     let body: SignUpDto
 
     beforeEach(() => {
       const { email, name, gender } = createFakeUser()
       body = { email, name, gender }
-      spy = vi.spyOn(controller, 'signUp')
+      mockSignUp = vi.spyOn(controller, 'signUp')
     })
 
-    afterEach(() => spy.mockRestore())
+    afterEach(() => mockSignUp.mockRestore())
 
     test('should be return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
@@ -73,33 +54,33 @@ describe('AuthController', () => {
         userId: otp.userId,
       }
 
-      vi.spyOn(service, 'signUp').mockResolvedValue(result)
+      service.signUp.mockResolvedValue(result)
 
       expect(await controller.signUp(body)).toEqual(result)
-      expect(spy).toHaveBeenCalledWith(body)
+      expect(mockSignUp).toHaveBeenCalledWith(body)
     })
 
     test('should be return null', async () => {
       const result: LoginReturn = null
 
-      vi.spyOn(service, 'signUp').mockResolvedValue(result)
+      service.signUp.mockResolvedValue(result)
 
       expect(await controller.signUp(body)).toBe(result)
-      expect(spy).toHaveBeenCalledWith(body)
+      expect(mockSignUp).toHaveBeenCalledWith(body)
     })
   })
 
   describe('signIn', () => {
-    let spy: MockInstance<typeof controller.signIn>
+    let mockSignIn: MockInstance<typeof controller.signIn>
     let body: SignInDto
 
     beforeEach(() => {
       const { email } = createFakeUser()
       body = { email }
-      spy = vi.spyOn(controller, 'signIn')
+      mockSignIn = vi.spyOn(controller, 'signIn')
     })
 
-    afterEach(() => spy.mockRestore())
+    afterEach(() => mockSignIn.mockRestore())
 
     test('should be return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
@@ -110,57 +91,57 @@ describe('AuthController', () => {
         userId: otp.userId,
       }
 
-      vi.spyOn(service, 'signIn').mockResolvedValue(result)
+      service.signIn.mockResolvedValue(result)
 
       expect(await controller.signIn(body)).toEqual(result)
-      expect(spy).toHaveBeenCalledWith(body)
+      expect(mockSignIn).toHaveBeenCalledWith(body)
     })
 
     test('should be return null', async () => {
       const result: LoginReturn = null
 
-      vi.spyOn(service, 'signIn').mockResolvedValue(result)
+      service.signIn.mockResolvedValue(result)
 
       expect(await controller.signIn(body)).toBe(result)
-      expect(spy).toHaveBeenCalledWith(body)
+      expect(mockSignIn).toHaveBeenCalledWith(body)
     })
 
     test('should be return 403', async () => {
-      vi.spyOn(service, 'signIn').mockRejectedValue(new ForbiddenException())
+      service.signIn.mockRejectedValue(new ForbiddenException())
 
       await expect(controller.signIn(body)).rejects.toThrow(ForbiddenException)
-      expect(spy).toHaveBeenCalledWith(body)
+      expect(mockSignIn).toHaveBeenCalledWith(body)
     })
   })
 
   describe('verifyOtp', () => {
     let body: VerifyOtpDto
-    let spy: MockInstance<typeof controller.verifyOtp>
+    let mockVerifyOtp: MockInstance<typeof controller.verifyOtp>
 
     const { res, clearMockRes } = getMockRes()
 
     beforeEach(() => {
       body = createFakeOtp()
       clearMockRes()
-      spy = vi.spyOn(controller, 'verifyOtp')
+      mockVerifyOtp = vi.spyOn(controller, 'verifyOtp')
     })
 
-    afterEach(() => spy.mockRestore())
+    afterEach(() => mockVerifyOtp.mockRestore())
 
     test('should be return undefined', async () => {
-      vi.spyOn(service, 'verifyOtp').mockResolvedValue(undefined)
+      service.verifyOtp.mockResolvedValue(undefined)
 
       await expect(controller.verifyOtp(body, res)).resolves.toBeUndefined()
-      expect(spy).toHaveBeenCalledWith(body, res)
+      expect(mockVerifyOtp).toHaveBeenCalledWith(body, res)
     })
 
     test('should be return 404', async () => {
-      vi.spyOn(service, 'verifyOtp').mockRejectedValue(new NotFoundException())
+      service.verifyOtp.mockRejectedValue(new NotFoundException())
 
       await expect(controller.verifyOtp(body, res)).rejects.toThrow(
         NotFoundException,
       )
-      expect(spy).toHaveBeenCalledWith(body, res)
+      expect(mockVerifyOtp).toHaveBeenCalledWith(body, res)
     })
   })
 
@@ -169,10 +150,10 @@ describe('AuthController', () => {
       const user = createFakeUser()
       const req = getMockReq({ user })
 
-      const spy = vi.spyOn(controller, 'me')
+      const mockMe = vi.spyOn(controller, 'me')
 
       expect(await controller.me(req)).toEqual(user)
-      expect(spy).toHaveBeenCalledWith(req)
+      expect(mockMe).toHaveBeenCalledWith(req)
     })
   })
 
@@ -181,11 +162,12 @@ describe('AuthController', () => {
       const { res } = getMockRes()
       const jwts = createFakeJwts()
 
-      vi.spyOn(service, 'rotate').mockResolvedValue(undefined)
-      const spy = vi.spyOn(controller, 'update')
+      service.rotate.mockResolvedValue(undefined)
+
+      const mockUpdate = vi.spyOn(controller, 'update')
 
       expect(await controller.update(jwts, res)).toBeUndefined()
-      expect(spy).toHaveBeenCalledWith(jwts, res)
+      expect(mockUpdate).toHaveBeenCalledWith(jwts, res)
     })
   })
 
@@ -194,11 +176,12 @@ describe('AuthController', () => {
       const { res } = getMockRes()
       const jwts = createFakeJwts()
 
-      vi.spyOn(service, 'logout').mockResolvedValue(undefined)
-      const spy = vi.spyOn(controller, 'logout')
+      service.logout.mockResolvedValue(undefined)
+
+      const mockLogout = vi.spyOn(controller, 'logout')
 
       expect(await controller.logout(jwts, res)).toBeUndefined()
-      expect(spy).toHaveBeenCalledWith(jwts, res)
+      expect(mockLogout).toHaveBeenCalledWith(jwts, res)
     })
   })
 })
