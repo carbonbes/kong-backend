@@ -32,7 +32,7 @@ import { CookieOptions } from 'express'
 import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 
 describe('AuthService', () => {
-  let service: AuthService
+  let authService: AuthService
   let usersService: DeepMocked<UsersService>
   let mailService: DeepMocked<MailService>
   let otpsService: DeepMocked<OtpsService>
@@ -50,7 +50,7 @@ describe('AuthService', () => {
       .useMocker(createMock)
       .compile()
 
-    service = module.get(AuthService)
+    authService = module.get(AuthService)
     usersService = module.get(UsersService)
     mailService = module.get(MailService)
     otpsService = module.get(OtpsService)
@@ -75,15 +75,15 @@ describe('AuthService', () => {
 
   describe('signUp', () => {
     let data: SignUpOptions
-    let mockSignUp: MockInstance<typeof service.signUp>
+    let mockAuthServiceSignUp: MockInstance<typeof authService.signUp>
 
     beforeEach(() => {
       const { email, name, gender } = createFakeUser()
       data = { email, name, gender }
-      mockSignUp = vi.spyOn(service, 'signUp')
+      mockAuthServiceSignUp = vi.spyOn(authService, 'signUp')
     })
 
-    afterEach(() => mockSignUp.mockRestore())
+    afterEach(() => mockAuthServiceSignUp.mockRestore())
 
     test('should be return a user ID and otp ID if a user with that email not exist', async () => {
       const user = createFakeUser()
@@ -96,8 +96,8 @@ describe('AuthService', () => {
 
       const result: LoginReturn = { otpId: otp.id, userId: user.id }
 
-      expect(await service.signUp(data)).toEqual(result)
-      expect(mockSignUp).toHaveBeenCalledWith(data)
+      expect(await authService.signUp(data)).toEqual(result)
+      expect(mockAuthServiceSignUp).toHaveBeenCalledWith(data)
     })
 
     test('should be return null if a user with that email exists', async () => {
@@ -105,19 +105,19 @@ describe('AuthService', () => {
 
       const result: LoginReturn = null
 
-      expect(await service.signUp(data)).toBe(result)
-      expect(mockSignUp).toHaveBeenCalledWith(data)
+      expect(await authService.signUp(data)).toBe(result)
+      expect(mockAuthServiceSignUp).toHaveBeenCalledWith(data)
     })
   })
 
   describe('signIn', () => {
     let data: SignInOptions
-    let mockSignIn: MockInstance<typeof service.signIn>
+    let mockAuthServiceSignIn: MockInstance<typeof authService.signIn>
 
     beforeEach(() => {
       const { email } = createFakeUser()
       data = { email }
-      mockSignIn = vi.spyOn(service, 'signIn')
+      mockAuthServiceSignIn = vi.spyOn(authService, 'signIn')
     })
 
     test('should be return a user ID and otp ID if a user with that email has exist and user is active', async () => {
@@ -130,8 +130,8 @@ describe('AuthService', () => {
 
       const result: LoginReturn = { otpId: otp.id, userId: user.id }
 
-      expect(await service.signIn(data)).toEqual(result)
-      expect(mockSignIn).toHaveBeenCalledWith(data)
+      expect(await authService.signIn(data)).toEqual(result)
+      expect(mockAuthServiceSignIn).toHaveBeenCalledWith(data)
     })
 
     test('should be return a null if a user with that email does not exist', async () => {
@@ -139,8 +139,8 @@ describe('AuthService', () => {
 
       usersService.findOne.mockResolvedValue(result)
 
-      expect(await service.signIn(data)).toBe(result)
-      expect(mockSignIn).toHaveBeenCalledWith(data)
+      expect(await authService.signIn(data)).toBe(result)
+      expect(mockAuthServiceSignIn).toHaveBeenCalledWith(data)
     })
 
     test('should be return a 403 if a user with that email does not active', async () => {
@@ -148,25 +148,25 @@ describe('AuthService', () => {
 
       usersService.findOne.mockResolvedValue(user)
 
-      await expect(service.signIn(data)).rejects.toThrow(
+      await expect(authService.signIn(data)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(mockSignIn).toHaveBeenCalledWith(data)
+      expect(mockAuthServiceSignIn).toHaveBeenCalledWith(data)
     })
   })
 
   describe('verifyOtp', () => {
     let body: VerifyOtpOptions['body']
-    let mockVerifyOtp: MockInstance<typeof service.verifyOtp>
+    let mockAuthServiceVerifyOtp: MockInstance<typeof authService.verifyOtp>
     const { res, clearMockRes } = getMockRes()
 
     beforeEach(() => {
       body = createFakeOtp()
       clearMockRes()
-      mockVerifyOtp = vi.spyOn(service, 'verifyOtp')
+      mockAuthServiceVerifyOtp = vi.spyOn(authService, 'verifyOtp')
     })
 
-    afterEach(() => mockVerifyOtp.mockRestore())
+    afterEach(() => mockAuthServiceVerifyOtp.mockRestore())
 
     test('should be set a pair of cookies with JWT if such an OTP exists', async () => {
       const user = createFakeUser()
@@ -176,8 +176,8 @@ describe('AuthService', () => {
       usersService.setActive.mockResolvedValue(user)
       jwtsService.sign.mockResolvedValue(jwts)
 
-      expect(await service.verifyOtp({ body, res })).toBe(undefined)
-      expect(mockVerifyOtp).toHaveBeenCalledWith({ body, res })
+      expect(await authService.verifyOtp({ body, res })).toBe(undefined)
+      expect(mockAuthServiceVerifyOtp).toHaveBeenCalledWith({ body, res })
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenNthCalledWith(
         1,
@@ -196,10 +196,10 @@ describe('AuthService', () => {
     test('should be return a 404 if a OTP not found', async () => {
       otpsService.verify.mockResolvedValue(false)
 
-      await expect(service.verifyOtp({ body, res })).rejects.toThrow(
+      await expect(authService.verifyOtp({ body, res })).rejects.toThrow(
         new NotFoundException(),
       )
-      expect(mockVerifyOtp).toHaveBeenCalledWith({ body, res })
+      expect(mockAuthServiceVerifyOtp).toHaveBeenCalledWith({ body, res })
     })
   })
 
@@ -211,10 +211,10 @@ describe('AuthService', () => {
 
       jwtsService.rotate.mockResolvedValue(newJwts)
 
-      const mockRotate = vi.spyOn(service, 'rotate')
+      const mockAuthServiceRotate = vi.spyOn(authService, 'rotate')
 
-      expect(await service.rotate({ jwts: oldJwts, res })).toBeUndefined()
-      expect(mockRotate).toHaveBeenCalledWith({ jwts: oldJwts, res })
+      expect(await authService.rotate({ jwts: oldJwts, res })).toBeUndefined()
+      expect(mockAuthServiceRotate).toHaveBeenCalledWith({ jwts: oldJwts, res })
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenNthCalledWith(
         1,
@@ -236,10 +236,10 @@ describe('AuthService', () => {
       const { res } = getMockRes()
       const jwts = createFakeJwts()
 
-      const mockLogout = vi.spyOn(service, 'logout')
+      const mockAuthServiceLogout = vi.spyOn(authService, 'logout')
 
-      expect(await service.logout({ jwts, res })).toBeUndefined()
-      expect(mockLogout).toHaveBeenCalledWith({ jwts, res })
+      expect(await authService.logout({ jwts, res })).toBeUndefined()
+      expect(mockAuthServiceLogout).toHaveBeenCalledWith({ jwts, res })
       expect(res.clearCookie).toHaveBeenCalledTimes(2)
       expect(res.clearCookie).toHaveBeenNthCalledWith(1, ACCESS_TOKEN_NAME)
       expect(res.clearCookie).toHaveBeenNthCalledWith(2, REFRESH_TOKEN_NAME)
