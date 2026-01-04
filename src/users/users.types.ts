@@ -1,9 +1,9 @@
-import { Prisma } from 'generated/prisma'
+import { Prisma } from '@/generated/prisma/client'
 import UserCreateInput = Prisma.UserCreateInput
 import UserFindUniqueArgs = Prisma.UserFindUniqueArgs
 import UserUpdateArgs = Prisma.UserUpdateArgs
 
-export { User, UserGender } from 'generated/prisma'
+export { User, UserGender } from '@/generated/prisma/client'
 
 export type CreateOptions = UserCreateInput
 export type FindOneOptions = UserFindUniqueArgs

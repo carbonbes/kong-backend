@@ -1,1 +1,1 @@
-export const PRISMA_SERVICE = 'PRISMA_SERVICE'
+export const PRISMA_CLIENT = 'PRISMA_CLIENT'

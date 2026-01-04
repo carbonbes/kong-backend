@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import {
   CreateOptions,
   FindOneOptions,
@@ -7,25 +7,25 @@ import {
   UpdateOptions,
   User,
 } from './users.types'
-import { PrismaService } from '@/prisma/prisma.service'
-import { PRISMA_SERVICE } from '@/prisma/prisma.consts'
+import { InjectPrismaEntity } from '@/prisma/prisma.utils'
+import { PrismaClient } from '@/generated/prisma/client'
 
 @Injectable()
 export class UsersService {
   constructor(
-    @Inject(PRISMA_SERVICE) private readonly prismaService: PrismaService,
+    @InjectPrismaEntity('user') private readonly user: PrismaClient['user'],
   ) {}
 
   create(data: CreateOptions): Promise<User> {
-    return this.prismaService.user.create({ data })
+    return this.user.create({ data })
   }
 
   findOne(opts: FindOneOptions): Promise<User | null> {
-    return this.prismaService.user.findUnique(opts)
+    return this.user.findUnique(opts)
   }
 
   update(opts: UpdateOptions): Promise<User> {
-    return this.prismaService.user.update(opts)
+    return this.user.update(opts)
   }
 
   async isExist(opts: IsExistOptions): Promise<boolean> {
