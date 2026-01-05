@@ -5,7 +5,7 @@ import UserUpdateArgs = Prisma.UserUpdateArgs
 
 export { User, UserGender } from '@/prisma/prisma.types'
 
-export type CreateOptions = UserCreateInput
+export type CreateOptions = Omit<UserCreateInput, 'isActive' | 'createdAt'>
 export type FindOneOptions = UserFindUniqueArgs
 export type UpdateOptions = UserUpdateArgs
 export type IsExistOptions = UserFindUniqueArgs

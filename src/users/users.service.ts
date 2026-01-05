@@ -13,19 +13,19 @@ import { PrismaClient } from '@/prisma/prisma.types'
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectPrismaEntity('user') private readonly user: PrismaClient['user'],
+    @InjectPrismaEntity('user') private readonly users: PrismaClient['user'],
   ) {}
 
   create(data: CreateOptions): Promise<User> {
-    return this.user.create({ data })
+    return this.users.create({ data })
   }
 
   findOne(opts: FindOneOptions): Promise<User | null> {
-    return this.user.findUnique(opts)
+    return this.users.findUnique(opts)
   }
 
   update(opts: UpdateOptions): Promise<User> {
-    return this.user.update(opts)
+    return this.users.update(opts)
   }
 
   async isExist(opts: IsExistOptions): Promise<boolean> {

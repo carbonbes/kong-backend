@@ -1,106 +1,38 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from './users.service'
-import { User } from './users.entity'
-import {
-  CreateUserOptions,
-  FindOneUserByOptions,
-  UpdateUserOptions,
-} from './users.types'
-import { UserGender } from './users.enum'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
+import { PrismaClient } from '@/prisma/prisma.types'
+import { getPrismaEntityToken } from '@/prisma/prisma.utils'
+import { CreateOptions } from '@/users/users.types'
+import { createFakeUser } from '@/test/utils'
 
 describe('UsersService', () => {
-  let service: UsersService
-  let repository: Pick<Repository<User>, 'save' | 'findOneBy'>
-
-  repository = {
-    save: vi.fn(),
-    findOneBy: vi.fn(),
-  }
-
-  const user: User = {
-    id: 1,
-    email: 'test@test.com',
-    name: 'Test',
-    gender: UserGender.MALE,
-    isActive: false,
-    createdAt: new Date(),
-  }
+  let usersService: UsersService
+  let users: DeepMocked<PrismaClient['user']>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UsersService,
-        {
-          provide: getRepositoryToken(User),
-          useValue: repository,
-        },
-      ],
-    }).compile()
+      providers: [UsersService],
+    })
+      .useMocker(createMock)
+      .compile()
 
-    service = module.get<UsersService>(UsersService)
-    repository = module.get<Repository<User>>(getRepositoryToken(User))
+    usersService = module.get(UsersService)
+    users = module.get(getPrismaEntityToken('user'))
   })
 
-  test('create', async () => {
-    const createOptions: CreateUserOptions = {
-      email: 'test@test.com',
-      name: 'Test',
-      gender: UserGender.MALE,
-    }
+  describe('create', () => {
+    test('should be create a user', async () => {
+      const { email, name, gender } = createFakeUser()
+      const data: CreateOptions = { email, name, gender }
 
-    const createdUser: User = {
-      ...createOptions,
-      id: 1,
-      isActive: false,
-      createdAt: new Date(),
-    }
+      const user = createFakeUser({ ...data })
 
-    const save = vi
-      .spyOn(repository, 'save')
-      .mockImplementation(async () => createdUser)
+      users.create.mockResolvedValue(user)
 
-    const result = await service.create(createOptions)
-
-    expect(save).toHaveBeenCalledWith(createOptions)
-    expect(result).toEqual(createdUser)
-  })
-
-  test('findOneBy', async () => {
-    const findOneByOptions: FindOneUserByOptions = { id: 1 }
-
-    const findOneBy = vi
-      .spyOn(repository, 'findOneBy')
-      .mockImplementation(async () => user)
-
-    const result = await service.findOneBy(findOneByOptions)
-
-    expect(findOneBy).toHaveBeenCalledWith(findOneByOptions)
-    expect(result).toEqual(user)
-  })
-
-  test('update', async () => {
-    const updateOptions: UpdateUserOptions = {
-      where: { email: 'test@test.com' },
-      data: {
-        isActive: true,
-      },
-    }
-
-    const updatedUser: User = {
-      ...user,
-      ...updateOptions.data,
-    }
-
-    const save = vi
-      .spyOn(repository, 'save')
-      .mockImplementation(async () => updatedUser)
-
-    const result = await service.update(updateOptions)
-
-    expect(save).toHaveBeenCalledWith(updatedUser)
-    expect(result).toEqual(updatedUser)
+      expect(await usersService.create(data)).toBe(user)
+      expect(users.create).toHaveBeenCalledWith({ data })
+    })
   })
 })
