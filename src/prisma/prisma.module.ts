@@ -1,16 +1,15 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common'
 import { getPrismaEntityToken } from '@/prisma/prisma.utils'
 import { PrismaCoreModule } from '@/prisma/prisma-core.module'
-import { PrismaModuleOptions } from '@/prisma/prisma.types'
+import { PrismaClient } from '@/prisma/prisma.types'
 import { PRISMA_CLIENT } from '@/prisma/prisma.consts'
-import { PrismaClient } from '@/generated/prisma/client'
 
 @Module({})
 export class PrismaModule {
-  static forRootAsync(options: PrismaModuleOptions): DynamicModule {
+  static forRootAsync(): DynamicModule {
     return {
       module: PrismaModule,
-      imports: [PrismaCoreModule.forRootAsync(options)],
+      imports: [PrismaCoreModule.forRootAsync()],
     }
   }
 
@@ -20,7 +19,7 @@ export class PrismaModule {
     const prismaEntityProvider: Provider = {
       provide: getPrismaEntityToken(entity),
       inject: [PRISMA_CLIENT],
-      useFactory: async (prismaClient: PrismaClient) => {
+      useFactory: (prismaClient: PrismaClient) => {
         return prismaClient[entity]
       },
     }

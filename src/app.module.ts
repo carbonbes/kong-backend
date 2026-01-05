@@ -20,12 +20,7 @@ import { validate } from '@/shared/config/validate'
       validate,
     }),
 
-    PrismaModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        connectionString: configService.get('database.url')!,
-      }),
-    }),
+    PrismaModule.forRootAsync(),
 
     RedisModule.forRootAsync({
       inject: [ConfigService],

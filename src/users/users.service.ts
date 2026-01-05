@@ -8,7 +8,7 @@ import {
   User,
 } from './users.types'
 import { InjectPrismaEntity } from '@/prisma/prisma.utils'
-import { PrismaClient } from '@/generated/prisma/client'
+import { PrismaClient } from '@/prisma/prisma.types'
 
 @Injectable()
 export class UsersService {
