@@ -96,13 +96,13 @@ describe('AuthService', () => {
       }
       const usersServiceCreateOptions: UsersServiceCreateOptions = data
       const otpsServiceCreateOptions: OtpsServiceCreateOptions = {
-        type: OtpType.SIGN_UP,
+        type: otp.type,
         userId: user.id,
       }
       const mailServiceSendOtpOptions: MailServiceSendOtpOptions = {
         email: user.email,
         code: otp.code,
-        type: OtpType.SIGN_UP,
+        type: otp.type,
       }
 
       expect(await authService.signUp(data)).toEqual(result)
@@ -154,13 +154,13 @@ describe('AuthService', () => {
         where: { email: user.email },
       }
       const otpsServiceCreateOptions: OtpsServiceCreateOptions = {
-        type: OtpType.SIGN_IN,
+        type: otp.type,
         userId: user.id,
       }
       const mailServiceSendOtpOptions: MailServiceSendOtpOptions = {
         email: user.email,
         code: otp.code,
-        type: OtpType.SIGN_IN,
+        type: otp.type,
       }
 
       expect(await authService.signIn(data)).toEqual(result)
