@@ -22,7 +22,14 @@ import {
 import { getMockRes } from 'vitest-mock-express'
 import { CookieOptions } from 'express'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { User } from '@/users/users.types'
+import {
+  CreateOptions as UsersServiceCreateOptions,
+  FindOneOptions as UsersServiceFindOneOptions,
+  IsExistOptions as UsersServiceIsExistOptions,
+  User,
+} from '@/users/users.types'
+import { CreateOptions as OtpsServiceCreateOptions } from '@/otps/otps.types'
+import { SendOtpOptions as MailServiceSendOtpOptions } from '@/mail/mail.types'
 
 describe('AuthService', () => {
   let authService: AuthService
@@ -84,21 +91,31 @@ describe('AuthService', () => {
       mailService.sendOtp.mockResolvedValue(true)
 
       const result: LoginReturn = { otpId: otp.id, userId: user.id }
-
-      expect(await authService.signUp(data)).toEqual(result)
-      expect(usersService.isExist).toHaveBeenCalledWith({
+      const usersServiceIsExistOptions: UsersServiceIsExistOptions = {
         where: { email: user.email },
-      })
-      expect(usersService.create).toHaveBeenCalledWith(data)
-      expect(otpsService.create).toHaveBeenCalledWith({
+      }
+      const usersServiceCreateOptions: UsersServiceCreateOptions = data
+      const otpsServiceCreateOptions: OtpsServiceCreateOptions = {
         type: OtpType.SIGN_UP,
         userId: user.id,
-      })
-      expect(mailService.sendOtp).toHaveBeenCalledWith({
+      }
+      const mailServiceSendOtpOptions: MailServiceSendOtpOptions = {
         email: user.email,
         code: otp.code,
         type: OtpType.SIGN_UP,
-      })
+      }
+
+      expect(await authService.signUp(data)).toEqual(result)
+      expect(usersService.isExist).toHaveBeenCalledWith(
+        usersServiceIsExistOptions,
+      )
+      expect(usersService.create).toHaveBeenCalledWith(
+        usersServiceCreateOptions,
+      )
+      expect(otpsService.create).toHaveBeenCalledWith(otpsServiceCreateOptions)
+      expect(mailService.sendOtp).toHaveBeenCalledWith(
+        mailServiceSendOtpOptions,
+      )
     })
 
     test('should be return null if a user with that email exists', async () => {
@@ -107,11 +124,12 @@ describe('AuthService', () => {
       usersService.isExist.mockResolvedValue(true)
 
       const result: LoginReturn = null
+      const userIsExistOptions: UsersServiceIsExistOptions = {
+        where: { email: user.email },
+      }
 
       expect(await authService.signUp(data)).toBe(result)
-      expect(usersService.isExist).toHaveBeenCalledWith({
-        where: { email: user.email },
-      })
+      expect(usersService.isExist).toHaveBeenCalledWith(userIsExistOptions)
     })
   })
 
@@ -132,32 +150,42 @@ describe('AuthService', () => {
       mailService.sendOtp.mockResolvedValue(true)
 
       const result: LoginReturn = { otpId: otp.id, userId: user.id }
-
-      expect(await authService.signIn(data)).toEqual(result)
-      expect(usersService.findOne).toHaveBeenCalledWith({
+      const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
         where: { email: user.email },
-      })
-      expect(otpsService.create).toHaveBeenCalledWith({
+      }
+      const otpsServiceCreateOptions: OtpsServiceCreateOptions = {
         type: OtpType.SIGN_IN,
         userId: user.id,
-      })
-      expect(mailService.sendOtp).toHaveBeenCalledWith({
+      }
+      const mailServiceSendOtpOptions: MailServiceSendOtpOptions = {
         email: user.email,
         code: otp.code,
         type: OtpType.SIGN_IN,
-      })
+      }
+
+      expect(await authService.signIn(data)).toEqual(result)
+      expect(usersService.findOne).toHaveBeenCalledWith(
+        usersServiceFindOneOptions,
+      )
+      expect(otpsService.create).toHaveBeenCalledWith(otpsServiceCreateOptions)
+      expect(mailService.sendOtp).toHaveBeenCalledWith(
+        mailServiceSendOtpOptions,
+      )
     })
 
     test('should be return a null if a user with that email does not exist', async () => {
       const user = createFakeUser({ ...data })
       const result: LoginReturn = null
+      const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
+        where: { email: user.email },
+      }
 
       usersService.findOne.mockResolvedValue(result)
 
       expect(await authService.signIn(data)).toBe(result)
-      expect(usersService.findOne).toHaveBeenCalledWith({
-        where: { email: user.email },
-      })
+      expect(usersService.findOne).toHaveBeenCalledWith(
+        usersServiceFindOneOptions,
+      )
     })
 
     test('should be return a 403 if a user with that email does not active', async () => {
