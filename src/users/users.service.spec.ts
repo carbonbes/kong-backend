@@ -1,25 +1,33 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from './users.service'
-import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { PrismaClient } from '@/prisma/prisma.types'
-import { getPrismaEntityToken } from '@/prisma/prisma.utils'
-import { CreateOptions } from '@/users/users.types'
+import {
+  CreateOptions,
+  FindOneOptions,
+  IsExistOptions,
+  SetActiveOptions,
+  UpdateOptions,
+} from '@/users/users.types'
 import { createFakeUser } from '@/test/utils'
+import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
+import { getPrismaEntityToken } from '@/prisma/prisma.utils'
 
 describe('UsersService', () => {
   let usersService: UsersService
-  let users: DeepMocked<PrismaClient['user']>
+  let usersRepository: DeepMockProxy<PrismaClient['user']>
 
   beforeEach(async () => {
+    usersRepository = mockDeep<PrismaClient['user']>()
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
-    })
-      .useMocker(createMock)
-      .compile()
+      providers: [
+        UsersService,
+        { provide: getPrismaEntityToken('user'), useValue: usersRepository },
+      ],
+    }).compile()
 
     usersService = module.get(UsersService)
-    users = module.get(getPrismaEntityToken('user'))
   })
 
   describe('create', () => {
@@ -27,12 +35,91 @@ describe('UsersService', () => {
       const { email, name, gender } = createFakeUser()
       const data: CreateOptions = { email, name, gender }
 
-      const user = createFakeUser({ ...data })
+      const user = createFakeUser()
 
-      users.create.mockResolvedValue(user)
+      usersRepository.create.mockResolvedValue(user)
 
-      expect(await usersService.create(data)).toBe(user)
-      expect(users.create).toHaveBeenCalledWith({ data })
+      expect(await usersService.create(data)).toEqual(user)
+      expect(usersRepository.create).toHaveBeenCalledWith({ data })
+    })
+  })
+
+  describe('findOne', () => {
+    test('should be find a one user', async () => {
+      const { email } = createFakeUser()
+      const data: FindOneOptions = { where: { email } }
+
+      const user = createFakeUser()
+
+      usersRepository.findUnique.mockResolvedValue(user)
+
+      expect(await usersService.findOne(data)).toEqual(user)
+      expect(usersRepository.findUnique).toHaveBeenCalledWith(data)
+    })
+
+    test('should be return a null', async () => {
+      const { email } = createFakeUser()
+      const data: FindOneOptions = { where: { email } }
+
+      usersRepository.findUnique.mockResolvedValue(null)
+
+      expect(await usersService.findOne(data)).toBeNull()
+      expect(usersRepository.findUnique).toHaveBeenCalledWith(data)
+    })
+  })
+
+  describe('update', () => {
+    test('should be update a user', async () => {
+      const { email, name } = createFakeUser()
+      const data: UpdateOptions = { where: { email }, data: { name } }
+
+      const user = createFakeUser()
+
+      usersRepository.update.mockResolvedValue(user)
+
+      expect(await usersService.update(data)).toEqual(user)
+      expect(usersRepository.update).toHaveBeenCalledWith(data)
+    })
+  })
+
+  describe('isExist', () => {
+    test('should be return a true', async () => {
+      const { email } = createFakeUser()
+      const data: IsExistOptions = { where: { email } }
+
+      const user = createFakeUser()
+
+      usersRepository.findUnique.mockResolvedValue(user)
+
+      expect(await usersService.isExist(data)).toBeTruthy()
+      expect(usersRepository.findUnique).toHaveBeenCalledWith(data)
+    })
+
+    test('should be return false', async () => {
+      const { email } = createFakeUser()
+      const data: IsExistOptions = { where: { email } }
+
+      usersRepository.findUnique.mockResolvedValue(null)
+
+      expect(await usersService.isExist(data)).toBeFalsy()
+      expect(usersRepository.findUnique).toHaveBeenCalledWith(data)
+    })
+  })
+
+  describe('setActive', () => {
+    test('should be activate user', async () => {
+      const { email } = createFakeUser()
+      const data: SetActiveOptions = { where: { email }, value: true }
+
+      const user = createFakeUser()
+
+      usersRepository.update.mockResolvedValue(user)
+
+      expect(await usersService.setActive(data)).toEqual(user)
+      expect(usersRepository.update).toHaveBeenCalledWith({
+        where: data.where,
+        data: { isActive: data.value },
+      })
     })
   })
 })
