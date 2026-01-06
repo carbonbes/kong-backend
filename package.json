@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.1.0",
-    "@golevelup/ts-vitest": "^2.1.1",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",

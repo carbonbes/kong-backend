@@ -1093,13 +1093,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@golevelup/ts-vitest@npm:^2.1.1":
-  version: 2.1.1
-  resolution: "@golevelup/ts-vitest@npm:2.1.1"
-  checksum: 10c0/dc7a875a6209ab677a937240da4884a1c0960ecfa1adff2427dcb7a814b5a3f14c9b362b9bca218cc145b111b79c523deebac9beda2f29354c3e7931a852b143
-  languageName: node
-  linkType: hard
-
 "@hono/node-server@npm:1.19.6":
   version: 1.19.6
   resolution: "@hono/node-server@npm:1.19.6"
@@ -7067,7 +7060,6 @@ __metadata:
   resolution: "kong-backend@workspace:."
   dependencies:
     "@faker-js/faker": "npm:^10.1.0"
-    "@golevelup/ts-vitest": "npm:^2.1.1"
     "@nestjs-modules/mailer": "npm:^2.0.2"
     "@nestjs/cli": "npm:^10.0.0"
     "@nestjs/common": "npm:^10.0.0"

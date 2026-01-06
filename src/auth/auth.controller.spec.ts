@@ -1,12 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  MockInstance,
-  test,
-  vi,
-} from 'vitest'
+import { beforeEach, describe, expect, test } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthService } from './auth.service'
 import { LoginReturn } from './auth.types'
@@ -16,17 +8,17 @@ import { AuthController } from './auth.controller'
 import { getMockReq, getMockRes } from 'vitest-mock-express'
 import { createFakeJwts, createFakeOtp, createFakeUser } from '@/test/utils'
 import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/auth.dtos'
-import { createMock, DeepMocked } from '@golevelup/ts-vitest'
+import { mock, MockProxy } from 'vitest-mock-extended'
 
 describe('AuthController', () => {
   let authController: AuthController
-  let authService: DeepMocked<AuthService>
+  let authService: MockProxy<AuthService>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
     })
-      .useMocker(createMock)
+      .useMocker(mock)
       .compile()
 
     authController = module.get(AuthController)
@@ -34,16 +26,12 @@ describe('AuthController', () => {
   })
 
   describe('signUp', () => {
-    let mockAuthControllerSignUp: MockInstance<typeof authController.signUp>
     let body: SignUpDto
 
     beforeEach(() => {
       const { email, name, gender } = createFakeUser()
       body = { email, name, gender }
-      mockAuthControllerSignUp = vi.spyOn(authController, 'signUp')
     })
-
-    afterEach(() => mockAuthControllerSignUp.mockRestore())
 
     test('should be return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
@@ -57,7 +45,7 @@ describe('AuthController', () => {
       authService.signUp.mockResolvedValue(result)
 
       expect(await authController.signUp(body)).toEqual(result)
-      expect(mockAuthControllerSignUp).toHaveBeenCalledWith(body)
+      expect(authService.signUp).toHaveBeenCalledWith(body)
     })
 
     test('should be return null', async () => {
@@ -66,21 +54,17 @@ describe('AuthController', () => {
       authService.signUp.mockResolvedValue(result)
 
       expect(await authController.signUp(body)).toBe(result)
-      expect(mockAuthControllerSignUp).toHaveBeenCalledWith(body)
+      expect(authService.signUp).toHaveBeenCalledWith(body)
     })
   })
 
   describe('signIn', () => {
-    let mockAuthControllerSignIn: MockInstance<typeof authController.signIn>
     let body: SignInDto
 
     beforeEach(() => {
       const { email } = createFakeUser()
       body = { email }
-      mockAuthControllerSignIn = vi.spyOn(authController, 'signIn')
     })
-
-    afterEach(() => mockAuthControllerSignIn.mockRestore())
 
     test('should be return the otp ID and user ID', async () => {
       const user = createFakeUser({ ...body })
@@ -94,7 +78,7 @@ describe('AuthController', () => {
       authService.signIn.mockResolvedValue(result)
 
       expect(await authController.signIn(body)).toEqual(result)
-      expect(mockAuthControllerSignIn).toHaveBeenCalledWith(body)
+      expect(authService.signIn).toHaveBeenCalledWith(body)
     })
 
     test('should be return null', async () => {
@@ -103,7 +87,7 @@ describe('AuthController', () => {
       authService.signIn.mockResolvedValue(result)
 
       expect(await authController.signIn(body)).toBe(result)
-      expect(mockAuthControllerSignIn).toHaveBeenCalledWith(body)
+      expect(authService.signIn).toHaveBeenCalledWith(body)
     })
 
     test('should be return 403', async () => {
@@ -112,31 +96,25 @@ describe('AuthController', () => {
       await expect(authController.signIn(body)).rejects.toThrow(
         ForbiddenException,
       )
-      expect(mockAuthControllerSignIn).toHaveBeenCalledWith(body)
+      expect(authService.signIn).toHaveBeenCalledWith(body)
     })
   })
 
   describe('verifyOtp', () => {
     let body: VerifyOtpDto
-    let mockAuthControllerVerifyOtp: MockInstance<
-      typeof authController.verifyOtp
-    >
 
     const { res, clearMockRes } = getMockRes()
 
     beforeEach(() => {
       body = createFakeOtp()
       clearMockRes()
-      mockAuthControllerVerifyOtp = vi.spyOn(authController, 'verifyOtp')
     })
-
-    afterEach(() => mockAuthControllerVerifyOtp.mockRestore())
 
     test('should be return undefined', async () => {
       authService.verifyOtp.mockResolvedValue(undefined)
 
       await expect(authController.verifyOtp(body, res)).resolves.toBeUndefined()
-      expect(mockAuthControllerVerifyOtp).toHaveBeenCalledWith(body, res)
+      expect(authService.verifyOtp).toHaveBeenCalledWith({ body, res })
     })
 
     test('should be return 404', async () => {
@@ -145,7 +123,7 @@ describe('AuthController', () => {
       await expect(authController.verifyOtp(body, res)).rejects.toThrow(
         NotFoundException,
       )
-      expect(mockAuthControllerVerifyOtp).toHaveBeenCalledWith(body, res)
+      expect(authService.verifyOtp).toHaveBeenCalledWith({ body, res })
     })
   })
 
@@ -154,10 +132,7 @@ describe('AuthController', () => {
       const user = createFakeUser()
       const req = getMockReq({ user })
 
-      const mockAuthControllerMe = vi.spyOn(authController, 'me')
-
       expect(await authController.me(req)).toEqual(user)
-      expect(mockAuthControllerMe).toHaveBeenCalledWith(req)
     })
   })
 
@@ -168,10 +143,8 @@ describe('AuthController', () => {
 
       authService.rotate.mockResolvedValue(undefined)
 
-      const mockAuthControllerUpdate = vi.spyOn(authController, 'update')
-
       expect(await authController.update(jwts, res)).toBeUndefined()
-      expect(mockAuthControllerUpdate).toHaveBeenCalledWith(jwts, res)
+      expect(authService.rotate).toHaveBeenCalledWith({ jwts, res })
     })
   })
 
@@ -182,10 +155,8 @@ describe('AuthController', () => {
 
       authService.logout.mockResolvedValue(undefined)
 
-      const mockAuthControllerLogout = vi.spyOn(authController, 'logout')
-
       expect(await authController.logout(jwts, res)).toBeUndefined()
-      expect(mockAuthControllerLogout).toHaveBeenCalledWith(jwts, res)
+      expect(authService.logout).toHaveBeenCalledWith({ jwts, res })
     })
   })
 })
