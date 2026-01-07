@@ -115,11 +115,15 @@ describe('UsersService', () => {
 
       usersRepository.update.mockResolvedValue(user)
 
-      expect(await usersService.setActive(data)).toEqual(user)
-      expect(usersRepository.update).toHaveBeenCalledWith({
+      const usersRepositoryUpdateOptions: UpdateOptions = {
         where: data.where,
         data: { isActive: data.value },
-      })
+      }
+
+      expect(await usersService.setActive(data)).toEqual(user)
+      expect(usersRepository.update).toHaveBeenCalledWith(
+        usersRepositoryUpdateOptions,
+      )
     })
   })
 })
