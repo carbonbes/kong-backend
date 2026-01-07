@@ -26,10 +26,18 @@ import {
   CreateOptions as UsersServiceCreateOptions,
   FindOneOptions as UsersServiceFindOneOptions,
   IsExistOptions as UsersServiceIsExistOptions,
+  SetActiveOptions as UsersServiceSetActiveOptions,
   User,
 } from '@/users/users.types'
-import { CreateOptions as OtpsServiceCreateOptions } from '@/otps/otps.types'
+import {
+  CreateOptions as OtpsServiceCreateOptions,
+  VerifyOptions as OtpsServiceVerifyOptions,
+} from '@/otps/otps.types'
 import { SendOtpOptions as MailServiceSendOtpOptions } from '@/mail/mail.types'
+import {
+  RotateOptions as JwtsServiceRotateOptions,
+  SignOptions as JwtsServiceSignOptions,
+} from '@/jwts/jwts.types'
 
 describe('AuthService', () => {
   let authService: AuthService
@@ -190,15 +198,18 @@ describe('AuthService', () => {
 
     test('should be return a 403 if a user with that email does not active', async () => {
       const user = createFakeUser({ ...data, isActive: false })
+      const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
+        where: { email: user.email },
+      }
 
       usersService.findOne.mockResolvedValue(user)
 
       await expect(authService.signIn(data)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(usersService.findOne).toHaveBeenCalledWith({
-        where: { email: user.email },
-      })
+      expect(usersService.findOne).toHaveBeenCalledWith(
+        usersServiceFindOneOptions,
+      )
     })
   })
 
@@ -209,28 +220,31 @@ describe('AuthService', () => {
 
     beforeEach(() => {
       user = createFakeUser()
-      body = createFakeOtp({ userId: user.id })
+      body = createFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
       clearMockRes()
     })
 
     test('should be set a pair of cookies with JWT if such an OTP exists', async () => {
-      const otp = createFakeOtp({
-        ...body,
-        type: OtpType.SIGN_UP,
-      })
+      const otp = createFakeOtp({ ...body })
       const jwts = createFakeJwts()
 
       otpsService.verify.mockResolvedValue(true)
       usersService.setActive.mockResolvedValue(user)
       jwtsService.sign.mockResolvedValue(jwts)
 
+      const otpsServiceVerifyOptions: OtpsServiceVerifyOptions = otp
+      const usersServiceSetActiveOptions: UsersServiceSetActiveOptions = {
+        where: { id: user.id },
+        value: true,
+      }
+      const jwtsServiceSignOptions: JwtsServiceSignOptions = { sub: user.id }
+
       expect(await authService.verifyOtp({ body, res })).toBe(undefined)
-      expect(otpsService.verify).toHaveBeenCalledWith(otp)
-      expect(usersService.setActive).toHaveBeenCalledWith({
-        where: { email: user.email },
-        data: { isActive: true },
-      })
-      expect(jwtsService.sign).toHaveBeenCalledWith({ sub: user.id })
+      expect(otpsService.verify).toHaveBeenCalledWith(otpsServiceVerifyOptions)
+      expect(usersService.setActive).toHaveBeenCalledWith(
+        usersServiceSetActiveOptions,
+      )
+      expect(jwtsService.sign).toHaveBeenCalledWith(jwtsServiceSignOptions)
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenNthCalledWith(
         1,
@@ -252,7 +266,7 @@ describe('AuthService', () => {
       await expect(authService.verifyOtp({ body, res })).rejects.toThrow(
         new NotFoundException(),
       )
-      expect(mockAuthServiceVerifyOtp).toHaveBeenCalledWith({ body, res })
+      expect(otpsService.verify).toHaveBeenCalledWith(body)
     })
   })
 
@@ -264,10 +278,10 @@ describe('AuthService', () => {
 
       jwtsService.rotate.mockResolvedValue(newJwts)
 
-      const mockAuthServiceRotate = vi.spyOn(authService, 'rotate')
+      const jwtsServiveRotateOptions: JwtsServiceRotateOptions = oldJwts
 
       expect(await authService.rotate({ jwts: oldJwts, res })).toBeUndefined()
-      expect(mockAuthServiceRotate).toHaveBeenCalledWith({ jwts: oldJwts, res })
+      expect(jwtsService.rotate).toHaveBeenCalledWith(jwtsServiveRotateOptions)
       expect(res.cookie).toHaveBeenCalledTimes(2)
       expect(res.cookie).toHaveBeenNthCalledWith(
         1,
@@ -289,10 +303,7 @@ describe('AuthService', () => {
       const { res } = getMockRes()
       const jwts = createFakeJwts()
 
-      const mockAuthServiceLogout = vi.spyOn(authService, 'logout')
-
       expect(await authService.logout({ jwts, res })).toBeUndefined()
-      expect(mockAuthServiceLogout).toHaveBeenCalledWith({ jwts, res })
       expect(res.clearCookie).toHaveBeenCalledTimes(2)
       expect(res.clearCookie).toHaveBeenNthCalledWith(1, ACCESS_TOKEN_NAME)
       expect(res.clearCookie).toHaveBeenNthCalledWith(2, REFRESH_TOKEN_NAME)
