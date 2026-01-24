@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthService } from './auth.service'
-import { LoginReturn } from './auth.types'
+import { LoginReturn, LogoutOptions, RotateOptions } from './auth.types'
 import { OtpType } from '@/otps/otps.enums'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
@@ -113,6 +113,15 @@ describe('AuthController', () => {
       body = createFakeOtp()
     })
 
+    test('should be return JWT pair', async () => {
+      const jwts = createFakeJwts()
+
+      authService.verifyOtp.mockResolvedValue(jwts)
+
+      expect(await authController.verifyOtp(body)).toEqual(jwts)
+      expect(authService.verifyOtp).toHaveBeenCalledWith(body)
+    })
+
     test('should be return 404', async () => {
       authService.verifyOtp.mockRejectedValue(new NotFoundException())
 
@@ -133,22 +142,21 @@ describe('AuthController', () => {
   })
 
   describe('update', () => {
-    test('should return new JWT pair on successful token rotation', async () => {
-      const jwts = createFakeJwts()
+    test('should be return new JWT pair', async () => {
+      const oldJwts = createFakeJwts()
       const newJwts = createFakeJwts()
-      const body: AccessTokenDto = { access_token: jwts.access_token }
-      const refresh_token = jwts.refresh_token
+      const body: AccessTokenDto = { access_token: oldJwts.access_token }
+      const refresh_token = oldJwts.refresh_token
 
       authService.rotate.mockResolvedValue(newJwts)
 
-      const result = await authController.update(refresh_token, body)
-
-      expect(result).toEqual(newJwts)
-      expect(authService.rotate).toHaveBeenCalledTimes(1)
-      expect(authService.rotate).toHaveBeenCalledWith({
+      const authServiceRotateOptions: RotateOptions = {
         access_token: body.access_token,
         refresh_token,
-      })
+      }
+
+      expect(await authController.update(refresh_token, body)).toEqual(newJwts)
+      expect(authService.rotate).toHaveBeenCalledWith(authServiceRotateOptions)
     })
   })
 
@@ -160,11 +168,13 @@ describe('AuthController', () => {
 
       authService.logout.mockResolvedValue(undefined)
 
-      expect(await authController.logout(access_token, body)).toBeUndefined()
-      expect(authService.logout).toHaveBeenCalledWith({
+      const authServiceLogoutOptions: LogoutOptions = {
         access_token,
         refresh_token: body.refresh_token,
-      })
+      }
+
+      expect(await authController.logout(access_token, body)).toBeUndefined()
+      expect(authService.logout).toHaveBeenCalledWith(authServiceLogoutOptions)
     })
   })
 })
