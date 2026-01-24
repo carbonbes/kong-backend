@@ -14,13 +14,6 @@ import {
   VerifyOtpOptions,
 } from '@/auth/auth.types'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
-import {
-  ACCESS_TOKEN_NAME,
-  JWT_COOKIE_OPTIONS,
-  REFRESH_TOKEN_NAME,
-} from '@/shared/consts'
-import { getMockRes } from 'vitest-mock-express'
-import { CookieOptions } from 'express'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import {
   CreateOptions as UsersServiceCreateOptions,
@@ -45,11 +38,6 @@ describe('AuthService', () => {
   let mailService: MockProxy<MailService>
   let otpsService: MockProxy<OtpsService>
   let jwtsService: MockProxy<JwtsService>
-  const accessJwtExpiresIn = Number(process.env.ACCESS_JWT_EXPIRES_IN)
-  const refreshJwtExpiresIn = Number(process.env.REFRESH_JWT_EXPIRES_IN)
-  let currentTime: number
-  let accessJwtCookieOptions: CookieOptions
-  let refreshJwtCookieOptions: CookieOptions
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -63,20 +51,6 @@ describe('AuthService', () => {
     mailService = module.get(MailService)
     otpsService = module.get(OtpsService)
     jwtsService = module.get(JwtsService)
-
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date())
-    currentTime = Date.now() / 1000
-
-    accessJwtCookieOptions = {
-      ...JWT_COOKIE_OPTIONS,
-      expires: new Date((currentTime + accessJwtExpiresIn) * 1000),
-    }
-
-    refreshJwtCookieOptions = {
-      ...JWT_COOKIE_OPTIONS,
-      expires: new Date((currentTime + refreshJwtExpiresIn) * 1000),
-    }
   })
 
   afterEach(vi.useRealTimers)
@@ -215,13 +189,11 @@ describe('AuthService', () => {
 
   describe('verifyOtp', () => {
     let user: User
-    let body: VerifyOtpOptions['body']
-    const { res, clearMockRes } = getMockRes()
+    let body: VerifyOtpOptions
 
     beforeEach(() => {
       user = createFakeUser()
       body = createFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
-      clearMockRes()
     })
 
     test('should be set a pair of cookies with JWT if such an OTP exists', async () => {
@@ -239,31 +211,18 @@ describe('AuthService', () => {
       }
       const jwtsServiceSignOptions: JwtsServiceSignOptions = { sub: user.id }
 
-      expect(await authService.verifyOtp({ body, res })).toBe(undefined)
+      expect(await authService.verifyOtp(body)).toEqual(jwts)
       expect(otpsService.verify).toHaveBeenCalledWith(otpsServiceVerifyOptions)
       expect(usersService.setActive).toHaveBeenCalledWith(
         usersServiceSetActiveOptions,
       )
       expect(jwtsService.sign).toHaveBeenCalledWith(jwtsServiceSignOptions)
-      expect(res.cookie).toHaveBeenCalledTimes(2)
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        1,
-        ACCESS_TOKEN_NAME,
-        jwts[ACCESS_TOKEN_NAME],
-        accessJwtCookieOptions,
-      )
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        2,
-        REFRESH_TOKEN_NAME,
-        jwts[REFRESH_TOKEN_NAME],
-        refreshJwtCookieOptions,
-      )
     })
 
     test('should be return a 404 if a OTP not found', async () => {
       otpsService.verify.mockResolvedValue(false)
 
-      await expect(authService.verifyOtp({ body, res })).rejects.toThrow(
+      await expect(authService.verifyOtp(body)).rejects.toThrow(
         new NotFoundException(),
       )
       expect(otpsService.verify).toHaveBeenCalledWith(body)
@@ -272,7 +231,6 @@ describe('AuthService', () => {
 
   describe('rotate', () => {
     test('should be set a pair of cookies with JWT', async () => {
-      const { res } = getMockRes()
       const oldJwts = createFakeJwts()
       const newJwts = createFakeJwts()
 
@@ -280,33 +238,16 @@ describe('AuthService', () => {
 
       const jwtsServiveRotateOptions: JwtsServiceRotateOptions = oldJwts
 
-      expect(await authService.rotate({ jwts: oldJwts, res })).toBeUndefined()
+      expect(await authService.rotate(oldJwts)).toEqual(newJwts)
       expect(jwtsService.rotate).toHaveBeenCalledWith(jwtsServiveRotateOptions)
-      expect(res.cookie).toHaveBeenCalledTimes(2)
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        1,
-        ACCESS_TOKEN_NAME,
-        newJwts[ACCESS_TOKEN_NAME],
-        accessJwtCookieOptions,
-      )
-      expect(res.cookie).toHaveBeenNthCalledWith(
-        2,
-        REFRESH_TOKEN_NAME,
-        newJwts[REFRESH_TOKEN_NAME],
-        refreshJwtCookieOptions,
-      )
     })
   })
 
   describe('logout', () => {
     test('should be remove a pair of cookies with JWT', async () => {
-      const { res } = getMockRes()
       const jwts = createFakeJwts()
 
-      expect(await authService.logout({ jwts, res })).toBeUndefined()
-      expect(res.clearCookie).toHaveBeenCalledTimes(2)
-      expect(res.clearCookie).toHaveBeenNthCalledWith(1, ACCESS_TOKEN_NAME)
-      expect(res.clearCookie).toHaveBeenNthCalledWith(2, REFRESH_TOKEN_NAME)
+      expect(await authService.logout(jwts)).toBeUndefined()
     })
   })
 })
