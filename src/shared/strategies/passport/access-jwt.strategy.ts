@@ -4,12 +4,10 @@ import { JwtPayload } from '@/shared/types'
 import { UsersService } from '@/users/users.service'
 import { JwtsService } from '@/jwts/jwts.service'
 import { CreateJwtStrategy } from '@/shared/strategies/passport/utils/createJwtStrategy'
-import { ACCESS_TOKEN_NAME } from '@/shared/consts'
 
 @Injectable()
 export class AccessJwtStrategy extends CreateJwtStrategy({
   name: 'access-jwt-strategy',
-  cookieName: ACCESS_TOKEN_NAME,
 }) {
   constructor(
     private readonly configService: ConfigService,

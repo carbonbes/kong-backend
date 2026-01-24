@@ -5,10 +5,8 @@ import {
 } from '@nestjs/common'
 import { UsersService } from '@/users/users.service'
 import {
-  ClearJwtCookiesOptions,
   LogoutOptions,
   RotateOptions,
-  SetJwtCookiesOptions,
   SignInOptions,
   SignInReturn,
   SignUpOptions,
@@ -20,9 +18,6 @@ import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
 import { JwtsService } from '@/jwts/jwts.service'
 import { MailService } from '@/mail/mail.service'
-import getDecodedJwt from '@/shared/utils/getDecodedJwt'
-import { CookieOptions } from 'express'
-import { JWT_COOKIE_OPTIONS } from '@/shared/consts'
 
 @Injectable()
 export class AuthService {
@@ -90,7 +85,7 @@ export class AuthService {
   }
 
   @Transactional()
-  async verifyOtp({ body: otp, res }: VerifyOtpOptions) {
+  async verifyOtp(otp: VerifyOtpOptions) {
     const isVerify = await this.otpsService.verify(otp)
 
     if (!isVerify) {
@@ -106,35 +101,14 @@ export class AuthService {
       })
     }
 
-    const jwts = await this.jwtsService.sign({ sub: userId })
-
-    this.setJwtCookies({ jwts, res })
+    return this.jwtsService.sign({ sub: userId })
   }
 
-  async rotate({ jwts, res }: RotateOptions) {
-    const newJwts = await this.jwtsService.rotate(jwts)
-
-    this.setJwtCookies({ jwts: newJwts, res })
+  rotate(jwts: RotateOptions) {
+    return this.jwtsService.rotate(jwts)
   }
 
-  async logout({ jwts, res }: LogoutOptions) {
-    this.clearJwtCookies({ jwts, res })
-  }
-
-  private setJwtCookies({ jwts, res }: SetJwtCookiesOptions) {
-    Object.entries(jwts).forEach(([name, value]) => {
-      const { exp } = getDecodedJwt(value)
-
-      const options: CookieOptions = {
-        ...JWT_COOKIE_OPTIONS,
-        expires: new Date(exp * 1000),
-      }
-
-      res.cookie(name, value, options)
-    })
-  }
-
-  private clearJwtCookies({ jwts, res }: ClearJwtCookiesOptions) {
-    Object.keys(jwts).forEach((name) => res.clearCookie(name))
+  async logout(jwts: LogoutOptions) {
+    Object.values(jwts).forEach((jwt) => this.jwtsService.revoke({ jwt }))
   }
 }

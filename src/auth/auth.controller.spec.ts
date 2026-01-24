@@ -5,9 +5,15 @@ import { LoginReturn } from './auth.types'
 import { OtpType } from '@/otps/otps.enums'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
-import { getMockReq, getMockRes } from 'vitest-mock-express'
+import { getMockReq } from 'vitest-mock-express'
 import { createFakeJwts, createFakeOtp, createFakeUser } from '@/test/utils'
-import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/auth.dtos'
+import {
+  AccessTokenDto,
+  RefreshTokenDto,
+  SignInDto,
+  SignUpDto,
+  VerifyOtpDto,
+} from '@/auth/auth.dtos'
 import { mock, MockProxy } from 'vitest-mock-extended'
 
 describe('AuthController', () => {
@@ -103,27 +109,17 @@ describe('AuthController', () => {
   describe('verifyOtp', () => {
     let body: VerifyOtpDto
 
-    const { res, clearMockRes } = getMockRes()
-
     beforeEach(() => {
       body = createFakeOtp()
-      clearMockRes()
-    })
-
-    test('should be return undefined', async () => {
-      authService.verifyOtp.mockResolvedValue(undefined)
-
-      await expect(authController.verifyOtp(body, res)).resolves.toBeUndefined()
-      expect(authService.verifyOtp).toHaveBeenCalledWith({ body, res })
     })
 
     test('should be return 404', async () => {
       authService.verifyOtp.mockRejectedValue(new NotFoundException())
 
-      await expect(authController.verifyOtp(body, res)).rejects.toThrow(
+      await expect(authController.verifyOtp(body)).rejects.toThrow(
         NotFoundException,
       )
-      expect(authService.verifyOtp).toHaveBeenCalledWith({ body, res })
+      expect(authService.verifyOtp).toHaveBeenCalledWith(body)
     })
   })
 
@@ -137,26 +133,38 @@ describe('AuthController', () => {
   })
 
   describe('update', () => {
-    test('should be return undefined', async () => {
-      const { res } = getMockRes()
+    test('should return new JWT pair on successful token rotation', async () => {
       const jwts = createFakeJwts()
+      const newJwts = createFakeJwts()
+      const body: AccessTokenDto = { access_token: jwts.access_token }
+      const refresh_token = jwts.refresh_token
 
-      authService.rotate.mockResolvedValue(undefined)
+      authService.rotate.mockResolvedValue(newJwts)
 
-      expect(await authController.update(jwts, res)).toBeUndefined()
-      expect(authService.rotate).toHaveBeenCalledWith({ jwts, res })
+      const result = await authController.update(refresh_token, body)
+
+      expect(result).toEqual(newJwts)
+      expect(authService.rotate).toHaveBeenCalledTimes(1)
+      expect(authService.rotate).toHaveBeenCalledWith({
+        access_token: body.access_token,
+        refresh_token,
+      })
     })
   })
 
   describe('logout', () => {
     test('should be return undefined', async () => {
-      const { res } = getMockRes()
       const jwts = createFakeJwts()
+      const body: RefreshTokenDto = { refresh_token: jwts.refresh_token }
+      const access_token = jwts.access_token
 
       authService.logout.mockResolvedValue(undefined)
 
-      expect(await authController.logout(jwts, res)).toBeUndefined()
-      expect(authService.logout).toHaveBeenCalledWith({ jwts, res })
+      expect(await authController.logout(access_token, body)).toBeUndefined()
+      expect(authService.logout).toHaveBeenCalledWith({
+        access_token,
+        refresh_token: body.refresh_token,
+      })
     })
   })
 })

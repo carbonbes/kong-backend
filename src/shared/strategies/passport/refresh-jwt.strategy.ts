@@ -3,12 +3,10 @@ import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '@/shared/types'
 import { JwtsService } from '@/jwts/jwts.service'
 import { CreateJwtStrategy } from '@/shared/strategies/passport/utils/createJwtStrategy'
-import { REFRESH_TOKEN_NAME } from '@/shared/consts'
 
 @Injectable()
 export class RefreshJwtStrategy extends CreateJwtStrategy({
   name: 'refresh-jwt-strategy',
-  cookieName: REFRESH_TOKEN_NAME,
 }) {
   constructor(
     private readonly configService: ConfigService,

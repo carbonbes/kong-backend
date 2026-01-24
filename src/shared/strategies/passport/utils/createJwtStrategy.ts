@@ -1,6 +1,5 @@
 import { PassportStrategy } from '@nestjs/passport'
-import { Strategy } from 'passport-jwt'
-import { Request } from 'express'
+import { ExtractJwt, Strategy } from 'passport-jwt'
 import { User } from '@/users/users.types'
 
 declare module 'express-serve-static-core' {
@@ -9,30 +8,15 @@ declare module 'express-serve-static-core' {
   }
 }
 
-interface ExtractJwtFromCookieOptions {
-  request: Request
-  cookieName: string
-}
-
 interface CreateCommonJwtStrategyOptions {
   name: string
-  cookieName: string
 }
 
-const extractJwtFromCookie = ({
-  request,
-  cookieName,
-}: ExtractJwtFromCookieOptions) => request.cookies[cookieName]
-
-export const CreateJwtStrategy = ({
-  name,
-  cookieName,
-}: CreateCommonJwtStrategyOptions) => {
+export const CreateJwtStrategy = ({ name }: CreateCommonJwtStrategyOptions) => {
   abstract class JwtStrategy extends PassportStrategy(Strategy, name) {
     protected constructor(secretOrKey: string) {
       super({
-        jwtFromRequest: (request: Request) =>
-          extractJwtFromCookie({ request, cookieName }),
+        jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
         ignoreExpiration: false,
         secretOrKey,
       })

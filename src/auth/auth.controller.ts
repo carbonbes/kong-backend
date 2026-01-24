@@ -4,17 +4,21 @@ import {
   Get,
   Post,
   Req,
-  Res,
   UseGuards,
+  Headers,
 } from '@nestjs/common'
-import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dtos'
+import {
+  AccessTokenDto,
+  RefreshTokenDto,
+  SignInDto,
+  SignUpDto,
+  VerifyOtpDto,
+} from './auth.dtos'
 import { AuthService } from './auth.service'
-import { Request, Response } from 'express'
+import { Request } from 'express'
 import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
 import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
-import { Cookies } from '@/shared/decorators/cookies.decorator'
-import { Jwts } from '@/shared/types'
-import { JWTS_COOKIES } from './auth.consts'
+import { EncodedJwt, Jwts } from '@/shared/types'
 
 @Controller('auth')
 export class AuthController {
@@ -31,11 +35,8 @@ export class AuthController {
   }
 
   @Post('verify-otp')
-  verifyOtp(
-    @Body() body: VerifyOtpDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    return this.authService.verifyOtp({ body, res })
+  verifyOtp(@Body() body: VerifyOtpDto) {
+    return this.authService.verifyOtp(body)
   }
 
   @UseGuards(AccessJwtAuthGuard)
@@ -47,18 +48,28 @@ export class AuthController {
   @UseGuards(RefreshJwtAuthGuard)
   @Post('update')
   update(
-    @Cookies(JWTS_COOKIES) jwts: Jwts,
-    @Res({ passthrough: true }) res: Response,
+    @Headers('Authorization') refresh_token: EncodedJwt,
+    @Body() body: AccessTokenDto,
   ) {
-    return this.authService.rotate({ jwts, res })
+    const jwts: Jwts = {
+      access_token: body.access_token,
+      refresh_token,
+    }
+
+    return this.authService.rotate(jwts)
   }
 
   @UseGuards(AccessJwtAuthGuard)
   @Post('logout')
   logout(
-    @Cookies(JWTS_COOKIES) jwts: Jwts,
-    @Res({ passthrough: true }) res: Response,
+    @Headers('Authorization') access_token: EncodedJwt,
+    @Body() body: RefreshTokenDto,
   ) {
-    return this.authService.logout({ jwts, res })
+    const jwts: Jwts = {
+      access_token,
+      refresh_token: body.refresh_token,
+    }
+
+    return this.authService.logout(jwts)
   }
 }
