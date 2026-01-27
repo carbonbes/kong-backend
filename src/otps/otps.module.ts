@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common'
 import { OtpsService } from './otps.service'
-import { RedisModule } from '@/redis/redis.module'
+import { RedisModule } from '@/shared/redis/redis.module'
 import { otpSchema } from '@/otps/otps.schema'
-import { BcryptModule } from '@/bcrypt/bcrypt.module'
+import { BcryptModule } from '@/shared/bcrypt/bcrypt.module'
 import { ConfigService } from '@nestjs/config'
-import { NanoidModule } from '@/nanoid/nanoid.module'
+import { NanoidModule } from '@/shared/nanoid/nanoid.module'
+import { UuidModule } from '@/shared/uuid/uuid.module'
 
 @Module({
   imports: [
     RedisModule.forFeature([otpSchema]),
+    UuidModule,
 
     NanoidModule.registerAsync({
       inject: [ConfigService],

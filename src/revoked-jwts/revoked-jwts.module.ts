@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
-import { RedisModule } from '@/redis/redis.module'
+import { RedisModule } from '@/shared/redis/redis.module'
 import { revokedJwtSchema } from '@/revoked-jwts/revoked-jwts.schema'
 
 @Module({

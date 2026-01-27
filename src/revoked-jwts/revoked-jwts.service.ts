@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@/redis/redis.utils'
+import { InjectRepository } from '@/shared/redis/redis.utils'
 import { Repository } from 'redis-om'
 import { revokedJwtSchema } from '@/revoked-jwts/revoked-jwts.schema'
 import { JwtStorageService } from '@/shared/services/jwt-storage/jwt-storage.service'

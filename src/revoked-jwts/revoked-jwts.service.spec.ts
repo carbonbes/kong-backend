@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { RevokedJwtsSchema } from './revoked-jwts.schema'
-import { RedisClient } from '@/redis/redis.types'
-import { REDIS_CLIENT } from '@/redis/redis.consts'
+import { RedisClient } from '@/shared/redis/redis.types'
+import { REDIS_CLIENT } from '@/shared/redis/redis.consts'
 import { AddOptions, GetOptions, HasOptions } from './revoked-jwts.types'
 
 describe('RevokedJwtsService', () => {

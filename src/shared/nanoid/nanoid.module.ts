@@ -1,7 +1,7 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common'
 import { NanoidService } from './nanoid.service'
-import { NANOID_MODULE_OPTIONS } from '@/nanoid/nanoid.consts'
-import { NanoidModuleAsyncOptions } from '@/nanoid/nanoid.types'
+import { NANOID_MODULE_OPTIONS } from '@/shared/nanoid/nanoid.consts'
+import { NanoidModuleAsyncOptions } from '@/shared/nanoid/nanoid.types'
 
 @Module({})
 export class NanoidModule {

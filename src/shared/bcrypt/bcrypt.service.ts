@@ -5,7 +5,7 @@ import {
   HashOptions,
 } from './bcrypt.types'
 import * as bcrypt from 'bcrypt'
-import { BCRYPT_MODULE_OPTIONS } from '@/bcrypt/bcrypt.consts'
+import { BCRYPT_MODULE_OPTIONS } from '@/shared/bcrypt/bcrypt.consts'
 
 @Injectable()
 export class BcryptService {

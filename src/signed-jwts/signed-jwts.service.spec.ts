@@ -1,8 +1,8 @@
 import { describe, beforeEach, test, expect, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { SignedJwtsService } from './signed-jwts.service'
-import { RedisClient } from '@/redis/redis.types'
-import { REDIS_CLIENT } from '@/redis/redis.consts'
+import { RedisClient } from '@/shared/redis/redis.types'
+import { REDIS_CLIENT } from '@/shared/redis/redis.consts'
 import { AddOptions, GetAllOptions, GetOptions } from './signed-jwts.types'
 
 describe('SignedJwtsService', () => {

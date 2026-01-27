@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test } from 'vitest'
 import { AuthService } from '@/auth/auth.service'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from '@/users/users.service'
-import { MailService } from '@/mail/mail.service'
+import { MailService } from '@/shared/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
 import { JwtsService } from '@/jwts/jwts.service'
 import { createFakeJwts, createFakeOtp, createFakeUser } from '@/test/utils'
@@ -26,7 +26,7 @@ import {
   CreateOptions as OtpsServiceCreateOptions,
   VerifyOptions as OtpsServiceVerifyOptions,
 } from '@/otps/otps.types'
-import { SendOtpOptions as MailServiceSendOtpOptions } from '@/mail/mail.types'
+import { SendOtpOptions as MailServiceSendOtpOptions } from '@/shared/mail/mail.types'
 import {
   RotateOptions as JwtsServiceRotateOptions,
   SignOptions as JwtsServiceSignOptions,
@@ -52,8 +52,6 @@ describe('AuthService', () => {
     otpsService = module.get(OtpsService)
     jwtsService = module.get(JwtsService)
   })
-
-  afterEach(vi.useRealTimers)
 
   describe('signUp', () => {
     let data: SignUpOptions

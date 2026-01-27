@@ -1,25 +1,26 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@/redis/redis.utils'
+import { InjectRepository } from '@/shared/redis/redis.utils'
 import { otpSchema } from '@/otps/otps.schema'
 import { EntityId, Repository } from 'redis-om'
 import { CreateOptions, Otp, VerifyOptions } from '@/otps/otps.types'
 import { ConfigService } from '@nestjs/config'
-import getUuid from '@/shared/utils/getUuid'
-import { BcryptService } from '@/bcrypt/bcrypt.service'
-import { NanoidService } from '@/nanoid/nanoid.service'
+import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
+import { NanoidService } from '@/shared/nanoid/nanoid.service'
+import { UuidService } from '@/shared/uuid/uuid.service'
 
 @Injectable()
 export class OtpsService {
   constructor(
     @InjectRepository(otpSchema)
     private readonly repository: Repository<Otp>,
+    private readonly uuidService: UuidService,
     private readonly nanoidService: NanoidService,
     private readonly bcryptService: BcryptService,
     private readonly configService: ConfigService,
   ) {}
 
   async create({ type, userId }: CreateOptions) {
-    const id = getUuid()
+    const id = this.uuidService.generate()
     const code = this.nanoidService.customAlphabet()
     const codeHash = await this.bcryptService.hash({ value: code })
 
@@ -30,8 +31,10 @@ export class OtpsService {
       userId,
     })
 
-    const entityId = otp[EntityId]
-    const expiresAt = this.getExpiresAt()
+    const entityId: string = otp[EntityId]
+    const expiresIn = this.configService.get<number>('otp.expiresIn')!
+    const expiresAt = new Date((Date.now() + expiresIn) * 1000)
+
     await this.repository.expireAt(entityId, expiresAt)
 
     return { ...otp, code } as Otp
@@ -61,15 +64,9 @@ export class OtpsService {
       return false
     }
 
-    const entityId = otp[EntityId]
+    const entityId: string = otp[EntityId]
     await this.repository.remove(entityId)
 
     return true
-  }
-
-  private getExpiresAt() {
-    const seconds = this.configService.get<number>('otp.expiresIn')!
-
-    return new Date(Date.now() + seconds * 1000)
   }
 }

@@ -7,7 +7,7 @@ import { PassportModule } from '@nestjs/passport'
 import { AccessJwtStrategy } from '@/shared/strategies/passport/access-jwt.strategy'
 import { JwtsModule } from '@/jwts/jwts.module'
 import { RefreshJwtStrategy } from '@/shared/strategies/passport/refresh-jwt.strategy'
-import { MailModule } from '@/mail/mail.module'
+import { MailModule } from '@/shared/mail/mail.module'
 
 @Module({
   imports: [UsersModule, MailModule, OtpsModule, JwtsModule, PassportModule],

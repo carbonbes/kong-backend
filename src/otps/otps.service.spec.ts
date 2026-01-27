@@ -1,69 +1,74 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
-import { OtpsService } from './otps.service'
-import { Repository } from 'typeorm'
-import { Otp } from './otps.entity'
-import { getRepositoryToken } from '@nestjs/typeorm'
-import { CreateOtpOptions } from './otps.types'
-import { OtpType } from './otps.enum'
-import { User } from '../users/users.entity'
-import { UserGender } from '../users/users.enum'
+import { OtpsService } from '@/otps/otps.service'
+import { mock, MockProxy } from 'vitest-mock-extended'
+import { EntityId, Repository } from 'redis-om'
+import { Otp } from '@/otps/otps.types'
+import { getRepositoryToken } from '@/shared/redis/redis.utils'
+import { otpSchema } from '@/otps/otps.schema'
+import { NanoidService } from '@/shared/nanoid/nanoid.service'
+import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
+import { ConfigService } from '@nestjs/config'
+import { createFakeBcryptHash, createFakeOtp } from '@/test/utils'
+import { HashOptions as BcryptServiceHashOptions } from '@/shared/bcrypt/bcrypt.types'
+import { UuidService } from '@/shared/uuid/uuid.service'
 
 describe('OtpsService', () => {
-  let service: OtpsService
-  let repository: Pick<Repository<Otp>, 'save' | 'findOneBy' | 'delete'>
-
-  repository = {
-    save: vi.fn(),
-    findOneBy: vi.fn(),
-    delete: vi.fn(),
-  }
-
-  const user: User = {
-    id: 1,
-    email: 'test@test.com',
-    name: 'Test',
-    gender: UserGender.MALE,
-    isActive: false,
-    createdAt: new Date(),
-  }
+  let otpsService: OtpsService
+  let repository: MockProxy<Repository<Otp>>
+  let uuidService: MockProxy<UuidService>
+  let nanoidService: MockProxy<NanoidService>
+  let bcryptService: MockProxy<BcryptService>
+  let configService: MockProxy<ConfigService>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OtpsService,
         {
-          provide: getRepositoryToken(Otp),
-          useValue: repository,
+          provide: getRepositoryToken(otpSchema),
+          useValue: mock<Repository<Otp>>(),
         },
       ],
-    }).compile()
+    })
+      .useMocker(mock)
+      .compile()
 
-    service = module.get<OtpsService>(OtpsService)
-    repository = module.get<Repository<Otp>>(getRepositoryToken(Otp))
+    otpsService = module.get(OtpsService)
+    repository = module.get(getRepositoryToken(otpSchema))
+    uuidService = module.get(UuidService)
+    nanoidService = module.get(NanoidService)
+    bcryptService = module.get(BcryptService)
+    configService = module.get(ConfigService)
   })
 
-  test('create', async () => {
-    const createOptions: CreateOtpOptions = {
-      otp: '123456',
-      type: OtpType.SIGN_IN,
-      user,
-      expiresAt: new Date(Date.now() + 300 * 1000),
-    }
+  describe('create', () => {
+    test('should be create OTP', async () => {
+      const otp = createFakeOtp()
+      const id = otp.id
+      const code = otp.code
+      const codeHash = await createFakeBcryptHash({ value: code })
+      const type = otp.type
+      const userId = otp.userId
+      const entityId: string = otp[EntityId]
+      const expiresIn = 300
+      const expiresAt = new Date((Date.now() + expiresIn) * 1000)
 
-    const createdOtp: Otp = {
-      ...createOptions,
-      id: 1,
-      createdAt: new Date(),
-    }
+      uuidService.generate.mockReturnValue(otp.id)
+      nanoidService.customAlphabet.mockReturnValue(code)
+      bcryptService.hash.mockResolvedValue(codeHash)
+      repository.save.mockResolvedValue(otp)
+      configService.get.mockReturnValue(expiresIn)
 
-    const save = vi
-      .spyOn(repository, 'save')
-      .mockImplementation(async () => createdOtp)
+      const bcryptServiceHashOptions: BcryptServiceHashOptions = { value: code }
+      const repositorySaveOptions: Otp = { id, code: codeHash, type, userId }
 
-    const result = await service.create(createOptions)
-
-    expect(save).toHaveBeenCalledWith(createOptions)
-    expect(result).toEqual(createdOtp)
+      expect(await otpsService.create({ type, userId })).toEqual(otp)
+      expect(nanoidService.customAlphabet).toHaveBeenCalled()
+      expect(bcryptService.hash).toHaveBeenCalledWith(bcryptServiceHashOptions)
+      expect(repository.save).toHaveBeenCalledWith(repositorySaveOptions)
+      expect(configService.get).toHaveBeenCalled()
+      expect(repository.expireAt).toHaveBeenCalledWith(entityId, expiresAt)
+    })
   })
 })

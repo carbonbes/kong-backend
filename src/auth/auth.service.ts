@@ -17,7 +17,7 @@ import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
 import { JwtsService } from '@/jwts/jwts.service'
-import { MailService } from '@/mail/mail.service'
+import { MailService } from '@/shared/mail/mail.service'
 
 @Injectable()
 export class AuthService {

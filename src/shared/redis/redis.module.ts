@@ -1,9 +1,9 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common'
 import { Repository, Schema } from 'redis-om'
 import { getRepositoryToken } from './redis.utils'
-import { RedisCoreModule } from '@/redis/redis-core.module'
-import { RedisClient, RedisModuleOptions } from '@/redis/redis.types'
-import { REDIS_CLIENT } from '@/redis/redis.consts'
+import { RedisCoreModule } from '@/shared/redis/redis-core.module'
+import { RedisClient, RedisModuleOptions } from '@/shared/redis/redis.types'
+import { REDIS_CLIENT } from '@/shared/redis/redis.consts'
 
 @Module({})
 export class RedisModule {
