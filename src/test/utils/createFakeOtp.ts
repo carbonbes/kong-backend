@@ -1,7 +1,7 @@
 import { Otp } from '@/otps/otps.types'
 import { faker } from '@faker-js/faker/locale/ru'
 import { OtpType } from '@/otps/otps.enums'
-import { Uuid } from '@/shared/types'
+import { Uuid } from '@/shared/uuid/uuid.types'
 
 const otpType: OtpType[] = [OtpType.SIGN_IN, OtpType.SIGN_UP]
 

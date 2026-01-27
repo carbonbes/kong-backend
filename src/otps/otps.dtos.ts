@@ -1,7 +1,7 @@
 import { Otp } from '@/otps/otps.types'
 import { IsEnum, IsNumber, IsString, IsUUID, Length } from 'class-validator'
 import { OtpType } from '@/otps/otps.enums'
-import { Uuid } from '@/shared/types'
+import { Uuid } from '@/shared/uuid/uuid.types'
 
 export class BaseOtpDto implements Otp {
   @IsUUID()

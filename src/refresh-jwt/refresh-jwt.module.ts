@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { RefreshJwtService } from './refresh-jwt.service'
 import { JwtModule } from '@nestjs/jwt'
 import { ConfigService } from '@nestjs/config'
+import { UuidModule } from '@/shared/uuid/uuid.module'
 
 @Module({
   imports: [
@@ -16,6 +17,8 @@ import { ConfigService } from '@nestjs/config'
         },
       }),
     }),
+
+    UuidModule,
   ],
 
   providers: [RefreshJwtService],
