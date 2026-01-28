@@ -3,20 +3,26 @@ import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '@/shared/types'
 import { UsersService } from '@/users/users.service'
 import { JwtsService } from '@/jwts/jwts.service'
-import { CreateJwtStrategy } from '@/shared/strategies/passport/utils/createJwtStrategy'
+import { PassportStrategy } from '@nestjs/passport'
+import { ExtractJwt, Strategy } from 'passport-jwt'
 
 @Injectable()
-export class AccessJwtStrategy extends CreateJwtStrategy({
-  name: 'access-jwt-strategy',
-}) {
+export class AccessJwtStrategy extends PassportStrategy(
+  Strategy,
+  'access-jwt-strategy',
+) {
   constructor(
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly jwtsService: JwtsService,
   ) {
-    const secret = configService.get('jwt-sign-options.accessJwtSecret')
+    const secretOrKey = configService.get('jwt-sign-options.accessJwtSecret')
 
-    super(secret)
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey,
+    })
   }
 
   async validate({ jti, sub }: JwtPayload) {

@@ -33,7 +33,7 @@ export class OtpsService {
 
     const entityId: string = otp[EntityId]
     const expiresIn = this.configService.get<number>('otp.expiresIn')!
-    const expiresAt = new Date((Date.now() + expiresIn) * 1000)
+    const expiresAt = new Date(Date.now() + expiresIn * 1000)
 
     await this.repository.expireAt(entityId, expiresAt)
 

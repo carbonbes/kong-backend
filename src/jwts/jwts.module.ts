@@ -1,18 +1,11 @@
 import { Module } from '@nestjs/common'
 import { JwtsService } from './jwts.service'
-import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
-import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
-import { AccessJwtModule } from '@/access-jwt/access-jwt.module'
-import { RefreshJwtModule } from '@/refresh-jwt/refresh-jwt.module'
+import { JwtStorageModule } from '@/jwt-storage/jwt-storage.module'
+import { JwtModule } from '@nestjs/jwt'
+import { UuidModule } from '@/shared/uuid/uuid.module'
 
 @Module({
-  imports: [
-    AccessJwtModule,
-    RefreshJwtModule,
-    SignedJwtsModule,
-    RevokedJwtsModule,
-  ],
-
+  imports: [JwtModule, JwtStorageModule, UuidModule],
   providers: [JwtsService],
   exports: [JwtsService],
 })

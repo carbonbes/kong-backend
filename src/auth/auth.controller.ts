@@ -18,7 +18,8 @@ import { AuthService } from './auth.service'
 import { Request } from 'express'
 import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
 import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
-import { EncodedJwt, Jwts } from '@/shared/types'
+import { EncodedJwt } from '@/shared/types'
+import { Jwts } from '@/jwts/jwts.types'
 
 @Controller('auth')
 export class AuthController {
