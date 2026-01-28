@@ -14,7 +14,7 @@ export class RefreshJwtStrategy extends PassportStrategy(
     private readonly configService: ConfigService,
     private readonly jwtsService: JwtsService,
   ) {
-    const secretOrKey = configService.get('jwt-sign-options.refreshJwtSecret')
+    const secretOrKey = configService.get('jwt-sign-options.refreshJwtSecret')!
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

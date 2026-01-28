@@ -16,7 +16,7 @@ export class AccessJwtStrategy extends PassportStrategy(
     private readonly usersService: UsersService,
     private readonly jwtsService: JwtsService,
   ) {
-    const secretOrKey = configService.get('jwt-sign-options.accessJwtSecret')
+    const secretOrKey = configService.get('jwt-sign-options.accessJwtSecret')!
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
