@@ -20,6 +20,7 @@ describe('OtpsService', () => {
   let nanoidService: MockProxy<NanoidService>
   let bcryptService: MockProxy<BcryptService>
   let configService: MockProxy<ConfigService>
+  let otp: Otp
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -40,21 +41,20 @@ describe('OtpsService', () => {
     nanoidService = module.get(NanoidService)
     bcryptService = module.get(BcryptService)
     configService = module.get(ConfigService)
+    otp = createFakeOtp()
   })
 
   describe('create', () => {
     test('should be create OTP', async () => {
-      const otp = createFakeOtp()
-      const id = otp.id
-      const code = otp.code
+      vi.useFakeTimers()
+
+      const { id, code, type, userId } = otp
       const codeHash = await createFakeBcryptHash({ value: code })
-      const type = otp.type
-      const userId = otp.userId
       const entityId: string = otp[EntityId]
       const expiresIn = 300
-      const expiresAt = new Date((Date.now() + expiresIn) * 1000)
+      const expiresAt = new Date(Date.now() + expiresIn * 1000)
 
-      uuidService.generate.mockReturnValue(otp.id)
+      uuidService.generate.mockReturnValue(id)
       nanoidService.customAlphabet.mockReturnValue(code)
       bcryptService.hash.mockResolvedValue(codeHash)
       repository.save.mockResolvedValue(otp)
@@ -63,12 +63,22 @@ describe('OtpsService', () => {
       const bcryptServiceHashOptions: BcryptServiceHashOptions = { value: code }
       const repositorySaveOptions: Otp = { id, code: codeHash, type, userId }
 
-      expect(await otpsService.create({ type, userId })).toEqual(otp)
+      const result = await otpsService.create({ type, userId })
+
+      expect(result).toEqual(otp)
       expect(nanoidService.customAlphabet).toHaveBeenCalled()
       expect(bcryptService.hash).toHaveBeenCalledWith(bcryptServiceHashOptions)
       expect(repository.save).toHaveBeenCalledWith(repositorySaveOptions)
-      expect(configService.get).toHaveBeenCalled()
+      expect(configService.get).toHaveBeenCalledWith('otp.expiresIn')
       expect(repository.expireAt).toHaveBeenCalledWith(entityId, expiresAt)
+
+      vi.useRealTimers()
+    })
+  })
+
+  describe('verify', () => {
+    test('should be verify OTP', async () => {
+      const { id, code, type, userId } = otp
     })
   })
 })
