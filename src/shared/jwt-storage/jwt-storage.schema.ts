@@ -1,5 +1,5 @@
 import { Schema } from 'redis-om'
-import { StoragedJwtSchema } from '@/jwt-storage/jwt-storage.types'
+import { StoragedJwtSchema } from '@/shared/jwt-storage/jwt-storage.types'
 
 export const jwtStorageSchema = new Schema<StoragedJwtSchema>(
   'jwt-storage',

@@ -5,36 +5,35 @@ import {
   IsRevokedOptions,
   RevokeOptions,
   RotateOptions,
-  SignJwtOptions,
   SignOptions,
 } from './jwts.types'
-import { EncodedJwt, JwtPayload } from '@/shared/types'
+import { JwtPayload } from '@/shared/types'
 import getDecodedJwt from '@/shared/utils/getDecodedJwt'
-import { JwtStorageService } from '@/jwt-storage/jwt-storage.service'
-import { JwtService, JwtSignOptions } from '@nestjs/jwt'
-import { ConfigService } from '@nestjs/config'
-import { UuidService } from '@/shared/uuid/uuid.service'
+import { AccessJwtService } from '@/access-jwt/access-jwt.service'
+import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
+import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
+import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 
 @Injectable()
 export class JwtsService {
   constructor(
-    private readonly configService: ConfigService,
-    private readonly jwtService: JwtService,
-    private readonly jwtStorageService: JwtStorageService,
-    private readonly uuidService: UuidService,
+    private readonly accessJwtService: AccessJwtService,
+    private readonly refreshJwtService: RefreshJwtService,
+    private readonly signedJwtsService: SignedJwtsService,
+    private readonly revokedJwtsService: RevokedJwtsService,
   ) {}
 
   async sign({ sub }: SignOptions): Promise<Jwts> {
     const jwts: Jwts = {
-      access_token: this.signJwt({ sub, type: 'access_token' }),
-      refresh_token: this.signJwt({ sub, type: 'refresh_token' }),
+      access_token: this.accessJwtService.sign({ sub }),
+      refresh_token: this.refreshJwtService.sign({ sub }),
     }
 
     await Promise.all([
       Object.values(jwts).map(async (jwt) => {
         const { jti, sub, exp } = this.decode({ jwt })
 
-        await this.jwtStorageService.add({ jti, sub, typ: 'signed', exp })
+        await this.signedJwtsService.add({ jti, sub, exp })
       }),
     ])
 
@@ -44,11 +43,11 @@ export class JwtsService {
   revoke({ jwt }: RevokeOptions) {
     const { jti, sub, exp } = this.decode({ jwt })
 
-    return this.jwtStorageService.add({ jti, sub, typ: 'revoked', exp })
+    return this.revokedJwtsService.add({ jti, sub, exp })
   }
 
   isRevoked({ jti }: IsRevokedOptions) {
-    return this.jwtStorageService.has({ jti })
+    return this.revokedJwtsService.has({ jti })
   }
 
   async rotate(jwts: RotateOptions) {
@@ -68,25 +67,5 @@ export class JwtsService {
 
   decode({ jwt }: DecodeOptions): JwtPayload {
     return getDecodedJwt(jwt)
-  }
-
-  private signJwt({ sub, type }: SignJwtOptions): EncodedJwt {
-    const secret =
-      type === 'access_token'
-        ? this.configService.get('jwt-sign-options.accessJwtSecret')!
-        : this.configService.get('jwt-sign-options.refreshJwtSecret')!
-
-    const expiresIn = Number(
-      type === 'access_token'
-        ? this.configService.get('jwt-sign-options.accessJwtExpiresIn')
-        : this.configService.get('jwt-sign-options.refreshJwtExpiresIn'),
-    )
-
-    const jti = this.uuidService.generate()
-
-    const payload: Pick<JwtPayload, 'jti' | 'sub'> = { jti, sub }
-    const options: JwtSignOptions = { secret, expiresIn }
-
-    return this.jwtService.sign(payload, options) as EncodedJwt
   }
 }
