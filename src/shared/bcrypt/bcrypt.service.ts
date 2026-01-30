@@ -1,16 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import {
   BcryptModuleOptions,
   CompareOptions,
   HashOptions,
 } from './bcrypt.types'
 import * as bcrypt from 'bcrypt'
-import { BCRYPT_MODULE_OPTIONS } from '@/shared/bcrypt/bcrypt.consts'
+import { InjectBcryptModuleOptions } from '@/shared/bcrypt/bcrypt.utils'
 
 @Injectable()
 export class BcryptService {
   constructor(
-    @Inject(BCRYPT_MODULE_OPTIONS)
+    @InjectBcryptModuleOptions()
     private readonly options: BcryptModuleOptions,
   ) {}
 

@@ -6,7 +6,7 @@ import { OtpType } from '@/otps/otps.enums'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
 import { getMockReq } from 'vitest-mock-express'
-import { createFakeJwts, createFakeOtp, createFakeUser } from '@/test/utils'
+import { createFakeJwts, getFakeOtp, getFakeUser } from '@/test/utils'
 import {
   AccessTokenDto,
   RefreshTokenDto,
@@ -35,13 +35,13 @@ describe('AuthController', () => {
     let body: SignUpDto
 
     beforeEach(() => {
-      const { email, name, gender } = createFakeUser()
+      const { email, name, gender } = getFakeUser()
       body = { email, name, gender }
     })
 
     test('should be return the otp ID and user ID', async () => {
-      const user = createFakeUser({ ...body })
-      const otp = createFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
+      const user = getFakeUser({ ...body })
+      const otp = getFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
 
       const result: LoginReturn = {
         otpId: otp.id,
@@ -68,13 +68,13 @@ describe('AuthController', () => {
     let body: SignInDto
 
     beforeEach(() => {
-      const { email } = createFakeUser()
+      const { email } = getFakeUser()
       body = { email }
     })
 
     test('should be return the otp ID and user ID', async () => {
-      const user = createFakeUser({ ...body })
-      const otp = createFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
+      const user = getFakeUser({ ...body })
+      const otp = getFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
 
       const result: LoginReturn = {
         otpId: otp.id,
@@ -110,7 +110,7 @@ describe('AuthController', () => {
     let body: VerifyOtpDto
 
     beforeEach(() => {
-      body = createFakeOtp()
+      body = getFakeOtp()
     })
 
     test('should be return JWT pair', async () => {
@@ -134,7 +134,7 @@ describe('AuthController', () => {
 
   describe('me', () => {
     test('should be return a user', async () => {
-      const user = createFakeUser()
+      const user = getFakeUser()
       const req = getMockReq({ user })
 
       expect(await authController.me(req)).toEqual(user)

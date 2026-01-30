@@ -9,9 +9,13 @@ import { otpSchema } from '@/otps/otps.schema'
 import { NanoidService } from '@/shared/nanoid/nanoid.service'
 import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
 import { ConfigService } from '@nestjs/config'
-import { createFakeBcryptHash, createFakeOtp } from '@/test/utils'
-import { HashOptions as BcryptServiceHashOptions } from '@/shared/bcrypt/bcrypt.types'
+import { getFakeBcryptHash, getFakeOtp } from '@/test/utils'
+import {
+  HashOptions as BcryptServiceHashOptions,
+  CompareOptions as BcryptServiceCompareOptions,
+} from '@/shared/bcrypt/bcrypt.types'
 import { UuidService } from '@/shared/uuid/uuid.service'
+import { createMockRedisSearch } from '@/test/mocks'
 
 describe('OtpsService', () => {
   let otpsService: OtpsService
@@ -41,7 +45,9 @@ describe('OtpsService', () => {
     nanoidService = module.get(NanoidService)
     bcryptService = module.get(BcryptService)
     configService = module.get(ConfigService)
-    otp = createFakeOtp()
+    otp = getFakeOtp()
+
+    vi.clearAllMocks()
   })
 
   describe('create', () => {
@@ -49,7 +55,7 @@ describe('OtpsService', () => {
       vi.useFakeTimers()
 
       const { id, code, type, userId } = otp
-      const codeHash = await createFakeBcryptHash({ value: code })
+      const codeHash = await getFakeBcryptHash({ value: code })
       const entityId: string = otp[EntityId]
       const expiresIn = 300
       const expiresAt = new Date(Date.now() + expiresIn * 1000)
@@ -77,8 +83,77 @@ describe('OtpsService', () => {
   })
 
   describe('verify', () => {
-    test('should be verify OTP', async () => {
+    test('should be verify OTP and return true', async () => {
       const { id, code, type, userId } = otp
+      const codeHash = await getFakeBcryptHash({ value: code })
+      const entityId: string = otp[EntityId]
+      const storedOtp: Otp = { ...otp, code: codeHash }
+
+      const searchBuilder = createMockRedisSearch<Otp>({
+        returnFirstValue: storedOtp,
+      })
+      repository.search.mockReturnValue(searchBuilder)
+      bcryptService.compare.mockResolvedValue(true)
+
+      const result = await otpsService.verify({ id, code, type, userId })
+
+      const bcryptServiceCompareOptions: BcryptServiceCompareOptions = {
+        value: code,
+        encoded: codeHash,
+      }
+
+      expect(result).toBe(true)
+      expect(repository.search).toHaveBeenCalled()
+      expect(searchBuilder.where).toHaveBeenCalledWith('id')
+      expect(searchBuilder.eq).toHaveBeenCalledWith(id)
+      expect(searchBuilder.and).toHaveBeenCalledWith('type')
+      expect(searchBuilder.eq).toHaveBeenCalledWith(type)
+      expect(searchBuilder.and).toHaveBeenCalledWith('userId')
+      expect(searchBuilder.eq).toHaveBeenCalledWith(userId)
+      expect(bcryptService.compare).toHaveBeenCalledWith(
+        bcryptServiceCompareOptions,
+      )
+      expect(repository.remove).toHaveBeenCalledWith(entityId)
+    })
+
+    test('should be return false when OTP not found', async () => {
+      const { id, code, type, userId } = otp
+
+      const searchBuilder = createMockRedisSearch<Otp>({
+        returnFirstValue: null,
+      })
+      repository.search.mockReturnValue(searchBuilder)
+
+      const result = await otpsService.verify({ id, code, type, userId })
+
+      expect(result).toBe(false)
+      expect(bcryptService.compare).not.toHaveBeenCalled()
+      expect(repository.remove).not.toHaveBeenCalled()
+    })
+
+    test('should be return false when code does not match', async () => {
+      const { id, code, type, userId } = otp
+      const codeHash = await getFakeBcryptHash({ value: code })
+      const storedOtp: Otp = { ...otp, code: codeHash }
+
+      const searchBuilder = createMockRedisSearch<Otp>({
+        returnFirstValue: storedOtp,
+      })
+      repository.search.mockReturnValue(searchBuilder)
+      bcryptService.compare.mockResolvedValue(false)
+
+      const result = await otpsService.verify({ id, code, type, userId })
+
+      const bcryptServiceCompareOptions: BcryptServiceCompareOptions = {
+        value: code,
+        encoded: codeHash,
+      }
+
+      expect(result).toBe(false)
+      expect(bcryptService.compare).toHaveBeenCalledWith(
+        bcryptServiceCompareOptions,
+      )
+      expect(repository.remove).not.toHaveBeenCalled()
     })
   })
 })

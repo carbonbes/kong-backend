@@ -9,7 +9,7 @@ import {
   SetActiveOptions,
   UpdateOptions,
 } from '@/users/users.types'
-import { createFakeUser } from '@/test/utils'
+import { getFakeUser } from '@/test/utils'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
 import { getPrismaEntityToken } from '@/prisma/prisma.utils'
 
@@ -32,10 +32,10 @@ describe('UsersService', () => {
 
   describe('create', () => {
     test('should be create a user', async () => {
-      const { email, name, gender } = createFakeUser()
+      const { email, name, gender } = getFakeUser()
       const data: CreateOptions = { email, name, gender }
 
-      const user = createFakeUser()
+      const user = getFakeUser()
 
       usersRepository.create.mockResolvedValue(user)
 
@@ -46,10 +46,10 @@ describe('UsersService', () => {
 
   describe('findOne', () => {
     test('should be find a one user', async () => {
-      const { email } = createFakeUser()
+      const { email } = getFakeUser()
       const data: FindOneOptions = { where: { email } }
 
-      const user = createFakeUser()
+      const user = getFakeUser()
 
       usersRepository.findUnique.mockResolvedValue(user)
 
@@ -58,7 +58,7 @@ describe('UsersService', () => {
     })
 
     test('should be return a null', async () => {
-      const { email } = createFakeUser()
+      const { email } = getFakeUser()
       const data: FindOneOptions = { where: { email } }
 
       usersRepository.findUnique.mockResolvedValue(null)
@@ -70,10 +70,10 @@ describe('UsersService', () => {
 
   describe('update', () => {
     test('should be update a user', async () => {
-      const { email, name } = createFakeUser()
+      const { email, name } = getFakeUser()
       const data: UpdateOptions = { where: { email }, data: { name } }
 
-      const user = createFakeUser()
+      const user = getFakeUser()
 
       usersRepository.update.mockResolvedValue(user)
 
@@ -84,10 +84,10 @@ describe('UsersService', () => {
 
   describe('isExist', () => {
     test('should be return a true', async () => {
-      const { email } = createFakeUser()
+      const { email } = getFakeUser()
       const data: IsExistOptions = { where: { email } }
 
-      const user = createFakeUser()
+      const user = getFakeUser()
 
       usersRepository.findUnique.mockResolvedValue(user)
 
@@ -96,7 +96,7 @@ describe('UsersService', () => {
     })
 
     test('should be return false', async () => {
-      const { email } = createFakeUser()
+      const { email } = getFakeUser()
       const data: IsExistOptions = { where: { email } }
 
       usersRepository.findUnique.mockResolvedValue(null)
@@ -108,10 +108,10 @@ describe('UsersService', () => {
 
   describe('setActive', () => {
     test('should be activate user', async () => {
-      const { email } = createFakeUser()
+      const { email } = getFakeUser()
       const data: SetActiveOptions = { where: { email }, value: true }
 
-      const user = createFakeUser()
+      const user = getFakeUser()
 
       usersRepository.update.mockResolvedValue(user)
 

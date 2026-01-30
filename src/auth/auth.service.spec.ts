@@ -5,7 +5,7 @@ import { UsersService } from '@/users/users.service'
 import { MailService } from '@/shared/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
 import { JwtsService } from '@/jwts/jwts.service'
-import { createFakeJwts, createFakeOtp, createFakeUser } from '@/test/utils'
+import { createFakeJwts, getFakeOtp, getFakeUser } from '@/test/utils'
 import { OtpType } from '@/otps/otps.enums'
 import {
   LoginReturn,
@@ -57,13 +57,13 @@ describe('AuthService', () => {
     let data: SignUpOptions
 
     beforeEach(() => {
-      const { email, name, gender } = createFakeUser()
+      const { email, name, gender } = getFakeUser()
       data = { email, name, gender }
     })
 
     test('should be return a user ID and otp ID if a user with that email not exist', async () => {
-      const user = createFakeUser({ ...data })
-      const otp = createFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
+      const user = getFakeUser({ ...data })
+      const otp = getFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
 
       usersService.isExist.mockResolvedValue(false)
       usersService.create.mockResolvedValue(user)
@@ -99,7 +99,7 @@ describe('AuthService', () => {
     })
 
     test('should be return null if a user with that email exists', async () => {
-      const user = createFakeUser({ ...data })
+      const user = getFakeUser({ ...data })
 
       usersService.isExist.mockResolvedValue(true)
 
@@ -117,13 +117,13 @@ describe('AuthService', () => {
     let data: SignInOptions
 
     beforeEach(() => {
-      const { email } = createFakeUser()
+      const { email } = getFakeUser()
       data = { email }
     })
 
     test('should be return a user ID and otp ID if a user with that email has exist and user is active', async () => {
-      const user = createFakeUser({ ...data, isActive: true })
-      const otp = createFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
+      const user = getFakeUser({ ...data, isActive: true })
+      const otp = getFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
 
       usersService.findOne.mockResolvedValue(user)
       otpsService.create.mockResolvedValue(otp)
@@ -154,7 +154,7 @@ describe('AuthService', () => {
     })
 
     test('should be return a null if a user with that email does not exist', async () => {
-      const user = createFakeUser({ ...data })
+      const user = getFakeUser({ ...data })
       const result: LoginReturn = null
       const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
         where: { email: user.email },
@@ -169,7 +169,7 @@ describe('AuthService', () => {
     })
 
     test('should be return a 403 if a user with that email does not active', async () => {
-      const user = createFakeUser({ ...data, isActive: false })
+      const user = getFakeUser({ ...data, isActive: false })
       const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
         where: { email: user.email },
       }
@@ -190,12 +190,12 @@ describe('AuthService', () => {
     let body: VerifyOtpOptions
 
     beforeEach(() => {
-      user = createFakeUser()
-      body = createFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
+      user = getFakeUser()
+      body = getFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
     })
 
     test('should be set a pair of cookies with JWT if such an OTP exists', async () => {
-      const otp = createFakeOtp({ ...body })
+      const otp = getFakeOtp({ ...body })
       const jwts = createFakeJwts()
 
       otpsService.verify.mockResolvedValue(true)

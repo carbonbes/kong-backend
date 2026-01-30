@@ -5,7 +5,7 @@ type CreateFakeBcryptHashOptions = {
   rounds?: number
 }
 
-export const createFakeBcryptHash = ({
+export const getFakeBcryptHash = ({
   value,
   rounds = 10,
 }: CreateFakeBcryptHashOptions) => {

@@ -4,13 +4,13 @@ import { Uuid } from '@/shared/uuid/uuid.types'
 import { faker } from '@faker-js/faker/locale/ru'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 
-type FakeJwtType = 'access_token' | 'refresh_token'
 type FakeJwtHeader = JwtHeader
 type FakeJwtPayload = JwtPayload
+type FakeJwtType = 'access_token' | 'refresh_token'
 
 type CreateFakeJwtOptions = {
-  header?: FakeJwtHeader
-  payload?: FakeJwtPayload
+  header?: Partial<FakeJwtHeader>
+  payload?: Partial<FakeJwtPayload>
   type?: FakeJwtType
 }
 
@@ -19,9 +19,7 @@ type CreateFakeJwtsOptions = {
   refreshJwtOptions?: Omit<CreateFakeJwtOptions, 'type'>
 }
 
-export const createFakeJwt = (
-  options: CreateFakeJwtOptions = {},
-): EncodedJwt => {
+export const getFakeJwt = (options: CreateFakeJwtOptions = {}): EncodedJwt => {
   const accessJwtExp = Number(process.env.ACCESS_JWT_EXPIRES_IN)
   const refreshJwtExp = Number(process.env.REFRESH_JWT_EXPIRES_IN)
   const jwtType = options.type ?? 'access_token'
@@ -49,11 +47,11 @@ export const createFakeJwts = (options: CreateFakeJwtsOptions = {}): Jwts => {
   const { accessJwtOptions, refreshJwtOptions } = options
 
   return {
-    [ACCESS_TOKEN_NAME]: createFakeJwt({
+    [ACCESS_TOKEN_NAME]: getFakeJwt({
       type: ACCESS_TOKEN_NAME,
       ...accessJwtOptions,
     }),
-    [REFRESH_TOKEN_NAME]: createFakeJwt({
+    [REFRESH_TOKEN_NAME]: getFakeJwt({
       type: REFRESH_TOKEN_NAME,
       ...refreshJwtOptions,
     }),

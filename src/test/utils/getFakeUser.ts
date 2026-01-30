@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker/locale/ru'
 
 const genders: UserGender[] = ['MALE', 'FEMALE', 'NON_BINARY', 'OTHER']
 
-export const createFakeUser = ({
+export const getFakeUser = ({
   name,
   id,
   email,

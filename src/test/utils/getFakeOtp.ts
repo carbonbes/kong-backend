@@ -5,7 +5,7 @@ import { Uuid } from '@/shared/uuid/uuid.types'
 
 const otpType: OtpType[] = [OtpType.SIGN_IN, OtpType.SIGN_UP]
 
-export const createFakeOtp = ({
+export const getFakeOtp = ({
   id,
   code,
   type,

@@ -1,10 +1,10 @@
 import { JwtService } from '@nestjs/jwt'
 import { UuidService } from '@/shared/uuid/uuid.service'
 import { Injectable } from '@nestjs/common'
-import { CredentialJwtService } from '@/shared/credential-jwt/credential-jwt.service'
+import { AuthJwtService } from '@/shared/auth-jwt/auth-jwt.service'
 
 @Injectable()
-export class AccessJwtService extends CredentialJwtService {
+export class AccessJwtService extends AuthJwtService {
   constructor(jwtService: JwtService, uuidService: UuidService) {
     super(jwtService, uuidService)
   }
