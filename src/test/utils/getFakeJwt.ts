@@ -8,18 +8,18 @@ type FakeJwtHeader = JwtHeader
 type FakeJwtPayload = JwtPayload
 type FakeJwtType = 'access_token' | 'refresh_token'
 
-type CreateFakeJwtOptions = {
+type GetFakeJwtOptions = {
   header?: Partial<FakeJwtHeader>
   payload?: Partial<FakeJwtPayload>
   type?: FakeJwtType
 }
 
-type CreateFakeJwtsOptions = {
-  accessJwtOptions?: Omit<CreateFakeJwtOptions, 'type'>
-  refreshJwtOptions?: Omit<CreateFakeJwtOptions, 'type'>
+type GetFakeJwtsOptions = {
+  accessJwtOptions?: Omit<GetFakeJwtOptions, 'type'>
+  refreshJwtOptions?: Omit<GetFakeJwtOptions, 'type'>
 }
 
-export const getFakeJwt = (options: CreateFakeJwtOptions = {}): EncodedJwt => {
+export const getFakeJwt = (options: GetFakeJwtOptions = {}): EncodedJwt => {
   const accessJwtExp = Number(process.env.ACCESS_JWT_EXPIRES_IN)
   const refreshJwtExp = Number(process.env.REFRESH_JWT_EXPIRES_IN)
   const jwtType = options.type ?? 'access_token'
@@ -43,7 +43,7 @@ export const getFakeJwt = (options: CreateFakeJwtOptions = {}): EncodedJwt => {
   return faker.internet.jwt({ header, payload }) as EncodedJwt
 }
 
-export const createFakeJwts = (options: CreateFakeJwtsOptions = {}): Jwts => {
+export const getFakeJwts = (options: GetFakeJwtsOptions = {}): Jwts => {
   const { accessJwtOptions, refreshJwtOptions } = options
 
   return {

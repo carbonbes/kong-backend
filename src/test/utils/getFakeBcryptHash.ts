@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt'
 
-type CreateFakeBcryptHashOptions = {
+type GetFakeBcryptHashOptions = {
   value: string
   rounds?: number
 }
@@ -8,6 +8,6 @@ type CreateFakeBcryptHashOptions = {
 export const getFakeBcryptHash = ({
   value,
   rounds = 10,
-}: CreateFakeBcryptHashOptions) => {
+}: GetFakeBcryptHashOptions) => {
   return bcrypt.hash(value, rounds)
 }

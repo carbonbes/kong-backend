@@ -11,6 +11,8 @@ import mailer from '@/shared/config/mailer'
 import otp from '@/shared/config/otp'
 import redis from '@/shared/config/redis'
 import { validate } from '@/shared/config/validate'
+import { APP_GUARD } from '@nestjs/core'
+import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
 
 @Module({
   imports: [
@@ -33,6 +35,6 @@ import { validate } from '@/shared/config/validate'
   ],
 
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: AccessJwtAuthGuard }],
 })
 export class AppModule {}

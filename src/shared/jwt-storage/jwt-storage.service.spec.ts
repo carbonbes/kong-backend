@@ -8,7 +8,7 @@ import { getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@/shared/redis/redis.utils'
 import { createSchema } from '@/shared/jwt-storage/jwt-storage.utils'
-import getDecodedJwt from '@/shared/utils/getDecodedJwt'
+import { getDecodedJwt } from '@/shared/utils'
 
 class JwtStorageService extends AbstractJwtStorageService {
   constructor(repository: Repository<StoragedJwt>) {

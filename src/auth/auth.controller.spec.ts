@@ -6,7 +6,7 @@ import { OtpType } from '@/otps/otps.enums'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
 import { getMockReq } from 'vitest-mock-express'
-import { createFakeJwts, getFakeOtp, getFakeUser } from '@/test/utils'
+import { getFakeJwts, getFakeOtp, getFakeUser } from '@/test/utils'
 import {
   AccessTokenDto,
   RefreshTokenDto,
@@ -114,7 +114,7 @@ describe('AuthController', () => {
     })
 
     test('should be return JWT pair', async () => {
-      const jwts = createFakeJwts()
+      const jwts = getFakeJwts()
 
       authService.verifyOtp.mockResolvedValue(jwts)
 
@@ -143,8 +143,8 @@ describe('AuthController', () => {
 
   describe('update', () => {
     test('should be return new JWT pair', async () => {
-      const oldJwts = createFakeJwts()
-      const newJwts = createFakeJwts()
+      const oldJwts = getFakeJwts()
+      const newJwts = getFakeJwts()
       const body: AccessTokenDto = { access_token: oldJwts.access_token }
       const refresh_token = oldJwts.refresh_token
 
@@ -162,7 +162,7 @@ describe('AuthController', () => {
 
   describe('logout', () => {
     test('should be return undefined', async () => {
-      const jwts = createFakeJwts()
+      const jwts = getFakeJwts()
       const body: RefreshTokenDto = { refresh_token: jwts.refresh_token }
       const access_token = jwts.access_token
 

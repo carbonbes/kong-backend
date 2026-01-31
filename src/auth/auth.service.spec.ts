@@ -5,7 +5,7 @@ import { UsersService } from '@/users/users.service'
 import { MailService } from '@/shared/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
 import { JwtsService } from '@/jwts/jwts.service'
-import { createFakeJwts, getFakeOtp, getFakeUser } from '@/test/utils'
+import { getFakeJwts, getFakeOtp, getFakeUser } from '@/test/utils'
 import { OtpType } from '@/otps/otps.enums'
 import {
   LoginReturn,
@@ -196,7 +196,7 @@ describe('AuthService', () => {
 
     test('should be set a pair of cookies with JWT if such an OTP exists', async () => {
       const otp = getFakeOtp({ ...body })
-      const jwts = createFakeJwts()
+      const jwts = getFakeJwts()
 
       otpsService.verify.mockResolvedValue(true)
       usersService.setActive.mockResolvedValue(user)
@@ -229,8 +229,8 @@ describe('AuthService', () => {
 
   describe('rotate', () => {
     test('should be set a pair of cookies with JWT', async () => {
-      const oldJwts = createFakeJwts()
-      const newJwts = createFakeJwts()
+      const oldJwts = getFakeJwts()
+      const newJwts = getFakeJwts()
 
       jwtsService.rotate.mockResolvedValue(newJwts)
 
@@ -243,7 +243,7 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     test('should be remove a pair of cookies with JWT', async () => {
-      const jwts = createFakeJwts()
+      const jwts = getFakeJwts()
 
       expect(await authService.logout(jwts)).toBeUndefined()
     })

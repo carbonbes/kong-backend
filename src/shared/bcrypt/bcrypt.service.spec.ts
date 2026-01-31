@@ -29,6 +29,7 @@ describe('BcryptService', () => {
     test('should be hash a value', async () => {
       const hashOptions: HashOptions = { value: 'password' }
       const expectedHash = 'mocked-hash-value'
+
       vi.mocked(bcrypt.hash).mockImplementation(() => expectedHash)
 
       const result = await bcryptService.hash(hashOptions)
@@ -45,6 +46,7 @@ describe('BcryptService', () => {
     test('should be return true when values match', async () => {
       const value = 'password123'
       const encoded = 'hashedPassword123'
+
       vi.mocked(bcrypt.compare).mockImplementation(() => true)
 
       const result = await bcryptService.compare({ value, encoded })
@@ -56,6 +58,7 @@ describe('BcryptService', () => {
     test('should be return false when values do not match', async () => {
       const value = 'wrongPassword'
       const encoded = 'hashedPassword123'
+
       vi.mocked(bcrypt.compare).mockImplementation(() => false)
 
       const result = await bcryptService.compare({ value, encoded })

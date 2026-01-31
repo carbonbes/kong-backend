@@ -4,8 +4,8 @@ import {
   Get,
   Post,
   Req,
-  UseGuards,
   Headers,
+  UseGuards,
 } from '@nestjs/common'
 import {
   AccessTokenDto,
@@ -16,36 +16,39 @@ import {
 } from './auth.dtos'
 import { AuthService } from './auth.service'
 import { Request } from 'express'
-import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
-import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
 import { EncodedJwt } from '@/shared/types'
 import { Jwts } from '@/jwts/jwts.types'
+import { Public } from '@/shared/decorators/public.decorator'
+import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('signup')
   signUp(@Body() body: SignUpDto) {
     return this.authService.signUp(body)
   }
 
+  @Public()
   @Post('signin')
   signIn(@Body() body: SignInDto) {
     return this.authService.signIn(body)
   }
 
+  @Public()
   @Post('verify-otp')
   verifyOtp(@Body() body: VerifyOtpDto) {
     return this.authService.verifyOtp(body)
   }
 
-  @UseGuards(AccessJwtAuthGuard)
   @Get('me')
   async me(@Req() req: Request) {
     return req.user
   }
 
+  @Public()
   @UseGuards(RefreshJwtAuthGuard)
   @Post('update')
   update(
@@ -60,7 +63,6 @@ export class AuthController {
     return this.authService.rotate(jwts)
   }
 
-  @UseGuards(AccessJwtAuthGuard)
   @Post('logout')
   logout(
     @Headers('Authorization') access_token: EncodedJwt,

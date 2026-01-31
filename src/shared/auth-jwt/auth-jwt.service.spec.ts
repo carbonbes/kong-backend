@@ -6,7 +6,7 @@ import { AuthJwtService as AbstractAuthJwtService } from '@/shared/auth-jwt/auth
 import { SignOptions } from '@/shared/auth-jwt/auth-jwt.types'
 import { getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import getDecodedJwt from '@/shared/utils/getDecodedJwt'
+import { getDecodedJwt } from '@/shared/utils'
 
 class AuthJwtService extends AbstractAuthJwtService {
   constructor(jwtService: JwtService, uuidService: UuidService) {
@@ -36,12 +36,13 @@ describe('AuthJwtService', () => {
     authJwtService = module.get(AuthJwtService)
     jwtService = module.get(JwtService)
     uuidService = module.get(UuidService)
-
-    vi.clearAllMocks()
   })
 
   describe('sign', () => {
-    test('should be sign JWT with jti and sub', () => {
+    test('should be sign JWT', () => {
+      vi.useFakeTimers()
+      const currentDate = Date.now() / 1000
+
       const { sub }: SignOptions = { sub: getFakeInt() }
 
       const jti = getFakeUuid()
@@ -57,9 +58,11 @@ describe('AuthJwtService', () => {
       expect(decodedJwt.jti).toBe(jti)
       expect(decodedJwt.sub).toBe(sub)
       expect(decodedJwt.exp).toBeDefined()
-      expect(decodedJwt.iat).toBeDefined()
+      expect(decodedJwt.iat).toBe(currentDate)
       expect(uuidService.generate).toHaveBeenCalled()
       expect(jwtService.sign).toHaveBeenCalledWith({ jti, sub })
+
+      vi.useRealTimers()
     })
   })
 })

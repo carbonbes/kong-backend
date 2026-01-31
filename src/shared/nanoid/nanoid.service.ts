@@ -1,12 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { customAlphabet } from 'nanoid'
-import { NANOID_MODULE_OPTIONS } from '@/shared/nanoid/nanoid.consts'
 import { NanoidModuleOptions } from '@/shared/nanoid/nanoid.types'
+import { InjectNanoidModuleOptions } from '@/shared/nanoid/nanoid.utils'
 
 @Injectable()
 export class NanoidService {
   constructor(
-    @Inject(NANOID_MODULE_OPTIONS)
+    @InjectNanoidModuleOptions()
     private readonly options: NanoidModuleOptions,
   ) {}
 

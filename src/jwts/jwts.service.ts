@@ -8,7 +8,7 @@ import {
   SignOptions,
 } from './jwts.types'
 import { JwtPayload } from '@/shared/types'
-import getDecodedJwt from '@/shared/utils/getDecodedJwt'
+import { getDecodedJwt } from '@/shared/utils'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
