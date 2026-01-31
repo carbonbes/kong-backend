@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { ModuleRef } from '@nestjs/core'
 import { prismaTransactional } from '@transactional/prisma'
-import { PrismaClient } from '@/prisma/prisma.types'
+import { PrismaClient, PrismaModuleOptions } from '@/prisma/prisma.types'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PRISMA_CLIENT } from '@/prisma/prisma.consts'
 
@@ -16,14 +16,16 @@ import { PRISMA_CLIENT } from '@/prisma/prisma.consts'
 export class PrismaCoreModule implements OnApplicationShutdown {
   constructor(private readonly moduleRef: ModuleRef) {}
 
-  static forRootAsync(): DynamicModule {
+  static forRootAsync({
+    connectionString,
+  }: PrismaModuleOptions): DynamicModule {
     const module = PrismaCoreModule
 
     const prismaClientProvider: Provider = {
       provide: PRISMA_CLIENT,
       useFactory: () => {
         const adapter = new PrismaPg({
-          connectionString: process.env.DATABASE_URL,
+          connectionString,
         })
 
         return new PrismaClient({ adapter }).$extends(prismaTransactional)

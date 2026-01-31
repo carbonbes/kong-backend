@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common'
-import { AppController } from '@/app.controller'
-import { AppService } from '@/app.service'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { AuthModule } from '@/auth/auth.module'
 import { RedisModule } from '@/shared/redis/redis.module'
@@ -22,11 +20,16 @@ import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
       validate,
     }),
 
-    PrismaModule.forRootAsync(),
+    PrismaModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connectionString: configService.get('database.url')!,
+      }),
+    }),
 
     RedisModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         url: configService.get('redis.url')!,
       }),
     }),
@@ -34,7 +37,6 @@ import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
     AuthModule,
   ],
 
-  controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: AccessJwtAuthGuard }],
+  providers: [{ provide: APP_GUARD, useClass: AccessJwtAuthGuard }],
 })
 export class AppModule {}
