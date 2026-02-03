@@ -1,13 +1,24 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common'
 import { Repository, Schema } from 'redis-om'
-import { getRepositoryToken } from './redis.utils'
+import { getRepositoryToken } from '@/shared/redis/redis.utils'
 import { RedisCoreModule } from '@/shared/redis/redis-core.module'
-import { RedisClient, RedisModuleOptions } from '@/shared/redis/redis.types'
+import {
+  RedisClient,
+  RedisModuleAsyncOptions,
+  RedisModuleOptions,
+} from '@/shared/redis/redis.types'
 import { REDIS_CLIENT } from '@/shared/redis/redis.consts'
 
 @Module({})
 export class RedisModule {
-  static forRootAsync(options: RedisModuleOptions): DynamicModule {
+  static forRoot(options?: RedisModuleOptions): DynamicModule {
+    return {
+      module: RedisModule,
+      imports: [RedisCoreModule.forRoot(options)],
+    }
+  }
+
+  static forRootAsync(options: RedisModuleAsyncOptions): DynamicModule {
     return {
       module: RedisModule,
       imports: [RedisCoreModule.forRootAsync(options)],
@@ -21,7 +32,7 @@ export class RedisModule {
       provide: getRepositoryToken(schema),
       inject: [REDIS_CLIENT],
       useFactory: async (redis: RedisClient) => {
-        // @ts-ignore
+        // @ts-expect-error - redis-om types issue
         const repository = new Repository(schema, redis)
         await repository.createIndex()
 
