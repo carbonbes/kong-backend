@@ -1,6 +1,6 @@
 import { describe, beforeAll, afterAll, test, expect } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication, ValidationPipe } from '@nestjs/common'
+import { INestApplication } from '@nestjs/common'
 import * as request from 'supertest'
 import { AppModule } from '@/app.module'
 import {
@@ -8,37 +8,38 @@ import {
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
+import { MailService } from '@/shared/mail/mail.service'
+import { mock, MockProxy } from 'vitest-mock-extended'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication
   let postgres: StartedPostgreSqlContainer
   let redis: StartedRedisContainer
+  let mailService: MockProxy<MailService>
 
   beforeAll(async () => {
-    postgres = await new PostgreSqlContainer('postgres:15-alpine').start()
-    redis = await new RedisContainer('redis:7-alpine').start()
+    postgres = await new PostgreSqlContainer('postgres:18-alpine').start()
+    redis = await new RedisContainer('redis/redis-stack:latest').start()
+    mailService = mock<MailService>()
 
     const postgresUrl = postgres.getConnectionUri()
     const redisUrl = redis.getConnectionUrl()
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile()
+    })
+      .overrideProvider(MailService)
+      .useValue(mailService)
+      .compile()
 
     app = module.createNestApplication()
-
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        whitelist: true,
-      }),
-    )
-
     await app.init()
   })
 
   afterAll(async () => {
     await app.close()
+    await postgres.stop()
+    await redis.stop()
   })
 
   describe('POST /auth/signup', () => {
