@@ -3,6 +3,7 @@ import {
   IsDate,
   IsEmail,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsString,
 } from 'class-validator'
@@ -16,6 +17,7 @@ export class BaseUserDto implements User {
   email: string
 
   @IsString()
+  @IsNotEmpty()
   name: string
 
   @IsEnum(UserGender)
