@@ -16,5 +16,5 @@ export const getFakeOtp = ({
   id: id ?? (faker.string.uuid() as Uuid),
   code: code ?? faker.string.alphanumeric({ length: 6 }),
   type: type ?? faker.helpers.arrayElement(otpType),
-  userId: userId ?? faker.number.int(),
+  userId: userId ?? faker.number.int({ min: 1, max: 2147483647 }),
 })

@@ -3,7 +3,7 @@ import { Jwts } from '@/jwts/jwts.types'
 import { Otp } from '@/otps/otps.types'
 import { User } from '@/users/users.types'
 
-export type LoginReturn = { otpId: Otp['id']; userId: User['id'] } | null
+export type LoginReturn = { otpId: Otp['id']; userId: User['id'] }
 
 export type SignUpOptions = SignUpDto
 export type SignUpReturn = Promise<LoginReturn>

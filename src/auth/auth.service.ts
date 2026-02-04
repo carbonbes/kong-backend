@@ -37,7 +37,7 @@ export class AuthService {
     })
 
     if (isExist) {
-      return null
+      throw new ForbiddenException()
     }
 
     const { id: userId } = await this.usersService.create(data)
@@ -61,7 +61,7 @@ export class AuthService {
     const user = await this.usersService.findOne({ where: { email } })
 
     if (!user) {
-      return null
+      throw new ForbiddenException()
     }
 
     if (!user.isActive) {
