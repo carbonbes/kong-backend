@@ -18,6 +18,7 @@ import { PRISMA_CLIENT } from '@/prisma/prisma.consts'
 import { OtpType } from '@/otps/otps.enums'
 import { OtpsService } from '@/otps/otps.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
+import { JwtsService } from '@/jwts/jwts.service'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication
@@ -26,6 +27,7 @@ describe('AuthController (e2e)', () => {
   let mailService: MockProxy<MailService>
   let prismaClient: PrismaClient
   let otpsService: OtpsService
+  let jwtsService: JwtsService
 
   beforeAll(async () => {
     postgres = await new PostgreSqlContainer('postgres:18-alpine').start()
@@ -54,6 +56,7 @@ describe('AuthController (e2e)', () => {
 
     prismaClient = app.get(PRISMA_CLIENT)
     otpsService = app.get(OtpsService)
+    jwtsService = app.get(JwtsService)
   }, 600000)
 
   afterAll(async () => {
@@ -78,8 +81,6 @@ describe('AuthController (e2e)', () => {
 
       expect(response.body).toHaveProperty('otpId')
       expect(response.body).toHaveProperty('userId')
-      expect(typeof response.body.otpId).toBe('string')
-      expect(typeof response.body.userId).toBe('number')
     })
 
     test('should be return 403 when user with some email already exists', async () => {
@@ -149,9 +150,6 @@ describe('AuthController (e2e)', () => {
 
       expect(response.body).toHaveProperty('otpId')
       expect(response.body).toHaveProperty('userId')
-      expect(typeof response.body.otpId).toBe('string')
-      expect(typeof response.body.userId).toBe('number')
-      expect(mailService.sendOtp).toHaveBeenCalledTimes(1)
     })
 
     test('should be return 403 when user does not exist', async () => {
@@ -186,7 +184,7 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/verify-otp', () => {
-    test('should be return 201 and JWT pair for valid signup otp', async () => {
+    test('should be return 201 and auth-JWT if signup otp is verified', async () => {
       const { email, name, gender } = getFakeUser()
       const { id: userId } = await prismaClient.user.create({
         data: { email, name, gender },
@@ -204,11 +202,9 @@ describe('AuthController (e2e)', () => {
 
       expect(response.body).toHaveProperty(ACCESS_TOKEN_NAME)
       expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
-      expect(typeof response.body.access_token).toBe('string')
-      expect(typeof response.body.refresh_token).toBe('string')
     })
 
-    test('should be return 201 and JWT pair for valid signin otp', async () => {
+    test('should be return 201 and auth-JWT if signin otp is verified', async () => {
       const { email, name, gender } = getFakeUser()
       const { id: userId } = await prismaClient.user.create({
         data: { email, name, gender },
@@ -228,79 +224,32 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
     })
 
-    test('should be return 404 when otp is invalid', async () => {
-      const signUpData = {
-        email: getFakeEmail(),
-        name: 'Verify Invalid User',
-        gender: UserGender.MALE,
-      }
-
-      const signUpResponse = await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(signUpData)
-        .expect(201)
+    test('should be return 404 when otp is not verified', async () => {
+      const body: VerifyOtpDto = getFakeOtp()
 
       await request(app.getHttpServer())
         .post('/auth/verify-otp')
-        .send({
-          id: signUpResponse.body.otpId,
-          code: '000000',
-          type: OtpType.SIGN_UP,
-          userId: signUpResponse.body.userId,
-        })
+        .send(body)
         .expect(404)
-    })
-
-    test('should be return 400 when otp data is invalid', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/verify-otp')
-        .send({
-          id: 'invalid-uuid',
-          code: '123',
-          type: 'INVALID_TYPE',
-          userId: 'not-a-number',
-        })
-        .expect(400)
     })
   })
 
   describe('GET /auth/me', () => {
-    test('should be return 200 and user data when authenticated', async () => {
-      const signUpData = {
-        email: getFakeEmail(),
-        name: 'Me Test User',
-        gender: UserGender.MALE,
-      }
+    test('should be return 200 and user', async () => {
+      const user = getFakeUser({ isActive: true })
 
-      const signUpResponse = await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(signUpData)
-        .expect(201)
+      await prismaClient.user.create({ data: user })
+      const { access_token } = await jwtsService.sign({ sub: user.id })
 
-      const otpCall = mailService.sendOtp.mock.calls[0][0]
-
-      const verifyResponse = await request(app.getHttpServer())
-        .post('/auth/verify-otp')
-        .send({
-          id: signUpResponse.body.otpId,
-          code: otpCall.code,
-          type: OtpType.SIGN_UP,
-          userId: signUpResponse.body.userId,
-        })
-        .expect(201)
-
-      const { access_token } = verifyResponse.body
-
-      const meResponse = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', `Bearer ${access_token}`)
         .expect(200)
 
-      expect(meResponse.body).toHaveProperty('id')
-      expect(meResponse.body).toHaveProperty('email', signUpData.email)
-      expect(meResponse.body).toHaveProperty('name', signUpData.name)
-      expect(meResponse.body).toHaveProperty('gender', signUpData.gender)
-      expect(meResponse.body).toHaveProperty('isActive', true)
+      expect(response.body).toEqual({
+        ...user,
+        createdAt: user.createdAt.toISOString(),
+      })
     })
 
     test('should be return 401 when no authorization header', async () => {

@@ -1,5 +1,6 @@
 import { User, UserGender } from '@/users/users.types'
 import { faker } from '@faker-js/faker/locale/ru'
+import { getFakeInt } from '@/test/utils/getFakeInt'
 
 type GetFakeUserOptions = Partial<User>
 
@@ -14,7 +15,7 @@ export const getFakeUser = ({
   createdAt,
 }: GetFakeUserOptions = {}): User => ({
   name: name ?? faker.internet.username(),
-  id: id ?? faker.number.int(),
+  id: id ?? getFakeInt(),
   email: email ?? faker.internet.email(),
   gender: gender ?? faker.helpers.arrayElement(genders),
   isActive: isActive ?? faker.datatype.boolean(),
