@@ -6,6 +6,7 @@ import { RefreshJwtService } from './refresh-jwt.service'
 import { getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { getDecodedJwt } from '@/shared/utils'
+import { UnauthorizedException } from '@nestjs/common'
 
 describe('RefreshJwtService', () => {
   let refreshJwtService: RefreshJwtService
@@ -59,6 +60,46 @@ describe('RefreshJwtService', () => {
       expect(jwtService.sign).toHaveBeenCalledWith({ jti, sub })
 
       vi.useRealTimers()
+    })
+  })
+
+  describe('verify', () => {
+    test('should be verify valid refresh JWT and return payload', () => {
+      const encodedJwt = getFakeJwt({ type: 'refresh_token' })
+      const decodedPayload = getDecodedJwt(encodedJwt)
+
+      jwtService.verify.mockReturnValue(decodedPayload)
+
+      const result = refreshJwtService.verify(encodedJwt)
+
+      expect(result).toEqual(decodedPayload)
+      expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
+    })
+
+    test('should be throw UnauthorizedException when token is invalid', () => {
+      const encodedJwt = getFakeJwt({ type: 'refresh_token' })
+
+      jwtService.verify.mockImplementation(() => {
+        throw new UnauthorizedException()
+      })
+
+      expect(() => refreshJwtService.verify(encodedJwt)).toThrow(
+        UnauthorizedException,
+      )
+      expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
+    })
+
+    test('should be throw UnauthorizedException when token is expired', () => {
+      const encodedJwt = getFakeJwt({ type: 'refresh_token' })
+
+      jwtService.verify.mockImplementation(() => {
+        throw new UnauthorizedException('Token expired')
+      })
+
+      expect(() => refreshJwtService.verify(encodedJwt)).toThrow(
+        UnauthorizedException,
+      )
+      expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
     })
   })
 })
