@@ -53,12 +53,9 @@ export class AuthController {
   @Post('update')
   update(
     @Headers('Authorization') refresh_token: EncodedJwt,
-    @Body() body: AccessTokenDto,
+    @Body() { access_token }: AccessTokenDto,
   ) {
-    const jwts: Jwts = {
-      access_token: body.access_token,
-      refresh_token,
-    }
+    const jwts: Jwts = { access_token, refresh_token }
 
     return this.authService.rotate(jwts)
   }
@@ -66,12 +63,9 @@ export class AuthController {
   @Post('logout')
   logout(
     @Headers('Authorization') access_token: EncodedJwt,
-    @Body() body: RefreshTokenDto,
+    @Body() { refresh_token }: RefreshTokenDto,
   ) {
-    const jwts: Jwts = {
-      access_token,
-      refresh_token: body.refresh_token,
-    }
+    const jwts: Jwts = { access_token, refresh_token }
 
     return this.authService.logout(jwts)
   }

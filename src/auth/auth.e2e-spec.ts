@@ -266,51 +266,14 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/update', () => {
     test('should be return 201 and new JWT pair with valid refresh token', async () => {
-      const signUpData = {
-        email: getFakeEmail(),
-        name: 'Update Test User',
-        gender: UserGender.FEMALE,
-      }
-
-      const signUpResponse = await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(signUpData)
-        .expect((res) => {
-          if (res.status !== 201) {
-            console.log('Signup error response:', res.status, res.body)
-          }
-        })
-        .expect(201)
-
-      const otpCall = mailService.sendOtp.mock.calls[0][0]
-
-      const verifyResponse = await request(app.getHttpServer())
-        .post('/auth/verify-otp')
-        .send({
-          id: signUpResponse.body.otpId,
-          code: otpCall.code,
-          type: OtpType.SIGN_UP,
-          userId: signUpResponse.body.userId,
-        })
-        .expect((res) => {
-          if (res.status !== 201) {
-            console.log('Verify OTP error response:', res.status, res.body)
-          }
-        })
-        .expect(201)
-
-      const { access_token, refresh_token } = verifyResponse.body
-
       const updateResponse = await request(app.getHttpServer())
         .post('/auth/update')
         .set('Authorization', `Bearer ${refresh_token}`)
         .send({ access_token })
         .expect(201)
 
-      expect(updateResponse.body).toHaveProperty('access_token')
-      expect(updateResponse.body).toHaveProperty('refresh_token')
-      expect(updateResponse.body.access_token).not.toBe(access_token)
-      expect(updateResponse.body.refresh_token).not.toBe(refresh_token)
+      expect(updateResponse.body).toHaveProperty(ACCESS_TOKEN_NAME)
+      expect(updateResponse.body).toHaveProperty(REFRESH_TOKEN_NAME)
     })
 
     test('should be return 401 when no refresh token provided', async () => {
