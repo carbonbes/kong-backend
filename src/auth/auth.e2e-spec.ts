@@ -24,7 +24,7 @@ import { PRISMA_CLIENT } from '@/prisma/prisma.consts'
 import { OtpType } from '@/otps/otps.enums'
 import { OtpsService } from '@/otps/otps.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { JwtsService } from '@/jwts/jwts.service'
+import { JwtService } from '@/jwt/jwt.service'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication
@@ -33,7 +33,7 @@ describe('AuthController (e2e)', () => {
   let mailService: MockProxy<MailService>
   let prismaClient: PrismaClient
   let otpsService: OtpsService
-  let jwtsService: JwtsService
+  let jwtService: JwtService
 
   beforeAll(async () => {
     postgres = await new PostgreSqlContainer('postgres:18-alpine').start()
@@ -62,7 +62,7 @@ describe('AuthController (e2e)', () => {
 
     prismaClient = app.get(PRISMA_CLIENT)
     otpsService = app.get(OtpsService)
-    jwtsService = app.get(JwtsService)
+    jwtService = app.get(JwtService)
   }, 600000)
 
   afterAll(async () => {
@@ -245,7 +245,7 @@ describe('AuthController (e2e)', () => {
       const user = getFakeUser({ isActive: true })
 
       await prismaClient.user.create({ data: user })
-      const { access_token } = await jwtsService.sign({ sub: user.id })
+      const { access_token } = await jwtService.sign({ sub: user.id })
 
       const response = await request(app.getHttpServer())
         .get('/auth/me')
@@ -275,7 +275,7 @@ describe('AuthController (e2e)', () => {
       const user = getFakeUser({ isActive: true })
       const { id: userId } = await prismaClient.user.create({ data: user })
 
-      const { access_token, refresh_token } = await jwtsService.sign({
+      const { access_token, refresh_token } = await jwtService.sign({
         sub: userId,
       })
 
@@ -318,7 +318,7 @@ describe('AuthController (e2e)', () => {
       const user = getFakeUser({ isActive: true })
       const { id: userId } = await prismaClient.user.create({ data: user })
 
-      const { access_token, refresh_token } = await jwtsService.sign({
+      const { access_token, refresh_token } = await jwtService.sign({
         sub: userId,
       })
 
@@ -344,7 +344,7 @@ describe('AuthController (e2e)', () => {
       const user = getFakeUser({ isActive: true })
       const { id: userId } = await prismaClient.user.create({ data: user })
 
-      const { access_token } = await jwtsService.sign({
+      const { access_token } = await jwtService.sign({
         sub: userId,
       })
 

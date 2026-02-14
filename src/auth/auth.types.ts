@@ -1,5 +1,5 @@
 import { SignInDto, SignUpDto, VerifyOtpDto } from './auth.dtos'
-import { Jwts } from '@/jwts/jwts.types'
+import { Jwts } from '@/jwt/jwt.types'
 import { Otp } from '@/otps/otps.types'
 import { User } from '@/users/users.types'
 

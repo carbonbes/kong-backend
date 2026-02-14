@@ -12,4 +12,7 @@ export type SignOptions = Pick<JwtPayload, 'sub'>
 export type RevokeOptions = Jwt
 export type IsRevokedOptions = Pick<JwtPayload, 'jti'>
 export type RotateOptions = Jwts
-export type DecodeOptions = Jwt
+export type VerifyOptions = {
+  type: typeof ACCESS_TOKEN_NAME | typeof REFRESH_TOKEN_NAME
+  jwt: EncodedJwt
+}

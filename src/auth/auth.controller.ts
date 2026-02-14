@@ -17,7 +17,7 @@ import {
 import { AuthService } from './auth.service'
 import { Request } from 'express'
 import { EncodedJwt } from '@/shared/types'
-import { Jwts } from '@/jwts/jwts.types'
+import { Jwts } from '@/jwt/jwt.types'
 import { Public } from '@/shared/decorators/public.decorator'
 import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
 

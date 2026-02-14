@@ -1,7 +1,7 @@
 import { PickType } from '@nestjs/mapped-types'
 import { BaseUserDto } from '@/users/users.dtos'
 import { BaseOtpDto } from '@/otps/otps.dtos'
-import { BaseJwtsDto } from '@/jwts/jwts.dtos'
+import { BaseJwtsDto } from '@/jwt/jwt.dtos'
 
 export class SignUpDto extends PickType(BaseUserDto, [
   'email',

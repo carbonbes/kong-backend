@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '@/shared/types'
-import { JwtsService } from '@/jwts/jwts.service'
+import { JwtService } from '@/jwt/jwt.service'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
@@ -12,7 +12,7 @@ export class RefreshJwtStrategy extends PassportStrategy(
 ) {
   constructor(
     private readonly configService: ConfigService,
-    private readonly jwtsService: JwtsService,
+    private readonly jwtsService: JwtService,
   ) {
     const secretOrKey = configService.get('jwt-sign-options.refreshJwtSecret')!
 

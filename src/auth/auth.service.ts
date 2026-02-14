@@ -16,7 +16,7 @@ import {
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
-import { JwtsService } from '@/jwts/jwts.service'
+import { JwtService } from '@/jwt/jwt.service'
 import { MailService } from '@/shared/mail/mail.service'
 
 @Injectable()
@@ -25,7 +25,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly otpsService: OtpsService,
-    private readonly jwtsService: JwtsService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Transactional()
@@ -101,14 +101,16 @@ export class AuthService {
       })
     }
 
-    return this.jwtsService.sign({ sub: userId })
+    return this.jwtService.sign({ sub: userId })
   }
 
   rotate(jwts: RotateOptions) {
-    return this.jwtsService.rotate(jwts)
+    return this.jwtService.rotate(jwts)
   }
 
   async logout(jwts: LogoutOptions) {
-    Object.values(jwts).forEach((jwt) => this.jwtsService.revoke({ jwt }))
+    Object.entries(jwts).forEach(([type, jwt]) =>
+      this.jwtService.revoke({ type, jwt }),
+    )
   }
 }

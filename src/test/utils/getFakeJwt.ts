@@ -1,5 +1,5 @@
 import { EncodedJwt, JwtHeader, JwtPayload } from '@/shared/types'
-import { Jwts } from '@/jwts/jwts.types'
+import { Jwts } from '@/jwt/jwts.types'
 import { Uuid } from '@/shared/uuid/uuid.types'
 import { faker } from '@faker-js/faker/locale/ru'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'

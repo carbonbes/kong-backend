@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from '@/users/users.service'
 import { MailService } from '@/shared/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
-import { JwtsService } from '@/jwts/jwts.service'
+import { JwtService } from '@/jwt/jwt.service'
 import { getFakeJwts, getFakeOtp, getFakeUser } from '@/test/utils'
 import { OtpType } from '@/otps/otps.enums'
 import {
@@ -30,14 +30,14 @@ import { SendOtpOptions as MailServiceSendOtpOptions } from '@/shared/mail/mail.
 import {
   RotateOptions as JwtsServiceRotateOptions,
   SignOptions as JwtsServiceSignOptions,
-} from '@/jwts/jwts.types'
+} from '@/jwt/jwt.types'
 
 describe('AuthService', () => {
   let authService: AuthService
   let usersService: MockProxy<UsersService>
   let mailService: MockProxy<MailService>
   let otpsService: MockProxy<OtpsService>
-  let jwtsService: MockProxy<JwtsService>
+  let jwtsService: MockProxy<JwtService>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -50,7 +50,7 @@ describe('AuthService', () => {
     usersService = module.get(UsersService)
     mailService = module.get(MailService)
     otpsService = module.get(OtpsService)
-    jwtsService = module.get(JwtsService)
+    jwtsService = module.get(JwtService)
   })
 
   describe('signUp', () => {

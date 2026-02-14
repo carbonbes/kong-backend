@@ -1,21 +1,19 @@
 import { Injectable } from '@nestjs/common'
 import {
   Jwts,
-  DecodeOptions,
   IsRevokedOptions,
   RevokeOptions,
   RotateOptions,
   SignOptions,
-} from './jwts.types'
-import { JwtPayload } from '@/shared/types'
-import { getDecodedJwt } from '@/shared/utils'
+  VerifyOptions,
+} from './jwt.types'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 
 @Injectable()
-export class JwtsService {
+export class JwtService {
   constructor(
     private readonly accessJwtService: AccessJwtService,
     private readonly refreshJwtService: RefreshJwtService,
@@ -23,15 +21,15 @@ export class JwtsService {
     private readonly revokedJwtsService: RevokedJwtsService,
   ) {}
 
-  async sign({ sub }: SignOptions): Promise<Jwts> {
+  async sign({ sub }: SignOptions) {
     const jwts: Jwts = {
       access_token: this.accessJwtService.sign({ sub }),
       refresh_token: this.refreshJwtService.sign({ sub }),
     }
 
     await Promise.all([
-      Object.values(jwts).map(async (jwt) => {
-        const { jti, sub, exp } = this.decode({ jwt })
+      Object.entries(jwts).map(async ([type, jwt]) => {
+        const { jti, sub, exp } = this.verify({ type, jwt })
 
         await this.signedJwtsService.add({ jti, sub, exp })
       }),
@@ -52,7 +50,7 @@ export class JwtsService {
 
   async rotate(jwts: RotateOptions) {
     await Promise.all([
-      Object.values(jwts).map(async (jwt) => {
+      Object.entries(jwts).map(async ([type, jwt]) => {
         if (!jwt) return
 
         await this.revoke({ jwt })
@@ -60,12 +58,14 @@ export class JwtsService {
     ])
 
     const { refresh_token } = jwts
-    const { sub } = this.decode({ jwt: refresh_token })
+    const { sub } = this.verify({ type: 'refresh_token', jwt: refresh_token })
 
     return this.sign({ sub })
   }
 
-  decode({ jwt }: DecodeOptions): JwtPayload {
-    return getDecodedJwt(jwt)
+  verify({ type, jwt }: VerifyOptions) {
+    return type === 'access_token'
+      ? this.accessJwtService.verify(jwt)
+      : this.refreshJwtService.verify(jwt)
   }
 }
