@@ -12,7 +12,13 @@ import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { MailService } from '@/shared/mail/mail.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { getFakeEmail, getFakeOtp, getFakeUser } from '@/test/utils'
-import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/auth.dtos'
+import {
+  AccessTokenDto,
+  RefreshTokenDto,
+  SignInDto,
+  SignUpDto,
+  VerifyOtpDto,
+} from '@/auth/auth.dtos'
 import { PrismaClient } from '@/prisma/prisma.types'
 import { PRISMA_CLIENT } from '@/prisma/prisma.consts'
 import { OtpType } from '@/otps/otps.enums'
@@ -266,69 +272,65 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/update', () => {
     test('should be return 201 and new JWT pair with valid refresh token', async () => {
-      const updateResponse = await request(app.getHttpServer())
+      const user = getFakeUser({ isActive: true })
+      const { id: userId } = await prismaClient.user.create({ data: user })
+
+      const { access_token, refresh_token } = await jwtsService.sign({
+        sub: userId,
+      })
+
+      const body: AccessTokenDto = { access_token }
+
+      const response = await request(app.getHttpServer())
         .post('/auth/update')
         .set('Authorization', `Bearer ${refresh_token}`)
-        .send({ access_token })
+        .send(body)
         .expect(201)
 
-      expect(updateResponse.body).toHaveProperty(ACCESS_TOKEN_NAME)
-      expect(updateResponse.body).toHaveProperty(REFRESH_TOKEN_NAME)
+      expect(response.body).toHaveProperty(ACCESS_TOKEN_NAME)
+      expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
+
+      await prismaClient.user.deleteMany()
     })
 
     test('should be return 401 when no refresh token provided', async () => {
+      const body = { access_token: 'some-token' }
+
       await request(app.getHttpServer())
         .post('/auth/update')
-        .send({ access_token: 'some-token' })
+        .send(body)
         .expect(401)
     })
 
     test('should be return 401 when invalid refresh token provided', async () => {
+      const body = { access_token: 'some-token' }
+
       await request(app.getHttpServer())
         .post('/auth/update')
         .set('Authorization', 'Bearer invalid-token')
-        .send({ access_token: 'some-token' })
+        .send(body)
         .expect(401)
     })
   })
 
   describe('POST /auth/logout', () => {
-    test('should be return 201 and revoke tokens successfully', async () => {
-      const signUpData = {
-        email: getFakeEmail(),
-        name: 'Logout Test User',
-        gender: UserGender.MALE,
-      }
+    test('should be return 200 and revoke tokens successfully', async () => {
+      const user = getFakeUser({ isActive: true })
+      const { id: userId } = await prismaClient.user.create({ data: user })
 
-      const signUpResponse = await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(signUpData)
-        .expect(201)
+      const { access_token, refresh_token } = await jwtsService.sign({
+        sub: userId,
+      })
 
-      const otpCall = mailService.sendOtp.mock.calls[0][0]
-
-      const verifyResponse = await request(app.getHttpServer())
-        .post('/auth/verify-otp')
-        .send({
-          id: signUpResponse.body.otpId,
-          code: otpCall.code,
-          type: OtpType.SIGN_UP,
-          userId: signUpResponse.body.userId,
-        })
-        .expect(201)
-
-      const { access_token, refresh_token } = verifyResponse.body
-
-      await request(app.getHttpServer())
-        .post('/auth/logout')
-        .set('Authorization', `Bearer ${access_token}`)
-        .send({ refresh_token })
-        .expect(201)
+      const body: RefreshTokenDto = { refresh_token }
 
       await request(app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', `Bearer ${access_token}`)
-        .expect(401)
+        .send(body)
+        .expect(200)
+
+      await prismaClient.user.deleteMany()
     })
 
     test('should be return 401 when no access token provided', async () => {
@@ -339,30 +341,12 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 400 when refresh token is missing in body', async () => {
-      const signUpData = {
-        email: getFakeEmail(),
-        name: 'Logout Missing User',
-        gender: UserGender.FEMALE,
-      }
+      const user = getFakeUser({ isActive: true })
+      const { id: userId } = await prismaClient.user.create({ data: user })
 
-      const signUpResponse = await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(signUpData)
-        .expect(201)
-
-      const otpCall = mailService.sendOtp.mock.calls[0][0]
-
-      const verifyResponse = await request(app.getHttpServer())
-        .post('/auth/verify-otp')
-        .send({
-          id: signUpResponse.body.otpId,
-          code: otpCall.code,
-          type: OtpType.SIGN_UP,
-          userId: signUpResponse.body.userId,
-        })
-        .expect(201)
-
-      const { access_token } = verifyResponse.body
+      const { access_token } = await jwtsService.sign({
+        sub: userId,
+      })
 
       await request(app.getHttpServer())
         .post('/auth/logout')
