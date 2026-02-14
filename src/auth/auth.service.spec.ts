@@ -98,17 +98,18 @@ describe('AuthService', () => {
       )
     })
 
-    test('should be return null if a user with that email exists', async () => {
+    test('should be return 403 if a user with that email exists', async () => {
       const user = getFakeUser({ ...data })
 
       usersService.isExist.mockResolvedValue(true)
 
-      const result: LoginReturn = null
       const userIsExistOptions: UsersServiceIsExistOptions = {
         where: { email: user.email },
       }
 
-      expect(await authService.signUp(data)).toBe(result)
+      await expect(authService.signUp(data)).rejects.toThrow(
+        new ForbiddenException(),
+      )
       expect(usersService.isExist).toHaveBeenCalledWith(userIsExistOptions)
     })
   })
@@ -155,14 +156,15 @@ describe('AuthService', () => {
 
     test('should be return a null if a user with that email does not exist', async () => {
       const user = getFakeUser({ ...data })
-      const result: LoginReturn = null
       const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
         where: { email: user.email },
       }
 
-      usersService.findOne.mockResolvedValue(result)
+      usersService.findOne.mockResolvedValue(null)
 
-      expect(await authService.signIn(data)).toBe(result)
+      await expect(authService.signIn(data)).rejects.toThrow(
+        new ForbiddenException(),
+      )
       expect(usersService.findOne).toHaveBeenCalledWith(
         usersServiceFindOneOptions,
       )
