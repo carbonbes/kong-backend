@@ -19,12 +19,12 @@ import {
   SignUpDto,
   VerifyOtpDto,
 } from '@/auth/auth.dtos'
-import { PrismaClient } from '@/prisma/prisma.types'
-import { PRISMA_CLIENT } from '@/prisma/prisma.consts'
+import { PrismaClient } from '@/shared/prisma/prisma.types'
+import { PRISMA_CLIENT } from '@/shared/prisma/prisma.consts'
 import { OtpType } from '@/otps/otps.enums'
 import { OtpsService } from '@/otps/otps.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { JwtService } from '@/jwt/jwt.service'
+import { AuthJwtsService } from '@/auth-jwts.service'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication
@@ -33,7 +33,7 @@ describe('AuthController (e2e)', () => {
   let mailService: MockProxy<MailService>
   let prismaClient: PrismaClient
   let otpsService: OtpsService
-  let jwtService: JwtService
+  let authJwtsService: AuthJwtsService
 
   beforeAll(async () => {
     postgres = await new PostgreSqlContainer('postgres:18-alpine').start()

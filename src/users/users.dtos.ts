@@ -9,7 +9,7 @@ import {
 } from 'class-validator'
 import { User, UserGender } from './users.types'
 
-export class BaseUserDto implements User {
+export class UserDto implements User {
   @IsNumber()
   id: number
 

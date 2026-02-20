@@ -1,18 +1,13 @@
 import { EncodedJwt, JwtPayload } from '@/shared/types'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 
-export type Jwts = {
+export type AuthJwts = {
   [ACCESS_TOKEN_NAME]: EncodedJwt
   [REFRESH_TOKEN_NAME]: EncodedJwt
 }
 
-type Jwt = { jwt: EncodedJwt }
-
 export type SignOptions = Pick<JwtPayload, 'sub'>
-export type RevokeOptions = Jwt
+export type RevokeOptions = EncodedJwt
 export type IsRevokedOptions = Pick<JwtPayload, 'jti'>
-export type RotateOptions = Jwts
-export type VerifyOptions = {
-  type: typeof ACCESS_TOKEN_NAME | typeof REFRESH_TOKEN_NAME
-  jwt: EncodedJwt
-}
+export type RotateOptions = EncodedJwt
+export type DecodeOptions = EncodedJwt

@@ -16,7 +16,7 @@ export abstract class AuthJwtService {
     return this.jwtService.sign(payload) as EncodedJwt
   }
 
-  verify(token: EncodedJwt): JwtPayload {
-    return this.jwtService.verify(token)
+  decode(token: EncodedJwt): JwtPayload {
+    return this.jwtService.decode(token)
   }
 }

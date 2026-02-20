@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
-import { JwtService } from './jwt.service'
+import { AuthJwtsService } from './auth-jwts.service'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
@@ -10,7 +10,7 @@ import { getFakeInt, getFakeJwt, getFakeJwts } from '@/test/utils'
 import { getDecodedJwt } from '@/shared/utils'
 
 describe('JwtsService', () => {
-  let jwtService: JwtService
+  let jwtService: AuthJwtsService
   let accessJwtService: MockProxy<AccessJwtService>
   let refreshJwtService: MockProxy<RefreshJwtService>
   let signedJwtsService: MockProxy<SignedJwtsService>
@@ -20,12 +20,12 @@ describe('JwtsService', () => {
     vi.clearAllMocks()
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [JwtService],
+      providers: [AuthJwtsService],
     })
       .useMocker(mock)
       .compile()
 
-    jwtService = module.get(JwtService)
+    jwtService = module.get(AuthJwtsService)
     accessJwtService = module.get(AccessJwtService)
     refreshJwtService = module.get(RefreshJwtService)
     signedJwtsService = module.get(SignedJwtsService)

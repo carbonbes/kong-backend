@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { JwtService } from './jwt.service'
+import { AuthJwtsService } from './auth-jwts.service'
 import { AccessJwtModule } from '@/access-jwt/access-jwt.module'
 import { RefreshJwtModule } from '@/refresh-jwt/refresh-jwt.module'
 import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
@@ -13,7 +13,7 @@ import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
     RevokedJwtsModule,
   ],
 
-  providers: [JwtService],
-  exports: [JwtService],
+  providers: [AuthJwtsService],
+  exports: [AuthJwtsService],
 })
-export class JwtModule {}
+export class AuthJwtsModule {}

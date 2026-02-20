@@ -6,18 +6,18 @@ import {
 import { UsersService } from '@/users/users.service'
 import {
   LogoutOptions,
-  RotateOptions,
   SignInOptions,
   SignInReturn,
   SignUpOptions,
   SignUpReturn,
+  UpdateOptions,
   VerifyOtpOptions,
 } from './auth.types'
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
-import { JwtService } from '@/jwt/jwt.service'
 import { MailService } from '@/shared/mail/mail.service'
+import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 
 @Injectable()
 export class AuthService {
@@ -25,7 +25,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly otpsService: OtpsService,
-    private readonly jwtService: JwtService,
+    private readonly authJwtsService: AuthJwtsService,
   ) {}
 
   @Transactional()
@@ -101,16 +101,14 @@ export class AuthService {
       })
     }
 
-    return this.jwtService.sign({ sub: userId })
+    return this.authJwtsService.sign({ sub: userId })
   }
 
-  rotate(jwts: RotateOptions) {
-    return this.jwtService.rotate(jwts)
+  update(jwt: UpdateOptions) {
+    return this.authJwtsService.rotate(jwt)
   }
 
   async logout(jwts: LogoutOptions) {
-    Object.entries(jwts).forEach(([type, jwt]) =>
-      this.jwtService.revoke({ type, jwt }),
-    )
+    Object.values(jwts).forEach((jwt) => this.authJwtsService.revoke(jwt))
   }
 }

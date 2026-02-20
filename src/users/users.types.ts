@@ -1,8 +1,8 @@
-import { Prisma, User } from '@/prisma/prisma.types'
+import { Prisma, User } from '@/shared/prisma/prisma.types'
 
 type UserFindUniqueArgs = Prisma.UserFindUniqueArgs
 
-export { User, UserGender } from '@/prisma/prisma.types'
+export { User, UserGender } from '@/shared/prisma/prisma.types'
 
 export type CreateOptions = Omit<
   Prisma.UserCreateInput,

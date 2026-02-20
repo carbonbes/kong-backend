@@ -1,19 +1,20 @@
 import { Injectable } from '@nestjs/common'
 import {
-  Jwts,
+  AuthJwts,
+  DecodeOptions,
   IsRevokedOptions,
   RevokeOptions,
   RotateOptions,
   SignOptions,
-  VerifyOptions,
-} from './jwt.types'
+} from './auth-jwts.types'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
+import { getDecodedJwt } from '@/shared/utils'
 
 @Injectable()
-export class JwtService {
+export class AuthJwtsService {
   constructor(
     private readonly accessJwtService: AccessJwtService,
     private readonly refreshJwtService: RefreshJwtService,
@@ -22,24 +23,24 @@ export class JwtService {
   ) {}
 
   async sign({ sub }: SignOptions) {
-    const jwts: Jwts = {
-      access_token: this.accessJwtService.sign({ sub }),
-      refresh_token: this.refreshJwtService.sign({ sub }),
+    const authJwts: AuthJwts = {
+      accessToken: this.accessJwtService.sign({ sub }),
+      refreshToken: this.refreshJwtService.sign({ sub }),
     }
 
     await Promise.all([
-      Object.entries(jwts).map(async ([type, jwt]) => {
-        const { jti, sub, exp } = this.verify({ type, jwt })
+      Object.values(authJwts).map(async (jwt) => {
+        const { jti, sub, exp } = this.decode(jwt)
 
         await this.signedJwtsService.add({ jti, sub, exp })
       }),
     ])
 
-    return jwts
+    return authJwts
   }
 
-  revoke({ jwt }: RevokeOptions) {
-    const { jti, sub, exp } = this.decode({ jwt })
+  revoke(jwt: RevokeOptions) {
+    const { jti, sub, exp } = this.decode(jwt)
 
     return this.revokedJwtsService.add({ jti, sub, exp })
   }
@@ -48,24 +49,15 @@ export class JwtService {
     return this.revokedJwtsService.has({ jti })
   }
 
-  async rotate(jwts: RotateOptions) {
-    await Promise.all([
-      Object.entries(jwts).map(async ([type, jwt]) => {
-        if (!jwt) return
+  async rotate(jwt: RotateOptions) {
+    await this.revoke(jwt)
 
-        await this.revoke({ jwt })
-      }),
-    ])
-
-    const { refresh_token } = jwts
-    const { sub } = this.verify({ type: 'refresh_token', jwt: refresh_token })
+    const { sub } = this.decode(jwt)
 
     return this.sign({ sub })
   }
 
-  verify({ type, jwt }: VerifyOptions) {
-    return type === 'access_token'
-      ? this.accessJwtService.verify(jwt)
-      : this.refreshJwtService.verify(jwt)
+  decode(jwt: DecodeOptions) {
+    return getDecodedJwt(jwt)
   }
 }

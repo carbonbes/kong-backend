@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@/shared/redis/redis.utils'
+import { InjectRedisOmRepository } from '@/shared/redis-om/redis-om.decorators'
 import { otpSchema } from '@/otps/otps.schema'
 import { EntityId, Repository } from 'redis-om'
 import { CreateOptions, Otp, VerifyOptions } from '@/otps/otps.types'
@@ -11,7 +11,7 @@ import { UuidService } from '@/shared/uuid/uuid.service'
 @Injectable()
 export class OtpsService {
   constructor(
-    @InjectRepository(otpSchema)
+    @InjectRedisOmRepository(otpSchema)
     private readonly repository: Repository<Otp>,
     private readonly uuidService: UuidService,
     private readonly nanoidService: NanoidService,

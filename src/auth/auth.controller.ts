@@ -8,7 +8,6 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import {
-  AccessTokenDto,
   RefreshTokenDto,
   SignInDto,
   SignUpDto,
@@ -17,9 +16,9 @@ import {
 import { AuthService } from './auth.service'
 import { Request } from 'express'
 import { EncodedJwt } from '@/shared/types'
-import { Jwts } from '@/jwt/jwt.types'
 import { Public } from '@/shared/decorators/public.decorator'
 import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
+import { LogoutOptions } from '@/auth/auth.types'
 
 @Controller('auth')
 export class AuthController {
@@ -51,21 +50,16 @@ export class AuthController {
   @Public()
   @UseGuards(RefreshJwtAuthGuard)
   @Post('update')
-  update(
-    @Headers('Authorization') refresh_token: EncodedJwt,
-    @Body() { access_token }: AccessTokenDto,
-  ) {
-    const jwts: Jwts = { access_token, refresh_token }
-
-    return this.authService.rotate(jwts)
+  update(@Headers('Authorization') refreshToken: EncodedJwt) {
+    return this.authService.update(refreshToken)
   }
 
   @Post('logout')
   logout(
-    @Headers('Authorization') access_token: EncodedJwt,
-    @Body() { refresh_token }: RefreshTokenDto,
+    @Headers('Authorization') accessToken: EncodedJwt,
+    @Body() { refreshToken }: RefreshTokenDto,
   ) {
-    const jwts: Jwts = { access_token, refresh_token }
+    const jwts: LogoutOptions = { accessToken, refreshToken }
 
     return this.authService.logout(jwts)
   }

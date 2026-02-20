@@ -11,8 +11,8 @@ import {
   UpdateOptions,
   UpdateReturn,
 } from '@/users/users.types'
-import { InjectPrismaEntity } from '@/prisma/prisma.utils'
-import { PrismaClient } from '@/prisma/prisma.types'
+import { InjectPrismaEntity } from '@/shared/prisma/prisma.decorators'
+import { PrismaClient } from '@/shared/prisma/prisma.types'
 
 @Injectable()
 export class UsersService {

@@ -1,5 +1,5 @@
 import { EncodedJwt, JwtHeader, JwtPayload } from '@/shared/types'
-import { Jwts } from '@/jwt/jwts.types'
+import { AuthJwts } from '@/auth-jwts/auth-jwts.types'
 import { Uuid } from '@/shared/uuid/uuid.types'
 import { faker } from '@faker-js/faker/locale/ru'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
@@ -7,7 +7,7 @@ import { getFakeInt } from '@/test/utils/getFakeInt'
 
 type FakeJwtHeader = JwtHeader
 type FakeJwtPayload = JwtPayload
-type FakeJwtType = 'access_token' | 'refresh_token'
+type FakeJwtType = typeof ACCESS_TOKEN_NAME | typeof REFRESH_TOKEN_NAME
 
 type GetFakeJwtOptions = {
   header?: Partial<FakeJwtHeader>
@@ -23,7 +23,7 @@ type GetFakeJwtsOptions = {
 export const getFakeJwt = (options: GetFakeJwtOptions = {}): EncodedJwt => {
   const accessJwtExp = Number(process.env.ACCESS_JWT_EXPIRES_IN)
   const refreshJwtExp = Number(process.env.REFRESH_JWT_EXPIRES_IN)
-  const jwtType = options.type ?? 'access_token'
+  const jwtType: FakeJwtType = options.type ?? ACCESS_TOKEN_NAME
 
   const currentTime = Date.now() / 1000
 
@@ -38,13 +38,14 @@ export const getFakeJwt = (options: GetFakeJwtOptions = {}): EncodedJwt => {
     iat: options.payload?.iat ?? currentTime,
     exp:
       options.payload?.exp ??
-      currentTime + (jwtType === 'access_token' ? accessJwtExp : refreshJwtExp),
+      currentTime +
+        (jwtType === ACCESS_TOKEN_NAME ? accessJwtExp : refreshJwtExp),
   }
 
   return faker.internet.jwt({ header, payload }) as EncodedJwt
 }
 
-export const getFakeJwts = (options: GetFakeJwtsOptions = {}): Jwts => {
+export const getFakeAuthJwts = (options: GetFakeJwtsOptions = {}): AuthJwts => {
   const { accessJwtOptions, refreshJwtOptions } = options
 
   return {

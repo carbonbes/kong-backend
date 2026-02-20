@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { AuthModule } from '@/auth/auth.module'
-import { RedisModule } from '@/shared/redis/redis.module'
-import { PrismaModule } from '@/prisma/prisma.module'
+import { RedisOmModule } from '@/shared/redis-om/redis-om.module'
+import { PrismaModule } from '@/shared/prisma/prisma.module'
 import database from '@/shared/config/database'
 import jwtSignOptions from '@/shared/config/jwt-sign-options'
 import mailer from '@/shared/config/mailer'
@@ -21,13 +21,15 @@ import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
     }),
 
     PrismaModule.forRootAsync({
+      isGlobal: true,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         connectionString: configService.get('database.url')!,
       }),
     }),
 
-    RedisModule.forRootAsync({
+    RedisOmModule.forRootAsync({
+      isGlobal: true,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         url: configService.get('redis.url')!,

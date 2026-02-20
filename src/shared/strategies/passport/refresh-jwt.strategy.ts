@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '@/shared/types'
-import { JwtService } from '@/jwt/jwt.service'
+import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
@@ -12,7 +12,7 @@ export class RefreshJwtStrategy extends PassportStrategy(
 ) {
   constructor(
     private readonly configService: ConfigService,
-    private readonly jwtsService: JwtService,
+    private readonly authJwtsService: AuthJwtsService,
   ) {
     const secretOrKey = configService.get('jwt-sign-options.refreshJwtSecret')!
 
@@ -24,7 +24,7 @@ export class RefreshJwtStrategy extends PassportStrategy(
   }
 
   async validate({ jti }: JwtPayload) {
-    const isRevoked = await this.jwtsService.isRevoked({ jti })
+    const isRevoked = await this.authJwtsService.isRevoked({ jti })
 
     if (isRevoked) {
       throw new UnauthorizedException()

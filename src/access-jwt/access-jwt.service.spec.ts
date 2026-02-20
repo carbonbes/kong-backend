@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
-import { JwtService, TokenExpiredError, JsonWebTokenError } from '@nestjs/jwt'
+import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt'
 import { UuidService } from '@/shared/uuid/uuid.service'
 import { AccessJwtService } from './access-jwt.service'
 import { getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { getDecodedJwt } from '@/shared/utils'
 import { EncodedJwt } from '@/shared/types'
+import { ACCESS_TOKEN_NAME } from '@/shared/consts'
 
 describe('AccessJwtService', () => {
   let accessJwtService: AccessJwtService
@@ -41,7 +42,7 @@ describe('AccessJwtService', () => {
       const sub = getFakeInt()
       const jti = getFakeUuid()
       const encodedJwt = getFakeJwt({
-        type: 'access_token',
+        type: ACCESS_TOKEN_NAME,
         payload: { jti, sub },
       })
 
@@ -67,7 +68,7 @@ describe('AccessJwtService', () => {
     let encodedJwt: EncodedJwt
 
     beforeEach(() => {
-      encodedJwt = getFakeJwt({ type: 'access_token' })
+      encodedJwt = getFakeJwt({ type: ACCESS_TOKEN_NAME })
     })
 
     test('should be verify valid access JWT and return payload', () => {

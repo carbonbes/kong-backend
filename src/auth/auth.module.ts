@@ -5,12 +5,18 @@ import { UsersModule } from '@/users/users.module'
 import { OtpsModule } from '@/otps/otps.module'
 import { PassportModule } from '@nestjs/passport'
 import { AccessJwtStrategy } from '@/shared/strategies/passport/access-jwt.strategy'
-import { JwtModule } from '@/jwt/jwt.module'
 import { RefreshJwtStrategy } from '@/shared/strategies/passport/refresh-jwt.strategy'
 import { MailModule } from '@/shared/mail/mail.module'
+import { AuthJwtsModule } from '@/auth-jwts/auth-jwts.module'
 
 @Module({
-  imports: [UsersModule, MailModule, OtpsModule, JwtModule, PassportModule],
+  imports: [
+    UsersModule,
+    MailModule,
+    OtpsModule,
+    AuthJwtsModule,
+    PassportModule,
+  ],
   providers: [AuthService, AccessJwtStrategy, RefreshJwtStrategy],
   controllers: [AuthController],
 })

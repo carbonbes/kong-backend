@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from './users.service'
-import { PrismaClient } from '@/prisma/prisma.types'
+import { PrismaClient } from '@/shared/prisma/prisma.types'
 import {
   CreateOptions,
   FindOneOptions,
@@ -11,7 +11,7 @@ import {
 } from '@/users/users.types'
 import { getFakeUser } from '@/test/utils'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
-import { getPrismaEntityToken } from '@/prisma/prisma.utils'
+import { getPrismaEntityToken } from '@/shared/prisma/prisma.utils'
 
 describe('UsersService', () => {
   let usersService: UsersService
