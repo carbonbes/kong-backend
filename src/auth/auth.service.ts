@@ -30,6 +30,7 @@ import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
+import { JwtPayload } from '@/shared/types'
 
 @Injectable()
 export class AuthService {
@@ -148,12 +149,14 @@ export class AuthService {
   }
 
   private async revokeJwt({ jwt, type }: RevokeJwtOptions) {
-    const { jti, sub, exp } =
-      type === ACCESS_TOKEN_NAME
-        ? this.accessJwtService.verify(jwt)
-        : this.refreshJwtService.verify(jwt)
+    try {
+      const { jti, sub, exp } =
+        type === ACCESS_TOKEN_NAME
+          ? this.accessJwtService.verify(jwt)
+          : this.refreshJwtService.verify(jwt)
 
-    await this.revokedJwtsService.add({ jti, sub, exp })
+      await this.revokedJwtsService.add({ jti, sub, exp })
+    } catch {}
   }
 
   private async revokeJwts(jwts: RevokeJwtsOptions) {
