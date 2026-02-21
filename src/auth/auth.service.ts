@@ -5,19 +5,31 @@ import {
 } from '@nestjs/common'
 import { UsersService } from '@/users/users.service'
 import {
+  AuthJwts,
   LogoutOptions,
+  RevokeJwtOptions,
+  RevokeJwtsOptions,
+  RotateJwtsOptions,
+  RotateJwtsReturn,
   SignInOptions,
   SignInReturn,
+  SignJwtsOptions,
+  SignJwtsReturn,
   SignUpOptions,
   SignUpReturn,
   UpdateOptions,
   VerifyOtpOptions,
+  VerifyOtpReturn,
 } from './auth.types'
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
 import { MailService } from '@/shared/mail/mail.service'
-import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
+import { AccessJwtService } from '@/access-jwt/access-jwt.service'
+import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
+import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
+import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
+import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 
 @Injectable()
 export class AuthService {
@@ -25,7 +37,10 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly otpsService: OtpsService,
-    private readonly authJwtsService: AuthJwtsService,
+    private readonly accessJwtService: AccessJwtService,
+    private readonly refreshJwtService: RefreshJwtService,
+    private readonly signedJwtsService: SignedJwtsService,
+    private readonly revokedJwtsService: RevokedJwtsService,
   ) {}
 
   @Transactional()
@@ -85,7 +100,7 @@ export class AuthService {
   }
 
   @Transactional()
-  async verifyOtp(otp: VerifyOtpOptions) {
+  async verifyOtp(otp: VerifyOtpOptions): VerifyOtpReturn {
     const isVerify = await this.otpsService.verify(otp)
 
     if (!isVerify) {
@@ -101,14 +116,61 @@ export class AuthService {
       })
     }
 
-    return this.authJwtsService.sign({ sub: userId })
+    return this.signJwts({ sub: userId })
   }
 
   update(jwt: UpdateOptions) {
-    return this.authJwtsService.rotate(jwt)
+    return this.rotateJwts(jwt)
   }
 
-  async logout(jwts: LogoutOptions) {
-    Object.values(jwts).forEach((jwt) => this.authJwtsService.revoke(jwt))
+  logout(jwts: LogoutOptions) {
+    return this.revokeJwts(jwts)
+  }
+
+  private async signJwts({ sub }: SignJwtsOptions): SignJwtsReturn {
+    const jwts: AuthJwts = {
+      [ACCESS_TOKEN_NAME]: this.accessJwtService.sign({ sub }),
+      [REFRESH_TOKEN_NAME]: this.refreshJwtService.sign({ sub }),
+    }
+
+    await Promise.all([
+      Object.values(jwts).map(async (jwt, i) => {
+        const { jti, sub, exp } =
+          i === 0
+            ? this.accessJwtService.decode(jwt)
+            : this.refreshJwtService.decode(jwt)
+
+        await this.signedJwtsService.add({ jti, sub, exp })
+      }),
+    ])
+
+    return jwts
+  }
+
+  private async revokeJwt({ jwt, type }: RevokeJwtOptions) {
+    const { jti, sub, exp } =
+      type === ACCESS_TOKEN_NAME
+        ? this.accessJwtService.verify(jwt)
+        : this.refreshJwtService.verify(jwt)
+
+    await this.revokedJwtsService.add({ jti, sub, exp })
+  }
+
+  private async revokeJwts(jwts: RevokeJwtsOptions) {
+    await Promise.all([
+      Object.values(jwts).map(async (jwt, i) => {
+        const type = i === 0 ? ACCESS_TOKEN_NAME : REFRESH_TOKEN_NAME
+
+        await this.revokeJwt({ jwt, type })
+      }),
+    ])
+  }
+
+  private async rotateJwts(jwt: RotateJwtsOptions): RotateJwtsReturn {
+    await this.revokeJwt({ jwt, type: REFRESH_TOKEN_NAME })
+
+    const { sub } = this.refreshJwtService.decode(jwt)
+
+    return this.signJwts({ sub })
   }
 }

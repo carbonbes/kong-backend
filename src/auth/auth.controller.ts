@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Headers,
-  UseGuards,
-} from '@nestjs/common'
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
 import {
   RefreshTokenDto,
   SignInDto,
@@ -18,7 +10,8 @@ import { Request } from 'express'
 import { EncodedJwt } from '@/shared/types'
 import { Public } from '@/shared/decorators/public.decorator'
 import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
-import { LogoutOptions } from '@/auth/auth.types'
+import { AuthJwts } from './auth.types'
+import { AuthHeader } from '@/shared/decorators/auth-header.decorator'
 
 @Controller('auth')
 export class AuthController {
@@ -50,16 +43,16 @@ export class AuthController {
   @Public()
   @UseGuards(RefreshJwtAuthGuard)
   @Post('update')
-  update(@Headers('Authorization') refreshToken: EncodedJwt) {
+  update(@AuthHeader() refreshToken: EncodedJwt) {
     return this.authService.update(refreshToken)
   }
 
   @Post('logout')
   logout(
-    @Headers('Authorization') accessToken: EncodedJwt,
+    @AuthHeader() accessToken: EncodedJwt,
     @Body() { refreshToken }: RefreshTokenDto,
   ) {
-    const jwts: LogoutOptions = { accessToken, refreshToken }
+    const jwts: AuthJwts = { accessToken, refreshToken }
 
     return this.authService.logout(jwts)
   }

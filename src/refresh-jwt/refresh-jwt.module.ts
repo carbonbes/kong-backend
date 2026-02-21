@@ -9,11 +9,9 @@ import { UuidModule } from '@/shared/uuid/uuid.module'
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('jwt-sign-options.refreshJwtSecret')!,
+        secret: configService.get('jwt.refreshJwtSecret')!,
         signOptions: {
-          expiresIn: Number(
-            configService.get('jwt-sign-options.refreshJwtExpiresIn'),
-          ),
+          expiresIn: Number(configService.get('jwt.refreshJwtExpiresIn')),
         },
       }),
     }),

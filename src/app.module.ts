@@ -4,7 +4,7 @@ import { AuthModule } from '@/auth/auth.module'
 import { RedisOmModule } from '@/shared/redis-om/redis-om.module'
 import { PrismaModule } from '@/shared/prisma/prisma.module'
 import database from '@/shared/config/database'
-import jwtSignOptions from '@/shared/config/jwt-sign-options'
+import jwt from '@/shared/config/jwt'
 import mailer from '@/shared/config/mailer'
 import otp from '@/shared/config/otp'
 import redis from '@/shared/config/redis'
@@ -16,7 +16,7 @@ import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [database, jwtSignOptions, mailer, otp, redis],
+      load: [database, jwt, mailer, otp, redis],
       validate,
     }),
 

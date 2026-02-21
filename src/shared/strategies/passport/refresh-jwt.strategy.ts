@@ -1,9 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtPayload } from '@/shared/types'
-import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
+import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 
 @Injectable()
 export class RefreshJwtStrategy extends PassportStrategy(
@@ -12,19 +12,16 @@ export class RefreshJwtStrategy extends PassportStrategy(
 ) {
   constructor(
     private readonly configService: ConfigService,
-    private readonly authJwtsService: AuthJwtsService,
+    private readonly revokedJwtsService: RevokedJwtsService,
   ) {
-    const secretOrKey = configService.get('jwt-sign-options.refreshJwtSecret')!
+    const jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken()
+    const secretOrKey = configService.get('jwt.refreshJwtSecret')!
 
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey,
-    })
+    super({ jwtFromRequest, ignoreExpiration: false, secretOrKey })
   }
 
   async validate({ jti }: JwtPayload) {
-    const isRevoked = await this.authJwtsService.isRevoked({ jti })
+    const isRevoked = await this.revokedJwtsService.has({ jti })
 
     if (isRevoked) {
       throw new UnauthorizedException()

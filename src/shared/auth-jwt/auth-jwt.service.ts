@@ -16,7 +16,11 @@ export abstract class AuthJwtService {
     return this.jwtService.sign(payload) as EncodedJwt
   }
 
-  decode(token: EncodedJwt): JwtPayload {
-    return this.jwtService.decode(token)
+  verify(jwt: EncodedJwt): JwtPayload {
+    return this.jwtService.verify(jwt)
+  }
+
+  decode(jwt: EncodedJwt): JwtPayload {
+    return this.jwtService.decode(jwt)
   }
 }

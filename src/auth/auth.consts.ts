@@ -1,3 +1,0 @@
-import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-
-export const JWTS_COOKIES = [ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME]
