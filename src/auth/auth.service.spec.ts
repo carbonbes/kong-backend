@@ -1,17 +1,27 @@
-import { beforeEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { AuthService } from '@/auth/auth.service'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from '@/users/users.service'
 import { MailService } from '@/shared/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
-import { JwtsService } from '@/jwts/jwts.service'
-import { getFakeJwts, getFakeOtp, getFakeUser } from '@/test/utils'
+import { AccessJwtService } from '@/access-jwt/access-jwt.service'
+import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
+import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
+import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
+import {
+  getFakeAuthJwts,
+  getFakeJwt,
+  getFakeOtp,
+  getFakeStoragedJwt,
+  getFakeUser,
+  getFakeUuid,
+} from '@/test/utils'
 import { OtpType } from '@/otps/otps.enums'
 import {
+  AuthJwts,
   LoginReturn,
   SignInOptions,
   SignUpOptions,
-  VerifyOtpOptions,
 } from '@/auth/auth.types'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { mock, MockProxy } from 'vitest-mock-extended'
@@ -20,24 +30,24 @@ import {
   FindOneOptions as UsersServiceFindOneOptions,
   IsExistOptions as UsersServiceIsExistOptions,
   SetActiveOptions as UsersServiceSetActiveOptions,
-  User,
 } from '@/users/users.types'
-import {
-  CreateOptions as OtpsServiceCreateOptions,
-  VerifyOptions as OtpsServiceVerifyOptions,
-} from '@/otps/otps.types'
+import { CreateOptions as OtpsServiceCreateOptions } from '@/otps/otps.types'
 import { SendOtpOptions as MailServiceSendOtpOptions } from '@/shared/mail/mail.types'
-import {
-  RotateOptions as JwtsServiceRotateOptions,
-  SignOptions as JwtsServiceSignOptions,
-} from '@/jwts/auth-jwts.types'
+import { AddOptions as JwtStorageAddOptions } from '@/shared/jwt-storage/jwt-storage.types'
+import { SignOptions as AuthJwtSignOptions } from '@/shared/auth-jwt/auth-jwt.types'
+import { JwtPayload } from '@/shared/types'
+import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
+import { getDecodedJwt } from '@/shared/utils'
 
 describe('AuthService', () => {
   let authService: AuthService
   let usersService: MockProxy<UsersService>
   let mailService: MockProxy<MailService>
   let otpsService: MockProxy<OtpsService>
-  let authJwtsService: MockProxy<JwtsService>
+  let accessJwtService: MockProxy<AccessJwtService>
+  let refreshJwtService: MockProxy<RefreshJwtService>
+  let signedJwtsService: MockProxy<SignedJwtsService>
+  let revokedJwtsService: MockProxy<RevokedJwtsService>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -50,7 +60,14 @@ describe('AuthService', () => {
     usersService = module.get(UsersService)
     mailService = module.get(MailService)
     otpsService = module.get(OtpsService)
-    jwtsService = module.get(JwtService)
+    accessJwtService = module.get(AccessJwtService)
+    refreshJwtService = module.get(RefreshJwtService)
+    signedJwtsService = module.get(SignedJwtsService)
+    revokedJwtsService = module.get(RevokedJwtsService)
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
   })
 
   describe('signUp', () => {
@@ -154,7 +171,7 @@ describe('AuthService', () => {
       )
     })
 
-    test('should be return a null if a user with that email does not exist', async () => {
+    test('should be return a 403 if a user with that email does not exist', async () => {
       const user = getFakeUser({ ...data })
       const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
         where: { email: user.email },
@@ -188,38 +205,118 @@ describe('AuthService', () => {
   })
 
   describe('verifyOtp', () => {
-    let user: User
-    let body: VerifyOtpOptions
-
-    beforeEach(() => {
-      user = getFakeUser()
-      body = getFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
-    })
-
-    test('should be set a pair of cookies with JWT if such an OTP exists', async () => {
-      const otp = getFakeOtp({ ...body })
-      const jwts = getFakeJwts()
+    test('should be return auth-jwts if such an OTP exists and type is SIGN_UP', async () => {
+      const user = getFakeUser()
+      const otp = getFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
+      const authJwts = getFakeAuthJwts({
+        accessJwtOptions: { payload: { sub: user.id } },
+        refreshJwtOptions: { payload: { sub: user.id } },
+      })
+      const encodedAccessJwt = authJwts[ACCESS_TOKEN_NAME]
+      const encodedRefreshJwt = authJwts[REFRESH_TOKEN_NAME]
+      const decodedAccessJwt = getDecodedJwt(encodedAccessJwt)
+      const decodedRefreshJwt = getDecodedJwt(encodedRefreshJwt)
+      const storagedJwt = getFakeStoragedJwt({ jti: sub: user.id })
 
       otpsService.verify.mockResolvedValue(true)
-      usersService.setActive.mockResolvedValue(user)
-      jwtsService.sign.mockResolvedValue(jwts)
+      accessJwtService.sign.mockReturnValue(encodedAccessJwt)
+      refreshJwtService.sign.mockReturnValue(encodedRefreshJwt)
+      accessJwtService.decode.mockReturnValue(decodedAccessJwt)
+      refreshJwtService.decode.mockReturnValue(decodedRefreshJwt)
+      signedJwtsService.add.mockResolvedValue(storagedJwt)
 
-      const otpsServiceVerifyOptions: OtpsServiceVerifyOptions = otp
       const usersServiceSetActiveOptions: UsersServiceSetActiveOptions = {
         where: { id: user.id },
         value: true,
       }
-      const jwtsServiceSignOptions: JwtsServiceSignOptions = { sub: user.id }
+      const accessJwtSignOptions: AuthJwtSignOptions = { sub: user.id }
+      const refreshJwtSignOptions: AuthJwtSignOptions = { sub: user.id }
+      const accessJwtStorageAddOptions: JwtStorageAddOptions = {
+        jti: decodedAccessJwt.jti,
+        sub: decodedAccessJwt.sub,
+        exp: decodedAccessJwt.exp,
+      }
+      const refreshJwtStorageAddOptions: JwtStorageAddOptions = {
+        jti: decodedRefreshJwt.jti,
+        sub: decodedRefreshJwt.sub,
+        exp: decodedRefreshJwt.exp,
+      }
 
-      expect(await authService.verifyOtp(body)).toEqual(jwts)
-      expect(otpsService.verify).toHaveBeenCalledWith(otpsServiceVerifyOptions)
+      const result = await authService.verifyOtp(otp)
+
+      expect(result).toEqual(authJwts)
+      expect(otpsService.verify).toHaveBeenCalledWith(otp)
       expect(usersService.setActive).toHaveBeenCalledWith(
         usersServiceSetActiveOptions,
       )
-      expect(jwtsService.sign).toHaveBeenCalledWith(jwtsServiceSignOptions)
+      expect(accessJwtService.sign).toHaveBeenCalledWith(accessJwtSignOptions)
+      expect(refreshJwtService.sign).toHaveBeenCalledWith(refreshJwtSignOptions)
+      expect(signedJwtsService.add).toHaveBeenCalledWith(
+        accessJwtStorageAddOptions,
+      )
+      expect(signedJwtsService.add).toHaveBeenCalledWith(
+        refreshJwtStorageAddOptions,
+      )
+    })
+
+    test('should be return auth-jwts without activating user if type is SIGN_IN', async () => {
+      const user = getFakeUser()
+      const otp = getFakeOtp({ userId: user.id, type: OtpType.SIGN_IN })
+      const authJwts = getFakeAuthJwts({
+        accessJwtOptions: { payload: { sub: user.id } },
+        refreshJwtOptions: { payload: { sub: user.id } },
+      })
+      const encodedAccessJwt = authJwts[ACCESS_TOKEN_NAME]
+      const encodedRefreshJwt = authJwts[REFRESH_TOKEN_NAME]
+      const decodedAccessJwt = getDecodedJwt(encodedAccessJwt)
+      const decodedRefreshJwt = getDecodedJwt(encodedRefreshJwt)
+      const storagedJwt = getFakeStoragedJwt({ sub: user.id })
+
+      otpsService.verify.mockResolvedValue(true)
+      accessJwtService.sign.mockReturnValue(encodedAccessJwt)
+      refreshJwtService.sign.mockReturnValue(encodedRefreshJwt)
+      accessJwtService.decode.mockReturnValue(decodedAccessJwt)
+      refreshJwtService.decode.mockReturnValue(decodedRefreshJwt)
+      signedJwtsService.add.mockResolvedValue(storagedJwt)
+
+      const usersServiceSetActiveOptions: UsersServiceSetActiveOptions = {
+        where: { id: user.id },
+        value: true,
+      }
+      const accessJwtSignOptions: AuthJwtSignOptions = { sub: user.id }
+      const refreshJwtSignOptions: AuthJwtSignOptions = { sub: user.id }
+      const accessJwtStorageAddOptions: JwtStorageAddOptions = {
+        jti: decodedAccessJwt.jti,
+        sub: decodedAccessJwt.sub,
+        exp: decodedAccessJwt.exp,
+      }
+      const refreshJwtStorageAddOptions: JwtStorageAddOptions = {
+        jti: decodedRefreshJwt.jti,
+        sub: decodedRefreshJwt.sub,
+        exp: decodedRefreshJwt.exp,
+      }
+
+      const result = await authService.verifyOtp(otp)
+
+      expect(result).toEqual(authJwts)
+      expect(otpsService.verify).toHaveBeenCalledWith(otp)
+      expect(usersService.setActive).toHaveBeenCalledWith(
+        usersServiceSetActiveOptions,
+      )
+      expect(accessJwtService.sign).toHaveBeenCalledWith(accessJwtSignOptions)
+      expect(refreshJwtService.sign).toHaveBeenCalledWith(refreshJwtSignOptions)
+      expect(signedJwtsService.add).toHaveBeenCalledWith(
+        accessJwtStorageAddOptions,
+      )
+      expect(signedJwtsService.add).toHaveBeenCalledWith(
+        refreshJwtStorageAddOptions,
+      )
     })
 
     test('should be return a 404 if a OTP not found', async () => {
+      const user = getFakeUser()
+      const body = getFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
+
       otpsService.verify.mockResolvedValue(false)
 
       await expect(authService.verifyOtp(body)).rejects.toThrow(
@@ -229,23 +326,61 @@ describe('AuthService', () => {
     })
   })
 
-  describe('rotate', () => {
-    test('should be set a pair of cookies with JWT', async () => {
-      const oldJwts = getFakeJwts()
-      const newJwts = getFakeJwts()
+  describe('update', () => {
+    test('should be return new auth-jwts', async () => {
+      const oldRefreshJwt = getFakeJwt({ type: REFRESH_TOKEN_NAME })
+      const newJwts = getFakeAuthJwts()
+      const oldPayload: JwtPayload = {
+        jti: getFakeUuid(),
+        sub: 1,
+        iat: 1,
+        exp: 2,
+      }
+      const accessPayload: JwtPayload = {
+        jti: getFakeUuid(),
+        sub: 1,
+        iat: 1,
+        exp: 2,
+      }
+      const refreshPayload: JwtPayload = {
+        jti: getFakeUuid(),
+        sub: 1,
+        iat: 1,
+        exp: 2,
+      }
 
-      jwtsService.rotate.mockResolvedValue(newJwts)
+      refreshJwtService.verify.mockReturnValue(oldPayload)
+      revokedJwtsService.add.mockResolvedValue({} as never)
+      refreshJwtService.decode.mockReturnValue(oldPayload)
+      accessJwtService.sign.mockReturnValue(newJwts[ACCESS_TOKEN_NAME])
+      refreshJwtService.sign.mockReturnValue(newJwts[REFRESH_TOKEN_NAME])
+      accessJwtService.decode.mockReturnValue(accessPayload)
+      refreshJwtService.decode.mockReturnValue(refreshPayload)
+      signedJwtsService.add.mockResolvedValue({} as never)
 
-      const jwtsServiveRotateOptions: JwtsServiceRotateOptions = oldJwts
-
-      expect(await authService.rotate(oldJwts)).toEqual(newJwts)
-      expect(jwtsService.rotate).toHaveBeenCalledWith(jwtsServiveRotateOptions)
+      expect(await authService.update(oldRefreshJwt)).toEqual(newJwts)
     })
   })
 
   describe('logout', () => {
-    test('should be remove a pair of cookies with JWT', async () => {
-      const jwts = getFakeJwts()
+    test('should be revoke auth-jwts', async () => {
+      const jwts: AuthJwts = getFakeAuthJwts()
+      const accessPayload: JwtPayload = {
+        jti: getFakeUuid(),
+        sub: 1,
+        iat: 1,
+        exp: 2,
+      }
+      const refreshPayload: JwtPayload = {
+        jti: getFakeUuid(),
+        sub: 1,
+        iat: 1,
+        exp: 2,
+      }
+
+      accessJwtService.verify.mockReturnValue(accessPayload)
+      refreshJwtService.verify.mockReturnValue(refreshPayload)
+      revokedJwtsService.add.mockResolvedValue({} as never)
 
       expect(await authService.logout(jwts)).toBeUndefined()
     })
