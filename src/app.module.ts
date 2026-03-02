@@ -11,6 +11,7 @@ import redis from '@/shared/config/redis'
 import { validate } from '@/shared/config/validate'
 import { APP_GUARD } from '@nestjs/core'
 import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
+import { MailModule } from '@/shared/mail/mail.module'
 
 @Module({
   imports: [
@@ -19,7 +20,6 @@ import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
       load: [database, jwt, mailer, otp, redis],
       validate,
     }),
-
     PrismaModule.forRootAsync({
       isGlobal: true,
       inject: [ConfigService],
@@ -27,7 +27,6 @@ import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
         connectionString: configService.get('database.url')!,
       }),
     }),
-
     RedisOmModule.forRootAsync({
       isGlobal: true,
       inject: [ConfigService],
@@ -35,10 +34,9 @@ import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
         url: configService.get('redis.url')!,
       }),
     }),
-
+    MailModule,
     AuthModule,
   ],
-
   providers: [{ provide: APP_GUARD, useClass: AccessJwtAuthGuard }],
 })
 export class AppModule {}

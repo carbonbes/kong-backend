@@ -4,11 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { UsersService } from '@/users/users.service'
-import {
+import type {
   AuthJwts,
   LogoutOptions,
+  LogoutReturn,
   RevokeJwtOptions,
+  RevokeJwtReturn,
   RevokeJwtsOptions,
+  RevokeJwtsReturn,
   RotateJwtsOptions,
   RotateJwtsReturn,
   SignInOptions,
@@ -18,9 +21,10 @@ import {
   SignUpOptions,
   SignUpReturn,
   UpdateOptions,
+  UpdateReturn,
   VerifyOtpOptions,
   VerifyOtpReturn,
-} from './auth.types'
+} from './types'
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/otps.enums'
@@ -30,7 +34,6 @@ import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { JwtPayload } from '@/shared/types'
 
 @Injectable()
 export class AuthService {
@@ -120,11 +123,11 @@ export class AuthService {
     return this.signJwts({ sub: userId })
   }
 
-  update(jwt: UpdateOptions) {
+  update(jwt: UpdateOptions): UpdateReturn {
     return this.rotateJwts(jwt)
   }
 
-  logout(jwts: LogoutOptions) {
+  logout(jwts: LogoutOptions): LogoutReturn {
     return this.revokeJwts(jwts)
   }
 
@@ -148,7 +151,7 @@ export class AuthService {
     return jwts
   }
 
-  private async revokeJwt({ jwt, type }: RevokeJwtOptions) {
+  private async revokeJwt({ jwt, type }: RevokeJwtOptions): RevokeJwtReturn {
     try {
       const { jti, sub, exp } =
         type === ACCESS_TOKEN_NAME
@@ -159,7 +162,7 @@ export class AuthService {
     } catch {}
   }
 
-  private async revokeJwts(jwts: RevokeJwtsOptions) {
+  private async revokeJwts(jwts: RevokeJwtsOptions): RevokeJwtsReturn {
     await Promise.all([
       Object.values(jwts).map(async (jwt, i) => {
         const type = i === 0 ? ACCESS_TOKEN_NAME : REFRESH_TOKEN_NAME
