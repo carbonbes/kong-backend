@@ -1,7 +1,7 @@
 import { AuthService } from '@/auth/auth.service'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from '@/users/users.service'
-import { MailService } from '@/shared/mail/mail.service'
+import { MailService } from '@/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
@@ -15,7 +15,7 @@ import {
   getFakeUser,
   getFakeUuid,
 } from '@/test/utils'
-import { OtpType } from '@/otps/otps.enums'
+import { OtpType } from '@/otps/enums'
 import {
   AuthJwts,
   LoginReturn,
@@ -29,11 +29,11 @@ import {
   FindOneOptions as UsersServiceFindOneOptions,
   IsExistOptions as UsersServiceIsExistOptions,
   SetActiveOptions as UsersServiceSetActiveOptions,
-} from '@/users/users.types'
-import { CreateOptions as OtpsServiceCreateOptions } from '@/otps/otps.types'
-import { SendOtpOptions as MailServiceSendOtpOptions } from '@/shared/mail/mail.types'
-import { AddOptions as JwtStorageAddOptions } from '@/shared/jwt-storage/jwt-storage.types'
-import { SignOptions as AuthJwtSignOptions } from '@/shared/auth-jwt/auth-jwt.types'
+} from '@/users/types'
+import { CreateOptions as OtpsServiceCreateOptions } from '@/otps/types'
+import { SendOtpOptions as MailServiceSendOtpOptions } from '@/mail/types'
+import { AddOptions as JwtStorageAddOptions } from '@/shared/jwt-storage/types'
+import { SignOptions as AuthJwtSignOptions } from '@/shared/auth-jwt/types'
 import { JwtPayload } from '@/shared/types'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { getDecodedJwt } from '@/shared/utils'
@@ -60,13 +60,12 @@ describe('AuthService', () => {
     mailService = module.get<MockProxy<MailService>>(MailService)
     otpsService = module.get<MockProxy<OtpsService>>(OtpsService)
     accessJwtService = module.get<MockProxy<AccessJwtService>>(AccessJwtService)
-    refreshJwtService = module.get<MockProxy<RefreshJwtService>>(RefreshJwtService)
-    signedJwtsService = module.get<MockProxy<SignedJwtsService>>(SignedJwtsService)
-    revokedJwtsService = module.get<MockProxy<RevokedJwtsService>>(RevokedJwtsService)
-  })
-
-  afterEach(() => {
-    vi.clearAllMocks()
+    refreshJwtService =
+      module.get<MockProxy<RefreshJwtService>>(RefreshJwtService)
+    signedJwtsService =
+      module.get<MockProxy<SignedJwtsService>>(SignedJwtsService)
+    revokedJwtsService =
+      module.get<MockProxy<RevokedJwtsService>>(RevokedJwtsService)
   })
 
   describe('signUp', () => {
@@ -77,14 +76,13 @@ describe('AuthService', () => {
       options = { email, name, gender }
     })
 
-    test('should be return a user ID and otp ID if a user with that email not exist', async () => {
+    test('should be return a user ID and otp ID if a user not exist', async () => {
       const user = getFakeUser({ ...options })
       const otp = getFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
 
       usersService.isExist.mockResolvedValue(false)
       usersService.create.mockResolvedValue(user)
       otpsService.create.mockResolvedValue(otp)
-      mailService.sendOtp.mockResolvedValue(true)
 
       const result: LoginReturn = { otpId: otp.id, userId: user.id }
       const usersServiceIsExistOptions: UsersServiceIsExistOptions = {
@@ -114,7 +112,7 @@ describe('AuthService', () => {
       )
     })
 
-    test('should be return 403 if a user with that email exists', async () => {
+    test('should be return 403 if a user has exists', async () => {
       const user = getFakeUser({ ...options })
 
       usersService.isExist.mockResolvedValue(true)
@@ -138,13 +136,12 @@ describe('AuthService', () => {
       options = { email }
     })
 
-    test('should be return a user ID and otp ID if a user with that email has exist and user is active', async () => {
+    test('should be return a user ID and otp ID if a user has exist and user is active', async () => {
       const user = getFakeUser({ ...options, isActive: true })
       const otp = getFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
 
       usersService.findOne.mockResolvedValue(user)
       otpsService.create.mockResolvedValue(otp)
-      mailService.sendOtp.mockResolvedValue(true)
 
       const result: LoginReturn = { otpId: otp.id, userId: user.id }
       const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
@@ -170,7 +167,7 @@ describe('AuthService', () => {
       )
     })
 
-    test('should be return a 403 if a user with that email does not exist', async () => {
+    test('should be return a 403 if a user not exist', async () => {
       const user = getFakeUser({ ...options })
       const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
         where: { email: user.email },
@@ -186,7 +183,7 @@ describe('AuthService', () => {
       )
     })
 
-    test('should be return a 403 if a user with that email does not active', async () => {
+    test('should be return a 403 if a user does not active', async () => {
       const user = getFakeUser({ ...options, isActive: false })
       const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
         where: { email: user.email },
@@ -215,7 +212,7 @@ describe('AuthService', () => {
       const encodedRefreshJwt = authJwts[REFRESH_TOKEN_NAME]
       const decodedAccessJwt = getDecodedJwt(encodedAccessJwt)
       const decodedRefreshJwt = getDecodedJwt(encodedRefreshJwt)
-      const storagedJwt = getFakeStoragedJwt({ jti: sub: user.id })
+      const storagedJwt = getFakeStoragedJwt({ sub: user.id })
 
       otpsService.verify.mockResolvedValue(true)
       accessJwtService.sign.mockReturnValue(encodedAccessJwt)

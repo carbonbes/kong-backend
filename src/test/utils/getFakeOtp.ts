@@ -1,7 +1,7 @@
-import { Otp } from '@/otps/otps.types'
+import { Otp } from '@/otps/types'
 import { faker } from '@faker-js/faker/locale/ru'
-import { OtpType } from '@/otps/otps.enums'
-import { Uuid } from '@/shared/uuid/uuid.types'
+import { OtpType } from '@/otps/enums'
+import { Uuid } from '@/shared/uuid/types'
 import { getFakeInt } from '@/test/utils/getFakeInt'
 
 type GetFakeOtpOptions = Partial<Otp>

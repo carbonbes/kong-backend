@@ -6,7 +6,7 @@ import { AddOptions, StoragedJwt } from './jwt-storage.types'
 import { createMockRedisSearch } from '@/test/mocks'
 import { getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@/shared/redis-om/redis.utils'
+import { getRepositoryToken } from '@/redis-om/redis.utils'
 import { createSchema } from '@/shared/jwt-storage/jwt-storage.utils'
 import { getDecodedJwt } from '@/shared/utils'
 

@@ -1,28 +1,9 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common'
-import { BcryptService } from './bcrypt.service'
-import { BcryptModuleAsyncOptions } from '@/shared/bcrypt/bcrypt.types'
-import { BCRYPT_MODULE_OPTIONS } from '@/shared/bcrypt/bcrypt.consts'
+import { Module } from '@nestjs/common'
+import { ConfigurableModuleClass } from '@/shared/bcrypt/bcrypt.module-definition'
+import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
 
-@Module({})
-export class BcryptModule {
-  static registerAsync(options: BcryptModuleAsyncOptions): DynamicModule {
-    const module = BcryptModule
-
-    const providers: Provider[] = [
-      BcryptService,
-      {
-        provide: BCRYPT_MODULE_OPTIONS,
-        inject: options.inject,
-        useFactory: options.useFactory,
-      },
-    ]
-
-    const exports: Provider[] = [BcryptService]
-
-    return {
-      module,
-      providers,
-      exports,
-    }
-  }
-}
+@Module({
+  providers: [BcryptService],
+  exports: [BcryptService],
+})
+export class BcryptModule extends ConfigurableModuleClass {}

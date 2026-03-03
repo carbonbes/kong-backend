@@ -1,37 +1,35 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { AuthModule } from '@/auth/auth.module'
-import { RedisOmModule } from '@/shared/redis-om/redis-om.module'
-import { PrismaModule } from '@/shared/prisma/prisma.module'
-import database from '@/shared/config/database'
-import jwt from '@/shared/config/jwt'
-import mailer from '@/shared/config/mailer'
-import otp from '@/shared/config/otp'
-import redis from '@/shared/config/redis'
-import { validate } from '@/shared/config/validate'
+import { RedisOmModule } from '@/redis-om/redis-om.module'
+import { PrismaModule } from '@/prisma/prisma.module'
+import database from '@/config/database'
+import jwt from '@/config/jwt'
+import mail from '@/config/mail'
+import otp from '@/config/otp'
+import redis from '@/config/redis'
+import { validate } from '@/config/validate'
 import { APP_GUARD } from '@nestjs/core'
-import { AccessJwtAuthGuard } from '@/shared/guards/passport/access-jwt.guard'
-import { MailModule } from '@/shared/mail/mail.module'
+import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'
+import { MailModule } from '@/mail/mail.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [database, jwt, mailer, otp, redis],
+      load: [database, jwt, mail, otp, redis],
       validate,
     }),
     PrismaModule.forRootAsync({
-      isGlobal: true,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        connectionString: configService.get('database.url')!,
+        connectionString: configService.get('database.url'),
       }),
     }),
     RedisOmModule.forRootAsync({
-      isGlobal: true,
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        url: configService.get('redis.url')!,
+        url: configService.get('redis.url'),
       }),
     }),
     MailModule,

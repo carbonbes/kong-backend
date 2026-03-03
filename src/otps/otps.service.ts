@@ -1,8 +1,14 @@
 import { Injectable } from '@nestjs/common'
-import { InjectRedisOmRepository } from '@/shared/redis-om/redis-om.decorators'
-import { otpSchema } from '@/otps/otps.schema'
+import { InjectRedisOmRepository } from '@/redis-om/decorators'
+import { otpSchema } from '@/otps/schemas'
 import { EntityId, Repository } from 'redis-om'
-import { CreateOptions, Otp, VerifyOptions } from '@/otps/otps.types'
+import {
+  CreateOptions,
+  CreateReturn,
+  Otp,
+  VerifyOptions,
+  VerifyReturn,
+} from '@/otps/types'
 import { ConfigService } from '@nestjs/config'
 import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
 import { NanoidService } from '@/shared/nanoid/nanoid.service'
@@ -19,7 +25,7 @@ export class OtpsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create({ type, userId }: CreateOptions) {
+  async create({ type, userId }: CreateOptions): CreateReturn {
     const id = this.uuidService.generate()
     const code = this.nanoidService.customAlphabet()
     const codeHash = await this.bcryptService.hash({ value: code })
@@ -40,7 +46,7 @@ export class OtpsService {
     return { ...otp, code } as Otp
   }
 
-  async verify({ id, code, type, userId }: VerifyOptions) {
+  async verify({ id, code, type, userId }: VerifyOptions): VerifyReturn {
     const otp = await this.repository
       .search()
       .where('id')

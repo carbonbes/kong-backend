@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
 import { SignInDto, SignUpDto, VerifyOtpDto } from './dtos'
 import { AuthService } from './auth.service'
-import { Request } from 'express'
-import { EncodedJwt } from '@/shared/types'
-import { Public } from '@/shared/decorators/public.decorator'
-import { RefreshJwtAuthGuard } from '@/shared/guards/passport/refresh-jwt.guard'
+import { type Request } from 'express'
+import { type EncodedJwt } from '@/shared/types'
+import { Public } from '@/shared/decorators'
+import { RefreshJwtAuthGuard } from '@/shared/guards'
 import { AuthJwts } from './types'
-import { AuthHeader } from '@/shared/decorators/auth-header.decorator'
+import { AuthHeader } from '@/shared/decorators'
 import { RefreshJwtDto } from '@/refresh-jwt/dtos'
 
 @Controller('auth')

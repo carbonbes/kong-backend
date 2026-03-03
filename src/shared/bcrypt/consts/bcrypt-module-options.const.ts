@@ -1,0 +1,1 @@
+export const BCRYPT_MODULE_OPTIONS = Symbol('BCRYPT_MODULE_OPTIONS')

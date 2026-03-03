@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { SignedJwtsService } from './signed-jwts.service'
-import { RedisOmModule } from '@/shared/redis-om/redis-om.module'
-import { signedJwtSchema } from '@/signed-jwts/signed-jwts.schema'
+import { RedisOmModule } from '@/redis-om/redis-om.module'
+import { signedJwtSchema } from '@/signed-jwts/schemas'
 
 @Module({
   imports: [RedisOmModule.forFeature([signedJwtSchema])],

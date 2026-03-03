@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { customAlphabet } from 'nanoid'
-import { NanoidModuleOptions } from '@/shared/nanoid/nanoid.types'
-import { InjectNanoidModuleOptions } from '@/shared/nanoid/nanoid.utils'
+import {
+  CustomAlphabetReturn,
+  type NanoidModuleOptions,
+} from '@/shared/nanoid/types'
+import { InjectNanoidModuleOptions } from '@/shared/nanoid/decorators'
 
 @Injectable()
 export class NanoidService {
@@ -10,7 +13,7 @@ export class NanoidService {
     private readonly options: NanoidModuleOptions,
   ) {}
 
-  customAlphabet() {
+  customAlphabet(): CustomAlphabetReturn {
     const { alphabet, defaultSize } = this.options.customAlphabet
 
     return customAlphabet(alphabet, defaultSize)()

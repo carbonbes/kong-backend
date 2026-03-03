@@ -12,19 +12,3 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
-enum UserGender {
-  MALE
-  FEMALE
-  NON_BINARY
-  OTHER
-}
-
-model User {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  name      String
-  gender    UserGender
-  isActive  Boolean    @default(false)
-  createdAt DateTime   @default(now())
-}

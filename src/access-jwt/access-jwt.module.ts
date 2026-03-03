@@ -7,18 +7,16 @@ import { UuidModule } from '@/shared/uuid/uuid.module'
 @Module({
   imports: [
     JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('jwt.accessJwtSecret')!,
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get('jwt.accessJwtSecret'),
         signOptions: {
           expiresIn: Number(configService.get('jwt.accessJwtExpiresIn')),
         },
       }),
+      inject: [ConfigService],
     }),
-
     UuidModule,
   ],
-
   providers: [AccessJwtService],
   exports: [AccessJwtService],
 })

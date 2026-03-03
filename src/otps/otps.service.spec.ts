@@ -1,11 +1,10 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { Test, TestingModule } from '@nestjs/testing'
 import { OtpsService } from '@/otps/otps.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { EntityId, Repository } from 'redis-om'
-import { Otp } from '@/otps/otps.types'
-import { getRepositoryToken } from '@/shared/redis-om/redis.utils'
-import { otpSchema } from '@/otps/otps.schema'
+import { Otp } from '@/otps/types'
+import { getRedisOmRepositoryToken } from '@/redis-om/utils'
+import { otpSchema } from '@/otps/schemas'
 import { NanoidService } from '@/shared/nanoid/nanoid.service'
 import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
 import { ConfigService } from '@nestjs/config'
@@ -13,7 +12,7 @@ import { getFakeBcryptHash, getFakeOtp } from '@/test/utils'
 import {
   HashOptions as BcryptServiceHashOptions,
   CompareOptions as BcryptServiceCompareOptions,
-} from '@/shared/bcrypt/bcrypt.types'
+} from '@/shared/bcrypt/types'
 import { UuidService } from '@/shared/uuid/uuid.service'
 import { createMockRedisSearch } from '@/test/mocks'
 
@@ -31,7 +30,7 @@ describe('OtpsService', () => {
       providers: [
         OtpsService,
         {
-          provide: getRepositoryToken(otpSchema),
+          provide: getRedisOmRepositoryToken(otpSchema),
           useValue: mock<Repository<Otp>>(),
         },
       ],
@@ -40,7 +39,7 @@ describe('OtpsService', () => {
       .compile()
 
     otpsService = module.get(OtpsService)
-    repository = module.get(getRepositoryToken(otpSchema))
+    repository = module.get(getRedisOmRepositoryToken(otpSchema))
     uuidService = module.get(UuidService)
     nanoidService = module.get(NanoidService)
     bcryptService = module.get(BcryptService)

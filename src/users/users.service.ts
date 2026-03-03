@@ -10,27 +10,23 @@ import {
   SetActiveReturn,
   UpdateOptions,
   UpdateReturn,
-} from '@/users/users.types'
-import { InjectPrismaEntity } from '@/shared/prisma/prisma.decorators'
-import { PrismaClient } from '@/shared/prisma/prisma.types'
+} from '@/users/types'
+import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectPrismaEntity('user')
-    private readonly usersRepository: PrismaClient['user'],
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   create(data: CreateOptions): CreateReturn {
-    return this.usersRepository.create({ data })
+    return this.prismaService.user.create({ data })
   }
 
   findOne(opts: FindOneOptions): FindOneReturn {
-    return this.usersRepository.findUnique(opts)
+    return this.prismaService.user.findUnique(opts)
   }
 
   update(opts: UpdateOptions): UpdateReturn {
-    return this.usersRepository.update(opts)
+    return this.prismaService.user.update(opts)
   }
 
   async isExist(opts: IsExistOptions): IsExistReturn {

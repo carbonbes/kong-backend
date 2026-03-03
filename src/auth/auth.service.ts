@@ -27,8 +27,8 @@ import type {
 } from './types'
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
-import { OtpType } from '@/otps/otps.enums'
-import { MailService } from '@/shared/mail/mail.service'
+import { OtpType } from '@/otps/enums'
+import { MailService } from '@/mail/mail.service'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
@@ -48,8 +48,8 @@ export class AuthService {
   ) {}
 
   @Transactional()
-  async signUp(data: SignUpOptions): SignUpReturn {
-    const { email } = data
+  async signUp(options: SignUpOptions): SignUpReturn {
+    const { email } = options
 
     const isExist = await this.usersService.isExist({
       where: { email },
@@ -59,7 +59,7 @@ export class AuthService {
       throw new ForbiddenException()
     }
 
-    const { id: userId } = await this.usersService.create(data)
+    const { id: userId } = await this.usersService.create(options)
 
     const {
       id: otpId,
@@ -76,14 +76,12 @@ export class AuthService {
   }
 
   @Transactional()
-  async signIn({ email }: SignInOptions): SignInReturn {
+  async signIn(options: SignInOptions): SignInReturn {
+    const { email } = options
+
     const user = await this.usersService.findOne({ where: { email } })
 
-    if (!user) {
-      throw new ForbiddenException()
-    }
-
-    if (!user.isActive) {
+    if (!user || (user && !user.isActive)) {
       throw new ForbiddenException()
     }
 
@@ -104,14 +102,14 @@ export class AuthService {
   }
 
   @Transactional()
-  async verifyOtp(otp: VerifyOtpOptions): VerifyOtpReturn {
-    const isVerify = await this.otpsService.verify(otp)
+  async verifyOtp(options: VerifyOtpOptions): VerifyOtpReturn {
+    const isVerify = await this.otpsService.verify(options)
 
     if (!isVerify) {
       throw new NotFoundException()
     }
 
-    const { type, userId } = otp
+    const { type, userId } = options
 
     if (type === 'SIGN_UP') {
       await this.usersService.setActive({
@@ -123,15 +121,17 @@ export class AuthService {
     return this.signJwts({ sub: userId })
   }
 
-  update(jwt: UpdateOptions): UpdateReturn {
-    return this.rotateJwts(jwt)
+  update(options: UpdateOptions): UpdateReturn {
+    return this.rotateJwts(options)
   }
 
-  logout(jwts: LogoutOptions): LogoutReturn {
-    return this.revokeJwts(jwts)
+  logout(options: LogoutOptions): LogoutReturn {
+    return this.revokeJwts(options)
   }
 
-  private async signJwts({ sub }: SignJwtsOptions): SignJwtsReturn {
+  private async signJwts(options: SignJwtsOptions): SignJwtsReturn {
+    const { sub } = options
+
     const jwts: AuthJwts = {
       [ACCESS_TOKEN_NAME]: this.accessJwtService.sign({ sub }),
       [REFRESH_TOKEN_NAME]: this.refreshJwtService.sign({ sub }),
@@ -151,7 +151,9 @@ export class AuthService {
     return jwts
   }
 
-  private async revokeJwt({ jwt, type }: RevokeJwtOptions): RevokeJwtReturn {
+  private async revokeJwt(options: RevokeJwtOptions): RevokeJwtReturn {
+    const { jwt, type } = options
+
     try {
       const { jti, sub, exp } =
         type === ACCESS_TOKEN_NAME
@@ -162,9 +164,9 @@ export class AuthService {
     } catch {}
   }
 
-  private async revokeJwts(jwts: RevokeJwtsOptions): RevokeJwtsReturn {
+  private async revokeJwts(options: RevokeJwtsOptions): RevokeJwtsReturn {
     await Promise.all([
-      Object.values(jwts).map(async (jwt, i) => {
+      Object.values(options).map(async (jwt, i) => {
         const type = i === 0 ? ACCESS_TOKEN_NAME : REFRESH_TOKEN_NAME
 
         await this.revokeJwt({ jwt, type })
@@ -172,10 +174,10 @@ export class AuthService {
     ])
   }
 
-  private async rotateJwts(jwt: RotateJwtsOptions): RotateJwtsReturn {
-    await this.revokeJwt({ jwt, type: REFRESH_TOKEN_NAME })
+  private async rotateJwts(options: RotateJwtsOptions): RotateJwtsReturn {
+    await this.revokeJwt({ jwt: options, type: REFRESH_TOKEN_NAME })
 
-    const { sub } = this.refreshJwtService.decode(jwt)
+    const { sub } = this.refreshJwtService.decode(options)
 
     return this.signJwts({ sub })
   }

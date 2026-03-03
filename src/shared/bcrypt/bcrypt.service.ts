@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import {
-  BcryptModuleOptions,
+  type BcryptModuleOptions,
   CompareOptions,
+  CompareReturn,
   HashOptions,
-} from './bcrypt.types'
+  HashReturn,
+} from './types'
 import * as bcrypt from 'bcrypt'
-import { InjectBcryptModuleOptions } from '@/shared/bcrypt/bcrypt.utils'
+import { InjectBcryptModuleOptions } from './decorators'
 
 @Injectable()
 export class BcryptService {
@@ -14,13 +16,13 @@ export class BcryptService {
     private readonly options: BcryptModuleOptions,
   ) {}
 
-  hash({ value }: HashOptions) {
-    const { rounds } = this.options
+  hash({ value }: HashOptions): HashReturn {
+    const { saltOrRounds } = this.options
 
-    return bcrypt.hash(value, rounds)
+    return bcrypt.hash(value, saltOrRounds)
   }
 
-  compare({ value, encoded }: CompareOptions) {
+  compare({ value, encoded }: CompareOptions): CompareReturn {
     return bcrypt.compare(value, encoded)
   }
 }

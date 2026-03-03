@@ -1,28 +1,9 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common'
-import { NanoidService } from './nanoid.service'
-import { NANOID_MODULE_OPTIONS } from '@/shared/nanoid/nanoid.consts'
-import { NanoidModuleAsyncOptions } from '@/shared/nanoid/nanoid.types'
+import { Module } from '@nestjs/common'
+import { ConfigurableModuleClass } from '@/shared/nanoid/nanoid.module-definition'
+import { NanoidService } from '@/shared/nanoid/nanoid.service'
 
-@Module({})
-export class NanoidModule {
-  static registerAsync(options: NanoidModuleAsyncOptions): DynamicModule {
-    const module = NanoidModule
-
-    const providers: Provider[] = [
-      NanoidService,
-      {
-        provide: NANOID_MODULE_OPTIONS,
-        inject: options.inject,
-        useFactory: options.useFactory,
-      },
-    ]
-
-    const exports: Provider[] = [NanoidService]
-
-    return {
-      module,
-      providers,
-      exports,
-    }
-  }
-}
+@Module({
+  providers: [NanoidService],
+  exports: [NanoidService],
+})
+export class NanoidModule extends ConfigurableModuleClass {}

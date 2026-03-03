@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
-import { Uuid } from './uuid.types'
+import { GenerateReturn } from './types'
 
 @Injectable()
 export class UuidService {
-  generate(): Uuid {
+  generate(): GenerateReturn {
     return crypto.randomUUID()
   }
 }

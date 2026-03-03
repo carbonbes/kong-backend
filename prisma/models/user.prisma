@@ -1,0 +1,22 @@
+enum UserGender {
+  MALE
+  FEMALE
+  NON_BINARY
+  OTHER
+}
+
+enum UserRole {
+  USER
+  MODER
+  ADMIN
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  name      String     @db.VarChar(150)
+  gender    UserGender
+  role      UserRole   @default(USER)
+  isActive  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+}
