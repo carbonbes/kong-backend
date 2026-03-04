@@ -1,5 +1,5 @@
-import { Uuid } from '@/shared/uuid/uuid.types'
-import { OtpType } from '@/otps/otps.enums'
+import { Uuid } from '@/shared/uuid/types'
+import { OtpType } from '@/otps/enums'
 import { User } from '@/users/types'
 
 export type Otp = {

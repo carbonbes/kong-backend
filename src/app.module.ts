@@ -12,6 +12,7 @@ import { validate } from '@/config/validate'
 import { APP_GUARD } from '@nestjs/core'
 import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'
 import { MailModule } from '@/mail/mail.module'
+import { EventEmitterModule } from '@nestjs/event-emitter'
 
 @Module({
   imports: [
@@ -20,17 +21,20 @@ import { MailModule } from '@/mail/mail.module'
       load: [database, jwt, mail, otp, redis],
       validate,
     }),
+    EventEmitterModule.forRoot({
+      delimiter: '_',
+    }),
     PrismaModule.forRootAsync({
-      inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         connectionString: configService.get('database.url'),
       }),
+      inject: [ConfigService],
     }),
     RedisOmModule.forRootAsync({
-      inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         url: configService.get('redis.url'),
       }),
+      inject: [ConfigService],
     }),
     MailModule,
     AuthModule,

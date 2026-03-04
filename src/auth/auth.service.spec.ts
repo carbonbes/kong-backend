@@ -1,7 +1,6 @@
 import { AuthService } from '@/auth/auth.service'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from '@/users/users.service'
-import { MailService } from '@/mail/mail.service'
 import { OtpsService } from '@/otps/otps.service'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
@@ -41,7 +40,6 @@ import { getDecodedJwt } from '@/shared/utils'
 describe('AuthService', () => {
   let authService: AuthService
   let usersService: MockProxy<UsersService>
-  let mailService: MockProxy<MailService>
   let otpsService: MockProxy<OtpsService>
   let accessJwtService: MockProxy<AccessJwtService>
   let refreshJwtService: MockProxy<RefreshJwtService>
@@ -57,7 +55,6 @@ describe('AuthService', () => {
 
     authService = module.get<AuthService>(AuthService)
     usersService = module.get<MockProxy<UsersService>>(UsersService)
-    mailService = module.get<MockProxy<MailService>>(MailService)
     otpsService = module.get<MockProxy<OtpsService>>(OtpsService)
     accessJwtService = module.get<MockProxy<AccessJwtService>>(AccessJwtService)
     refreshJwtService =
@@ -93,11 +90,6 @@ describe('AuthService', () => {
         type: otp.type,
         userId: user.id,
       }
-      const mailServiceSendOtpOptions: MailServiceSendOtpOptions = {
-        email: user.email,
-        code: otp.code,
-        type: otp.type,
-      }
 
       expect(await authService.signUp(options)).toEqual(result)
       expect(usersService.isExist).toHaveBeenCalledWith(
@@ -107,9 +99,6 @@ describe('AuthService', () => {
         usersServiceCreateOptions,
       )
       expect(otpsService.create).toHaveBeenCalledWith(otpsServiceCreateOptions)
-      expect(mailService.sendOtp).toHaveBeenCalledWith(
-        mailServiceSendOtpOptions,
-      )
     })
 
     test('should be return 403 if a user has exists', async () => {
@@ -162,9 +151,6 @@ describe('AuthService', () => {
         usersServiceFindOneOptions,
       )
       expect(otpsService.create).toHaveBeenCalledWith(otpsServiceCreateOptions)
-      expect(mailService.sendOtp).toHaveBeenCalledWith(
-        mailServiceSendOtpOptions,
-      )
     })
 
     test('should be return a 403 if a user not exist', async () => {

@@ -28,23 +28,25 @@ import type {
 import { Transactional } from '@transactional/core'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/enums'
-import { MailService } from '@/mail/mail.service'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
+import { EventEmitter2 } from '@nestjs/event-emitter'
+import { OTP_CREATED } from '@/events/otp-created/consts'
+import { OtpCreatedEvent } from '@/events/otp-created/otp-created.event'
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly mailService: MailService,
     private readonly otpsService: OtpsService,
     private readonly accessJwtService: AccessJwtService,
     private readonly refreshJwtService: RefreshJwtService,
     private readonly signedJwtsService: SignedJwtsService,
     private readonly revokedJwtsService: RevokedJwtsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Transactional()
@@ -63,14 +65,17 @@ export class AuthService {
 
     const {
       id: otpId,
-      code,
-      type,
+      code: otpCode,
+      type: otpType,
     } = await this.otpsService.create({
       type: OtpType.SIGN_UP,
       userId,
     })
 
-    await this.mailService.sendOtp({ email, code, type })
+    this.eventEmitter.emit(
+      OTP_CREATED,
+      new OtpCreatedEvent(email, otpCode, otpType),
+    )
 
     return { otpId, userId }
   }
@@ -89,14 +94,17 @@ export class AuthService {
 
     const {
       id: otpId,
-      code,
-      type,
+      code: otpCode,
+      type: otpType,
     } = await this.otpsService.create({
       type: OtpType.SIGN_IN,
       userId,
     })
 
-    await this.mailService.sendOtp({ email, code, type })
+    this.eventEmitter.emit(
+      OTP_CREATED,
+      new OtpCreatedEvent(email, otpCode, otpType),
+    )
 
     return { otpId, userId }
   }

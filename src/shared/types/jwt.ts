@@ -1,4 +1,4 @@
-import { Uuid } from '@/shared/uuid/uuid.types'
+import { Uuid } from '@/shared/uuid/types'
 
 export type JwtHeader = {
   alg: 'HS256'

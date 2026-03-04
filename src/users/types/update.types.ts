@@ -1,4 +1,4 @@
-import { Prisma } from '@/prisma/prisma.types'
+import { Prisma } from '@/prisma/types'
 import { User } from './user.type'
 
 export type UpdateOptions = Prisma.UserUpdateArgs
