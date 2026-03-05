@@ -12,13 +12,23 @@ import {
   UpdateReturn,
 } from '@/users/types'
 import { PrismaService } from '@/prisma/prisma.service'
+import { EventEmitter2 } from '@nestjs/event-emitter'
+import { USER_CREATED } from '@/events/user-created/consts'
+import { UserCreatedEvent } from '@/events/user-created/user-created.event'
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
-  create(data: CreateOptions): CreateReturn {
-    return this.prismaService.user.create({ data })
+  async create(data: CreateOptions): CreateReturn {
+    const user = await this.prismaService.user.create({ data })
+
+    this.eventEmitter.emit(USER_CREATED, user as UserCreatedEvent)
+
+    return user
   }
 
   findOne(opts: FindOneOptions): FindOneReturn {

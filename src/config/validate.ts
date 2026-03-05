@@ -43,6 +43,9 @@ class EnvVariables {
 
   @IsNumber()
   OTP_EXPIRES_IN: number
+
+  @IsString()
+  AES_KEY: string
 }
 
 export function validate(config: Record<string, any>) {

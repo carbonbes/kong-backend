@@ -7,7 +7,7 @@ export type JwtHeader = {
 
 export type JwtPayload = {
   jti: Uuid
-  sub: number
+  sub: string
   iat: number
   exp: number
 }

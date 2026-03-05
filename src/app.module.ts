@@ -13,12 +13,14 @@ import { APP_GUARD } from '@nestjs/core'
 import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'
 import { MailModule } from '@/mail/mail.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
+import aes from '@/config/aes'
+import { OtpsModule } from '@/otps/otps.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [database, jwt, mail, otp, redis],
+      load: [database, jwt, mail, otp, redis, aes],
       validate,
     }),
     EventEmitterModule.forRoot({
@@ -37,6 +39,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter'
       inject: [ConfigService],
     }),
     MailModule,
+    OtpsModule,
     AuthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: AccessJwtAuthGuard }],

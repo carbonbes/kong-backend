@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common'
 import { AuthService } from './auth.service'
 import { AuthController } from './auth.controller'
 import { UsersModule } from '@/users/users.module'
-import { OtpsModule } from '@/otps/otps.module'
 import { PassportModule } from '@nestjs/passport'
 import { AccessJwtStrategy } from '@/shared/strategies/access-jwt.strategy'
 import { RefreshJwtStrategy } from '@/shared/strategies/refresh-jwt.strategy'
@@ -14,7 +13,6 @@ import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 @Module({
   imports: [
     UsersModule,
-    OtpsModule,
     AccessJwtModule,
     RefreshJwtModule,
     SignedJwtsModule,

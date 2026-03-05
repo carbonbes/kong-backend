@@ -33,9 +33,6 @@ import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { SignedJwtsService } from '@/signed-jwts/signed-jwts.service'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { OTP_CREATED } from '@/events/otp-created/consts'
-import { OtpCreatedEvent } from '@/events/otp-created/otp-created.event'
 
 @Injectable()
 export class AuthService {
@@ -46,7 +43,6 @@ export class AuthService {
     private readonly refreshJwtService: RefreshJwtService,
     private readonly signedJwtsService: SignedJwtsService,
     private readonly revokedJwtsService: RevokedJwtsService,
-    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Transactional()
@@ -61,23 +57,7 @@ export class AuthService {
       throw new ForbiddenException()
     }
 
-    const { id: userId } = await this.usersService.create(options)
-
-    const {
-      id: otpId,
-      code: otpCode,
-      type: otpType,
-    } = await this.otpsService.create({
-      type: OtpType.SIGN_UP,
-      userId,
-    })
-
-    this.eventEmitter.emit(
-      OTP_CREATED,
-      new OtpCreatedEvent(email, otpCode, otpType),
-    )
-
-    return { otpId, userId }
+    await this.usersService.create(options)
   }
 
   @Transactional()
@@ -90,23 +70,7 @@ export class AuthService {
       throw new ForbiddenException()
     }
 
-    const { id: userId } = user
-
-    const {
-      id: otpId,
-      code: otpCode,
-      type: otpType,
-    } = await this.otpsService.create({
-      type: OtpType.SIGN_IN,
-      userId,
-    })
-
-    this.eventEmitter.emit(
-      OTP_CREATED,
-      new OtpCreatedEvent(email, otpCode, otpType),
-    )
-
-    return { otpId, userId }
+    await this.otpsService.create({ type: OtpType.SIGN_IN, email })
   }
 
   @Transactional()
@@ -117,16 +81,16 @@ export class AuthService {
       throw new NotFoundException()
     }
 
-    const { type, userId } = options
+    const { type, email } = options
 
     if (type === 'SIGN_UP') {
       await this.usersService.setActive({
-        where: { id: userId },
+        where: { email },
         value: true,
       })
     }
 
-    return this.signJwts({ sub: userId })
+    return this.signJwts({ sub: email })
   }
 
   update(options: UpdateOptions): UpdateReturn {

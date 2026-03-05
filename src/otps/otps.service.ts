@@ -10,63 +10,58 @@ import {
   VerifyReturn,
 } from '@/otps/types'
 import { ConfigService } from '@nestjs/config'
-import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
 import { NanoidService } from '@/shared/nanoid/nanoid.service'
-import { UuidService } from '@/shared/uuid/uuid.service'
+import { EventEmitter2 } from '@nestjs/event-emitter'
+import { OTP_CREATED } from '@/events/otp-created/consts'
+import { OtpCreatedEvent } from '@/events/otp-created/otp-created.event'
+import { AesService } from '@/aes/aes.service'
 
 @Injectable()
 export class OtpsService {
   constructor(
     @InjectRedisOmRepository(otpSchema)
     private readonly repository: Repository<Otp>,
-    private readonly uuidService: UuidService,
     private readonly nanoidService: NanoidService,
-    private readonly bcryptService: BcryptService,
+    private readonly aesService: AesService,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async create({ type, userId }: CreateOptions): CreateReturn {
-    const id = this.uuidService.generate()
+  async create({ type, email }: CreateOptions): CreateReturn {
     const code = this.nanoidService.customAlphabet()
-    const codeHash = await this.bcryptService.hash({ value: code })
+    const encryptedCode = this.aesService.encrypt({ value: code })
 
     const otp = await this.repository.save({
-      id,
-      code: codeHash,
+      code: encryptedCode,
       type,
-      userId,
+      email,
     })
 
     const entityId: string = otp[EntityId]
-    const expiresIn = this.configService.get<number>('otp.expiresIn')!
+    const expiresIn = Number(this.configService.get('otp.expiresIn'))
     const expiresAt = new Date(Date.now() + expiresIn * 1000)
 
     await this.repository.expireAt(entityId, expiresAt)
 
-    return { ...otp, code } as Otp
+    this.eventEmitter.emit(OTP_CREATED, {
+      email,
+      code,
+      type,
+    } as OtpCreatedEvent)
+
+    return { ...otp, code }
   }
 
-  async verify({ id, code, type, userId }: VerifyOptions): VerifyReturn {
+  async verify({ code, type, email }: VerifyOptions): VerifyReturn {
+    const encryptedCode = this.aesService.encrypt({ value: code })
+
     const otp = await this.repository
       .search()
-      .where('id')
-      .eq(id)
-      .and('type')
-      .eq(type)
-      .and('userId')
-      .eq(userId)
+      .where('code')
+      .eq(encryptedCode)
       .returnFirst()
 
-    if (!otp) {
-      return false
-    }
-
-    const isVerify = await this.bcryptService.compare({
-      value: code,
-      encoded: otp.code,
-    })
-
-    if (!isVerify) {
+    if (!otp || (otp && otp.type !== type && otp.email !== email)) {
       return false
     }
 
