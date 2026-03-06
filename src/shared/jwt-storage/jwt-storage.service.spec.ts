@@ -2,13 +2,14 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { JwtStorageService as AbstractJwtStorageService } from './jwt-storage.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { EntityId, Repository } from 'redis-om'
-import { AddOptions, StoragedJwt } from './jwt-storage.types'
+import { AddOptions, StoragedJwt } from './types'
 import { createMockRedisSearch } from '@/test/mocks'
-import { getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
+import { getFakeEmail, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@/redis-om/redis.utils'
-import { createSchema } from '@/shared/jwt-storage/jwt-storage.utils'
+import { getRedisOmRepositoryToken } from '@/redis-om/utils'
+import { createSchema } from '@/shared/jwt-storage/utils'
 import { getDecodedJwt } from '@/shared/utils'
+import { StoragedJwtSchema } from '@/shared/jwt-storage/types'
 
 class JwtStorageService extends AbstractJwtStorageService {
   constructor(repository: Repository<StoragedJwt>) {
@@ -20,26 +21,28 @@ const testJwtSchema = createSchema('test-jwt')
 
 describe('JwtStorageService', () => {
   let jwtStorageService: JwtStorageService
-  let repository: MockProxy<Repository<StoragedJwt>>
+  let repository: MockProxy<Repository<StoragedJwtSchema>>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
-          provide: getRepositoryToken(testJwtSchema),
-          useValue: mock<Repository<StoragedJwt>>(),
+          provide: getRedisOmRepositoryToken(testJwtSchema),
+          useValue: mock<Repository<StoragedJwtSchema>>(),
         },
         {
           provide: JwtStorageService,
-          inject: [getRepositoryToken(testJwtSchema)],
-          useFactory: (repository: Repository<StoragedJwt>) =>
+          inject: [getRedisOmRepositoryToken(testJwtSchema)],
+          useFactory: (repository: Repository<StoragedJwtSchema>) =>
             new JwtStorageService(repository),
         },
       ],
     }).compile()
 
-    jwtStorageService = module.get(JwtStorageService)
-    repository = module.get(getRepositoryToken(testJwtSchema))
+    jwtStorageService = module.get<JwtStorageService>(JwtStorageService)
+    repository = module.get<MockProxy<Repository<StoragedJwtSchema>>>(
+      getRedisOmRepositoryToken(testJwtSchema),
+    )
 
     vi.clearAllMocks()
   })
@@ -48,15 +51,15 @@ describe('JwtStorageService', () => {
     test('should be add a JWT', async () => {
       const { jti, sub, exp }: AddOptions = getDecodedJwt(getFakeJwt())
 
-      const jwtId: string = jti[EntityId]
+      const jwt: StoragedJwtSchema = { jti, sub }
+      const jwtId = jwt[EntityId]
       const jwtExpirationDate = new Date(exp * 1000)
-      const storagedJwt: StoragedJwt = { jti, sub }
 
-      repository.save.mockResolvedValue(storagedJwt)
+      repository.save.mockResolvedValue(jwt)
 
       const result = await jwtStorageService.add({ jti, sub, exp })
 
-      expect(result).toEqual(storagedJwt)
+      expect(result).toEqual(jwt)
       expect(repository.save).toHaveBeenCalledWith({ jti, sub })
       expect(repository.expireAt).toHaveBeenCalledWith(jwtId, jwtExpirationDate)
     })
@@ -97,7 +100,7 @@ describe('JwtStorageService', () => {
 
   describe('getAll', () => {
     test('should be return all JWTs for a user', async () => {
-      const sub = getFakeInt()
+      const sub = getFakeEmail()
 
       const storagedJwts: StoragedJwt[] = Array(4).map(() =>
         getDecodedJwt(getFakeJwt({ payload: { sub } })),
@@ -118,7 +121,7 @@ describe('JwtStorageService', () => {
     })
 
     test('should be return empty array when no JWTs found', async () => {
-      const sub = getFakeInt()
+      const sub = getFakeEmail()
 
       const searchBuilder = createMockRedisSearch<StoragedJwt>({
         returnAllValue: [],
