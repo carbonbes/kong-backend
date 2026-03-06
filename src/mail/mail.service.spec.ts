@@ -24,8 +24,8 @@ describe('MailService', () => {
       .useMocker(mock)
       .compile()
 
-    mailService = module.get(MailService)
-    mailerService = module.get(MailerService)
+    mailService = module.get<MailService>(MailService)
+    mailerService = module.get<MockProxy<MailerService>>(MailerService)
   })
 
   afterEach(() => {
@@ -54,7 +54,7 @@ describe('MailService', () => {
 
       const result = await mailService.sendOtp(options)
 
-      expect(result).toBe(true)
+      expect(result).toBe(undefined)
       expect(mailerService.sendMail).toHaveBeenCalledWith(
         mailerServiceSendMailOptions,
       )
@@ -74,7 +74,7 @@ describe('MailService', () => {
 
       const result = await mailService.sendOtp(options)
 
-      expect(result).toBe(true)
+      expect(result).toBe(undefined)
       expect(mailerService.sendMail).toHaveBeenCalledWith(
         mailerServiceSendMailOptions,
       )
@@ -92,9 +92,9 @@ describe('MailService', () => {
 
       mailerService.sendMail.mockRejectedValue(new Error('SMTP error'))
 
-      const result = await mailService.sendOtp(options)
-
-      expect(result).toBe(false)
+      await expect(mailService.sendOtp(options)).rejects.toThrow(
+        new Error('SMTP error'),
+      )
       expect(mailerService.sendMail).toHaveBeenCalledWith(
         mailerServiceSendMailOptions,
       )
