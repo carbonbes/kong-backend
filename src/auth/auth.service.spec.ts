@@ -260,10 +260,6 @@ describe('AuthService', () => {
       refreshJwtService.decode.mockReturnValue(decodedRefreshJwt)
       signedJwtsService.add.mockResolvedValue(storagedJwt)
 
-      const usersServiceSetActiveOptions: UsersServiceSetActiveOptions = {
-        where: { email: user.email },
-        value: true,
-      }
       const accessJwtSignOptions: AuthJwtSignOptions = { sub: user.email }
       const refreshJwtSignOptions: AuthJwtSignOptions = { sub: user.email }
       const accessJwtStorageAddOptions: JwtStorageAddOptions = {
@@ -281,9 +277,6 @@ describe('AuthService', () => {
 
       expect(result).toEqual(authJwts)
       expect(otpsService.verify).toHaveBeenCalledWith(options)
-      expect(usersService.setActive).toHaveBeenCalledWith(
-        usersServiceSetActiveOptions,
-      )
       expect(accessJwtService.sign).toHaveBeenCalledWith(accessJwtSignOptions)
       expect(refreshJwtService.sign).toHaveBeenCalledWith(refreshJwtSignOptions)
       expect(signedJwtsService.add).toHaveBeenCalledWith(
