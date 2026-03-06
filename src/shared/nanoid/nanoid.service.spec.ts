@@ -3,9 +3,9 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { customAlphabet } from 'nanoid'
 import { NanoidService } from './nanoid.service'
-import { NANOID_MODULE_OPTIONS } from './nanoid.consts'
-import { NanoidModuleOptions } from './nanoid.types'
+import { NanoidModuleOptions } from './types'
 import { getFakeNanoid } from '@/test/utils'
+import { MODULE_OPTIONS_TOKEN } from '@/shared/nanoid/nanoid.module-definition'
 
 vi.mock('nanoid', { spy: true })
 
@@ -24,11 +24,11 @@ describe('NanoidService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NanoidService,
-        { provide: NANOID_MODULE_OPTIONS, useValue: options },
+        { provide: MODULE_OPTIONS_TOKEN, useValue: options },
       ],
     }).compile()
 
-    nanoidService = module.get(NanoidService)
+    nanoidService = module.get<NanoidService>(NanoidService)
   })
 
   describe('customAlphabet', () => {
