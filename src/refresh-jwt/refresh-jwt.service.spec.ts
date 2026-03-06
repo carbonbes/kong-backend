@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { JwtService, TokenExpiredError, JsonWebTokenError } from '@nestjs/jwt'
 import { UuidService } from '@/shared/uuid/uuid.service'
 import { RefreshJwtService } from './refresh-jwt.service'
-import { getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
+import { getFakeEmail, getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { getDecodedJwt } from '@/shared/utils'
 import { EncodedJwt } from '@/shared/types'
@@ -26,21 +26,21 @@ describe('RefreshJwtService', () => {
       .useMocker(mock)
       .compile()
 
-    refreshJwtService = module.get(RefreshJwtService)
-    jwtService = module.get(JwtService)
-    uuidService = module.get(UuidService)
+    refreshJwtService = module.get<RefreshJwtService>(RefreshJwtService)
+    jwtService = module.get<MockProxy<JwtService>>(JwtService)
+    uuidService = module.get<MockProxy<UuidService>>(UuidService)
   })
 
   describe('sign', () => {
     test('should be sign refresh JWT', () => {
       vi.useFakeTimers()
       const currentDate = Date.now() / 1000
-      const refreshJwtExpiresIn = Number(process.env.REFRESH_JWT_EXPIRES_IN)
+      const refreshJwtExpiresIn = 2592000
 
-      const sub = getFakeInt()
+      const sub = getFakeEmail()
       const jti = getFakeUuid()
       const encodedJwt = getFakeJwt({
-        type: 'refresh_token',
+        type: 'refreshToken',
         payload: { jti, sub },
       })
 
@@ -66,7 +66,7 @@ describe('RefreshJwtService', () => {
     let encodedJwt: EncodedJwt
 
     beforeEach(() => {
-      encodedJwt = getFakeJwt({ type: 'refresh_token' })
+      encodedJwt = getFakeJwt({ type: 'refreshToken' })
     })
 
     test('should be verify valid refresh JWT and return payload', () => {
@@ -80,23 +80,23 @@ describe('RefreshJwtService', () => {
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
     })
 
-    test('should be throw JsonWebTokenError when token is invalid', () => {
+    test('should be throw JsonWebTokenError when token is invalid', async () => {
       jwtService.verify.mockRejectedValue(
         new JsonWebTokenError('Invalid token'),
       )
 
-      expect(refreshJwtService.verify(encodedJwt)).rejects.toThrow(
+      await expect(refreshJwtService.verify(encodedJwt)).rejects.toThrow(
         new JsonWebTokenError('Invalid token'),
       )
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
     })
 
-    test('should be throw TokenExpiredError when token is expired', () => {
+    test('should be throw TokenExpiredError when token is expired', async () => {
       jwtService.verify.mockRejectedValue(
         new TokenExpiredError('Token expired', new Date()),
       )
 
-      expect(refreshJwtService.verify(encodedJwt)).rejects.toThrow(
+      await expect(refreshJwtService.verify(encodedJwt)).rejects.toThrow(
         new TokenExpiredError('Token expired', new Date()),
       )
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
