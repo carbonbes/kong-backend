@@ -18,7 +18,7 @@ export abstract class JwtStorageService {
 
   async add({ jti, sub, exp }: AddOptions): AddReturn {
     const jwt = await this.repository.save({ jti, sub })
-    const jwtId = jwt[EntityId]
+    const jwtId = jwt[EntityId]!
     const jwtExpirationDate = new Date(exp * 1000)
 
     await this.repository.expireAt(jwtId, jwtExpirationDate)

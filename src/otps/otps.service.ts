@@ -41,13 +41,13 @@ export class OtpsService {
       email,
     })
 
-    const entityId = otp[EntityId]
+    const entityId = otp[EntityId]!
     const expiresIn = Number(this.configService.get('otp.expiresIn'))
     const expiresAt = new Date(Date.now() + expiresIn * 1000)
 
     await this.repository.expireAt(entityId, expiresAt)
 
-    this.eventEmitter.emit(OTP_CREATED, new OtpCreatedEvent(otp))
+    this.eventEmitter.emit(OTP_CREATED, new OtpCreatedEvent({ ...otp, code }))
 
     return { ...otp, code }
   }
@@ -76,7 +76,7 @@ export class OtpsService {
       return false
     }
 
-    const entityId = otp[EntityId]
+    const entityId = otp[EntityId]!
     await this.repository.remove(entityId)
 
     return true

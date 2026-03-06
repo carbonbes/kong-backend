@@ -1,12 +1,12 @@
 import { Schema } from 'redis-om'
-import { StoragedJwtSchema } from '../types'
+import { StoragedJwt } from '../types'
 
 export const createSchema = (name: string) =>
-  new Schema<StoragedJwtSchema>(
+  new Schema<StoragedJwt>(
     name,
     {
       jti: { type: 'string' },
-      sub: { type: 'number' },
+      sub: { type: 'string' },
     },
     { dataStructure: 'HASH' },
   )

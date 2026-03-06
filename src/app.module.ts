@@ -14,6 +14,7 @@ import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'
 import { MailModule } from '@/mail/mail.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { OtpsModule } from '@/otps/otps.module'
+import { OtpCreatedListener } from '@/listeners/otp-created.listener'
 
 @Module({
   imports: [
@@ -42,6 +43,9 @@ import { OtpsModule } from '@/otps/otps.module'
     OtpsModule,
     AuthModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: AccessJwtAuthGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: AccessJwtAuthGuard },
+    OtpCreatedListener,
+  ],
 })
 export class AppModule {}
