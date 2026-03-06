@@ -7,7 +7,6 @@ export const {
   OPTIONS_TYPE,
   ASYNC_OPTIONS_TYPE,
 } = new ConfigurableModuleBuilder<BcryptModuleOptions>()
-  .setClassMethodName('register')
   .setExtras(
     {
       isGlobal: false,

@@ -2,7 +2,6 @@ import { Otp } from '@/otps/types'
 import { faker } from '@faker-js/faker/locale/ru'
 import { OtpType } from '@/otps/enums'
 import { Uuid } from '@/shared/uuid/types'
-import { getFakeInt } from '@/test/utils/getFakeInt'
 
 type GetFakeOtpOptions = Partial<Otp>
 
@@ -12,10 +11,10 @@ export const getFakeOtp = ({
   id,
   code,
   type,
-  userId,
+  email,
 }: GetFakeOtpOptions = {}): Otp => ({
   id: id ?? (faker.string.uuid() as Uuid),
   code: code ?? faker.string.alphanumeric({ length: 6 }),
   type: type ?? faker.helpers.arrayElement(otpType),
-  userId: userId ?? getFakeInt(),
+  email: email ?? faker.internet.email(),
 })

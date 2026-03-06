@@ -3,7 +3,6 @@ import { AuthJwts } from '@/auth/types'
 import { Uuid } from '@/shared/uuid/types'
 import { faker } from '@faker-js/faker/locale/ru'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { getFakeInt } from '@/test/utils/getFakeInt'
 
 type FakeJwtHeader = JwtHeader
 type FakeJwtPayload = JwtPayload
@@ -34,7 +33,7 @@ export const getFakeJwt = (options: GetFakeJwtOptions = {}): EncodedJwt => {
 
   const payload: JwtPayload = {
     jti: options.payload?.jti ?? (faker.string.uuid() as Uuid),
-    sub: options.payload?.sub ?? getFakeInt(),
+    sub: options.payload?.sub ?? faker.internet.email(),
     iat: options.payload?.iat ?? currentTime,
     exp:
       options.payload?.exp ??

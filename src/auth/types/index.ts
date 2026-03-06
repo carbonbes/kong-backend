@@ -1,4 +1,5 @@
 export * from './auth-jwts.type'
+export * from './login-return.type'
 export * from './logout.types'
 export * from './revoke-jwt.types'
 export * from './revoke-jwts.types'

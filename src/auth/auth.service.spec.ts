@@ -20,6 +20,7 @@ import {
   LoginReturn,
   SignInOptions,
   SignUpOptions,
+  VerifyOtpOptions,
 } from '@/auth/types'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { mock, MockProxy } from 'vitest-mock-extended'
@@ -30,7 +31,6 @@ import {
   SetActiveOptions as UsersServiceSetActiveOptions,
 } from '@/users/types'
 import { CreateOptions as OtpsServiceCreateOptions } from '@/otps/types'
-import { SendOtpOptions as MailServiceSendOtpOptions } from '@/mail/types'
 import { AddOptions as JwtStorageAddOptions } from '@/shared/jwt-storage/types'
 import { SignOptions as AuthJwtSignOptions } from '@/shared/auth-jwt/types'
 import { JwtPayload } from '@/shared/types'
@@ -75,20 +75,20 @@ describe('AuthService', () => {
 
     test('should be return a user ID and otp ID if a user not exist', async () => {
       const user = getFakeUser({ ...options })
-      const otp = getFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
+      const otp = getFakeOtp({ type: OtpType.SIGN_UP, email: user.email })
 
       usersService.isExist.mockResolvedValue(false)
       usersService.create.mockResolvedValue(user)
       otpsService.create.mockResolvedValue(otp)
 
-      const result: LoginReturn = { otpId: otp.id, userId: user.id }
+      const result: LoginReturn = { otpId: otp.id }
       const usersServiceIsExistOptions: UsersServiceIsExistOptions = {
         where: { email: user.email },
       }
       const usersServiceCreateOptions: UsersServiceCreateOptions = options
       const otpsServiceCreateOptions: OtpsServiceCreateOptions = {
         type: otp.type,
-        userId: user.id,
+        email: user.email,
       }
 
       expect(await authService.signUp(options)).toEqual(result)
@@ -127,23 +127,18 @@ describe('AuthService', () => {
 
     test('should be return a user ID and otp ID if a user has exist and user is active', async () => {
       const user = getFakeUser({ ...options, isActive: true })
-      const otp = getFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
+      const otp = getFakeOtp({ type: OtpType.SIGN_IN, email: user.email })
 
       usersService.findOne.mockResolvedValue(user)
       otpsService.create.mockResolvedValue(otp)
 
-      const result: LoginReturn = { otpId: otp.id, userId: user.id }
+      const result: LoginReturn = { otpId: otp.id }
       const usersServiceFindOneOptions: UsersServiceFindOneOptions = {
         where: { email: user.email },
       }
       const otpsServiceCreateOptions: OtpsServiceCreateOptions = {
         type: otp.type,
-        userId: user.id,
-      }
-      const mailServiceSendOtpOptions: MailServiceSendOtpOptions = {
         email: user.email,
-        code: otp.code,
-        type: otp.type,
       }
 
       expect(await authService.signIn(options)).toEqual(result)
@@ -189,16 +184,16 @@ describe('AuthService', () => {
   describe('verifyOtp', () => {
     test('should be return auth-jwts if such an OTP exists and type is SIGN_UP', async () => {
       const user = getFakeUser()
-      const otp = getFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
+      const otp = getFakeOtp({ type: OtpType.SIGN_UP, email: user.email })
       const authJwts = getFakeAuthJwts({
-        accessJwtOptions: { payload: { sub: user.id } },
-        refreshJwtOptions: { payload: { sub: user.id } },
+        accessJwtOptions: { payload: { sub: user.email } },
+        refreshJwtOptions: { payload: { sub: user.email } },
       })
       const encodedAccessJwt = authJwts[ACCESS_TOKEN_NAME]
       const encodedRefreshJwt = authJwts[REFRESH_TOKEN_NAME]
       const decodedAccessJwt = getDecodedJwt(encodedAccessJwt)
       const decodedRefreshJwt = getDecodedJwt(encodedRefreshJwt)
-      const storagedJwt = getFakeStoragedJwt({ sub: user.id })
+      const storagedJwt = getFakeStoragedJwt({ sub: user.email })
 
       otpsService.verify.mockResolvedValue(true)
       accessJwtService.sign.mockReturnValue(encodedAccessJwt)
@@ -208,11 +203,11 @@ describe('AuthService', () => {
       signedJwtsService.add.mockResolvedValue(storagedJwt)
 
       const usersServiceSetActiveOptions: UsersServiceSetActiveOptions = {
-        where: { id: user.id },
+        where: { email: user.email },
         value: true,
       }
-      const accessJwtSignOptions: AuthJwtSignOptions = { sub: user.id }
-      const refreshJwtSignOptions: AuthJwtSignOptions = { sub: user.id }
+      const accessJwtSignOptions: AuthJwtSignOptions = { sub: user.email }
+      const refreshJwtSignOptions: AuthJwtSignOptions = { sub: user.email }
       const accessJwtStorageAddOptions: JwtStorageAddOptions = {
         jti: decodedAccessJwt.jti,
         sub: decodedAccessJwt.sub,
@@ -241,18 +236,22 @@ describe('AuthService', () => {
       )
     })
 
-    test('should be return auth-jwts without activating user if type is SIGN_IN', async () => {
+    test('should be return auth-jwts if such an OTP exists and type is SIGN_IN', async () => {
       const user = getFakeUser()
-      const otp = getFakeOtp({ userId: user.id, type: OtpType.SIGN_IN })
+      const options: VerifyOtpOptions = getFakeOtp({
+        type: OtpType.SIGN_IN,
+        email: user.email,
+      })
+
       const authJwts = getFakeAuthJwts({
-        accessJwtOptions: { payload: { sub: user.id } },
-        refreshJwtOptions: { payload: { sub: user.id } },
+        accessJwtOptions: { payload: { sub: user.email } },
+        refreshJwtOptions: { payload: { sub: user.email } },
       })
       const encodedAccessJwt = authJwts[ACCESS_TOKEN_NAME]
       const encodedRefreshJwt = authJwts[REFRESH_TOKEN_NAME]
       const decodedAccessJwt = getDecodedJwt(encodedAccessJwt)
       const decodedRefreshJwt = getDecodedJwt(encodedRefreshJwt)
-      const storagedJwt = getFakeStoragedJwt({ sub: user.id })
+      const storagedJwt = getFakeStoragedJwt({ sub: user.email })
 
       otpsService.verify.mockResolvedValue(true)
       accessJwtService.sign.mockReturnValue(encodedAccessJwt)
@@ -262,11 +261,11 @@ describe('AuthService', () => {
       signedJwtsService.add.mockResolvedValue(storagedJwt)
 
       const usersServiceSetActiveOptions: UsersServiceSetActiveOptions = {
-        where: { id: user.id },
+        where: { email: user.email },
         value: true,
       }
-      const accessJwtSignOptions: AuthJwtSignOptions = { sub: user.id }
-      const refreshJwtSignOptions: AuthJwtSignOptions = { sub: user.id }
+      const accessJwtSignOptions: AuthJwtSignOptions = { sub: user.email }
+      const refreshJwtSignOptions: AuthJwtSignOptions = { sub: user.email }
       const accessJwtStorageAddOptions: JwtStorageAddOptions = {
         jti: decodedAccessJwt.jti,
         sub: decodedAccessJwt.sub,
@@ -278,10 +277,10 @@ describe('AuthService', () => {
         exp: decodedRefreshJwt.exp,
       }
 
-      const result = await authService.verifyOtp(otp)
+      const result = await authService.verifyOtp(options)
 
       expect(result).toEqual(authJwts)
-      expect(otpsService.verify).toHaveBeenCalledWith(otp)
+      expect(otpsService.verify).toHaveBeenCalledWith(options)
       expect(usersService.setActive).toHaveBeenCalledWith(
         usersServiceSetActiveOptions,
       )
@@ -297,7 +296,7 @@ describe('AuthService', () => {
 
     test('should be return a 404 if a OTP not found', async () => {
       const user = getFakeUser()
-      const body = getFakeOtp({ userId: user.id, type: OtpType.SIGN_UP })
+      const body = getFakeOtp({ type: OtpType.SIGN_UP, email: user.email })
 
       otpsService.verify.mockResolvedValue(false)
 
@@ -314,19 +313,19 @@ describe('AuthService', () => {
       const newJwts = getFakeAuthJwts()
       const oldPayload: JwtPayload = {
         jti: getFakeUuid(),
-        sub: 1,
+        sub: '',
         iat: 1,
         exp: 2,
       }
       const accessPayload: JwtPayload = {
         jti: getFakeUuid(),
-        sub: 1,
+        sub: '',
         iat: 1,
         exp: 2,
       }
       const refreshPayload: JwtPayload = {
         jti: getFakeUuid(),
-        sub: 1,
+        sub: '',
         iat: 1,
         exp: 2,
       }
@@ -349,13 +348,13 @@ describe('AuthService', () => {
       const jwts: AuthJwts = getFakeAuthJwts()
       const accessPayload: JwtPayload = {
         jti: getFakeUuid(),
-        sub: 1,
+        sub: '',
         iat: 1,
         exp: 2,
       }
       const refreshPayload: JwtPayload = {
         jti: getFakeUuid(),
-        sub: 1,
+        sub: '',
         iat: 1,
         exp: 2,
       }

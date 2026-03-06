@@ -1,8 +1,12 @@
-import { IsEmail, IsEnum, IsString, Length } from 'class-validator'
+import { IsEmail, IsEnum, IsString, IsUUID, Length } from 'class-validator'
 import { OtpType } from '@/otps/enums'
 import { Otp } from '@/otps/types'
+import { type Uuid } from '@/shared/uuid/types'
 
 export class OtpDto implements Otp {
+  @IsUUID()
+  id: Uuid
+
   @IsString()
   @Length(6, 6)
   code: string

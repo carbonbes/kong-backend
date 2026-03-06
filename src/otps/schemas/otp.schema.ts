@@ -1,13 +1,13 @@
 import { Schema } from 'redis-om'
-import { OtpSchema } from '@/otps/types'
+import { Otp } from '@/otps/types'
 
-export const otpSchema = new Schema<OtpSchema>(
+export const otpSchema = new Schema<Otp>(
   'otp',
   {
+    id: { type: 'string' },
     code: { type: 'string' },
     type: { type: 'string' },
-    userId: { type: 'number' },
-    userEmail: { type: 'string' },
+    email: { type: 'string' },
   },
   { dataStructure: 'HASH' },
 )

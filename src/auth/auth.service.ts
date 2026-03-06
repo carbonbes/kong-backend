@@ -58,6 +58,12 @@ export class AuthService {
     }
 
     await this.usersService.create(options)
+    const { id: otpId } = await this.otpsService.create({
+      type: OtpType.SIGN_UP,
+      email,
+    })
+
+    return { otpId }
   }
 
   @Transactional()
@@ -70,7 +76,12 @@ export class AuthService {
       throw new ForbiddenException()
     }
 
-    await this.otpsService.create({ type: OtpType.SIGN_IN, email })
+    const { id: otpId } = await this.otpsService.create({
+      type: OtpType.SIGN_IN,
+      email,
+    })
+
+    return { otpId }
   }
 
   @Transactional()

@@ -1,3 +1,3 @@
 export interface BcryptModuleOptions {
-  saltOrRounds: string | number
+  rounds: number
 }

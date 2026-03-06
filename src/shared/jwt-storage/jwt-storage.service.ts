@@ -4,15 +4,17 @@ import {
   GetOneOptions,
   GetAllOptions,
   HasOptions,
-  StoragedJwt,
   AddReturn,
   GetOneReturn,
   GetAllReturn,
   HasReturn,
+  StoragedJwtSchema,
 } from './types'
 
 export abstract class JwtStorageService {
-  protected constructor(private readonly repository: Repository<StoragedJwt>) {}
+  protected constructor(
+    private readonly repository: Repository<StoragedJwtSchema>,
+  ) {}
 
   async add({ jti, sub, exp }: AddOptions): AddReturn {
     const jwt = await this.repository.save({ jti, sub })

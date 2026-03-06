@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { OtpsService } from '@/otps/otps.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { EntityId, Repository } from 'redis-om'
-import { Otp } from '@/otps/types'
+import { Otp, OtpSchema } from '@/otps/types'
 import { getRedisOmRepositoryToken } from '@/redis-om/utils'
 import { otpSchema } from '@/otps/schemas'
 import { NanoidService } from '@/shared/nanoid/nanoid.service'
@@ -18,7 +18,7 @@ import { createMockRedisSearch } from '@/test/mocks'
 
 describe('OtpsService', () => {
   let otpsService: OtpsService
-  let repository: MockProxy<Repository<Otp>>
+  let repository: MockProxy<Repository<OtpSchema>>
   let uuidService: MockProxy<UuidService>
   let nanoidService: MockProxy<NanoidService>
   let bcryptService: MockProxy<BcryptService>
@@ -31,19 +31,21 @@ describe('OtpsService', () => {
         OtpsService,
         {
           provide: getRedisOmRepositoryToken(otpSchema),
-          useValue: mock<Repository<Otp>>(),
+          useValue: mock<Repository<OtpSchema>>(),
         },
       ],
     })
       .useMocker(mock)
       .compile()
 
-    otpsService = module.get(OtpsService)
-    repository = module.get(getRedisOmRepositoryToken(otpSchema))
-    uuidService = module.get(UuidService)
-    nanoidService = module.get(NanoidService)
-    bcryptService = module.get(BcryptService)
-    configService = module.get(ConfigService)
+    otpsService = module.get<OtpsService>(OtpsService)
+    repository = module.get<MockProxy<Repository<OtpSchema>>>(
+      getRedisOmRepositoryToken(otpSchema),
+    )
+    uuidService = module.get<MockProxy<UuidService>>(UuidService)
+    nanoidService = module.get<MockProxy<NanoidService>>(NanoidService)
+    bcryptService = module.get<MockProxy<BcryptService>>(BcryptService)
+    configService = module.get<MockProxy<ConfigService>>(ConfigService)
     otp = getFakeOtp()
 
     vi.clearAllMocks()
@@ -53,7 +55,7 @@ describe('OtpsService', () => {
     test('should be create OTP', async () => {
       vi.useFakeTimers()
 
-      const { id, code, type, userId } = otp
+      const { id, code, type, email } = otp
       const codeHash = await getFakeBcryptHash({ value: code })
       const entityId: string = otp[EntityId]
       const expiresIn = 300
@@ -66,9 +68,9 @@ describe('OtpsService', () => {
       configService.get.mockReturnValue(expiresIn)
 
       const bcryptServiceHashOptions: BcryptServiceHashOptions = { value: code }
-      const repositorySaveOptions: Otp = { id, code: codeHash, type, userId }
+      const repositorySaveOptions: Otp = { id, code: codeHash, type, email }
 
-      const result = await otpsService.create({ type, userId })
+      const result = await otpsService.create({ type, email })
 
       expect(result).toEqual(otp)
       expect(nanoidService.customAlphabet).toHaveBeenCalled()
@@ -83,7 +85,7 @@ describe('OtpsService', () => {
 
   describe('verify', () => {
     test('should be verify OTP and return true', async () => {
-      const { id, code, type, userId } = otp
+      const { id, code, type, email } = otp
       const codeHash = await getFakeBcryptHash({ value: code })
       const entityId: string = otp[EntityId]
       const storedOtp: Otp = { ...otp, code: codeHash }
@@ -94,11 +96,11 @@ describe('OtpsService', () => {
       repository.search.mockReturnValue(searchBuilder)
       bcryptService.compare.mockResolvedValue(true)
 
-      const result = await otpsService.verify({ id, code, type, userId })
+      const result = await otpsService.verify({ id, code, type, email })
 
       const bcryptServiceCompareOptions: BcryptServiceCompareOptions = {
         value: code,
-        encoded: codeHash,
+        hash: codeHash,
       }
 
       expect(result).toBe(true)
@@ -107,8 +109,8 @@ describe('OtpsService', () => {
       expect(searchBuilder.eq).toHaveBeenCalledWith(id)
       expect(searchBuilder.and).toHaveBeenCalledWith('type')
       expect(searchBuilder.eq).toHaveBeenCalledWith(type)
-      expect(searchBuilder.and).toHaveBeenCalledWith('userId')
-      expect(searchBuilder.eq).toHaveBeenCalledWith(userId)
+      expect(searchBuilder.and).toHaveBeenCalledWith('email')
+      expect(searchBuilder.eq).toHaveBeenCalledWith(email)
       expect(bcryptService.compare).toHaveBeenCalledWith(
         bcryptServiceCompareOptions,
       )
@@ -116,14 +118,14 @@ describe('OtpsService', () => {
     })
 
     test('should be return false when OTP not found', async () => {
-      const { id, code, type, userId } = otp
+      const { id, code, type, email } = otp
 
       const searchBuilder = createMockRedisSearch<Otp>({
         returnFirstValue: null,
       })
       repository.search.mockReturnValue(searchBuilder)
 
-      const result = await otpsService.verify({ id, code, type, userId })
+      const result = await otpsService.verify({ id, code, type, email })
 
       expect(result).toBe(false)
       expect(bcryptService.compare).not.toHaveBeenCalled()
@@ -131,7 +133,7 @@ describe('OtpsService', () => {
     })
 
     test('should be return false when code does not match', async () => {
-      const { id, code, type, userId } = otp
+      const { id, code, type, email } = otp
       const codeHash = await getFakeBcryptHash({ value: code })
       const storedOtp: Otp = { ...otp, code: codeHash }
 
@@ -141,11 +143,11 @@ describe('OtpsService', () => {
       repository.search.mockReturnValue(searchBuilder)
       bcryptService.compare.mockResolvedValue(false)
 
-      const result = await otpsService.verify({ id, code, type, userId })
+      const result = await otpsService.verify({ id, code, type, email })
 
       const bcryptServiceCompareOptions: BcryptServiceCompareOptions = {
         value: code,
-        encoded: codeHash,
+        hash: codeHash,
       }
 
       expect(result).toBe(false)

@@ -33,19 +33,16 @@ class EnvVariables {
   REFRESH_JWT_EXPIRES_IN: number
 
   @IsString()
-  OTP_CODE_NANOID_ALPHABET: string
+  OTP_ALPHABET: string
 
   @IsNumber()
-  OTP_CODE_NANOID_DEFAULT_SIZE: number
+  OTP_SIZE: number
 
   @IsNumber()
-  OTP_CODE_BCRYPT_ROUNDS: number
+  OTP_HASH_ROUNDS: number
 
   @IsNumber()
   OTP_EXPIRES_IN: number
-
-  @IsString()
-  AES_KEY: string
 }
 
 export function validate(config: Record<string, any>) {

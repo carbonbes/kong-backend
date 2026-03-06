@@ -29,6 +29,6 @@ export class AccessJwtStrategy extends PassportStrategy(
       throw new UnauthorizedException()
     }
 
-    return this.usersService.findOne({ where: { id: sub } })
+    return this.usersService.findOne({ where: { email: sub } })
   }
 }

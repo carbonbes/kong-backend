@@ -17,12 +17,12 @@ export class BcryptService {
   ) {}
 
   hash({ value }: HashOptions): HashReturn {
-    const { saltOrRounds } = this.options
+    const { rounds } = this.options
 
-    return bcrypt.hash(value, saltOrRounds)
+    return bcrypt.hash(value, rounds)
   }
 
-  compare({ value, encoded }: CompareOptions): CompareReturn {
-    return bcrypt.compare(value, encoded)
+  compare({ value, hash }: CompareOptions): CompareReturn {
+    return bcrypt.compare(value, hash)
   }
 }

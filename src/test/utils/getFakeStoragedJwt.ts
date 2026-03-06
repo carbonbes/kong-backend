@@ -1,6 +1,6 @@
 import { StoragedJwt } from '@/shared/jwt-storage/types'
 import { getFakeUuid } from '@/test/utils/getFakeUuid'
-import { getFakeInt } from '@/test/utils/getFakeInt'
+import { faker } from '@faker-js/faker/locale/ru'
 
 type GetFakeJwtOptions = Partial<StoragedJwt>
 
@@ -9,5 +9,5 @@ export const getFakeStoragedJwt = ({
   sub,
 }: GetFakeJwtOptions = {}): StoragedJwt => ({
   jti: jti ?? getFakeUuid(),
-  sub: sub ?? getFakeInt(),
+  sub: sub ?? faker.internet.email(),
 })
