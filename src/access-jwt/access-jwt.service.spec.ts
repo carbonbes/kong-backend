@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt'
 import { UuidService } from '@/shared/uuid/uuid.service'
 import { AccessJwtService } from './access-jwt.service'
-import { getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
+import { getFakeEmail, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { getDecodedJwt } from '@/shared/utils'
 import { EncodedJwt } from '@/shared/types'
@@ -27,9 +27,9 @@ describe('AccessJwtService', () => {
       .useMocker(mock)
       .compile()
 
-    accessJwtService = module.get(AccessJwtService)
-    jwtService = module.get(JwtService)
-    uuidService = module.get(UuidService)
+    accessJwtService = module.get<AccessJwtService>(AccessJwtService)
+    jwtService = module.get<MockProxy<JwtService>>(JwtService)
+    uuidService = module.get<MockProxy<UuidService>>(UuidService)
   })
 
   describe('sign', () => {
@@ -38,7 +38,7 @@ describe('AccessJwtService', () => {
       const currentDate = Date.now() / 1000
       const accessJwtExpiresIn = Number(process.env.ACCESS_JWT_EXPIRES_IN)
 
-      const sub = getFakeInt()
+      const sub = getFakeEmail()
       const jti = getFakeUuid()
       const encodedJwt = getFakeJwt({
         type: ACCESS_TOKEN_NAME,
@@ -81,23 +81,23 @@ describe('AccessJwtService', () => {
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
     })
 
-    test('should be throw JsonWebTokenError when token is invalid', () => {
+    test('should be throw JsonWebTokenError when token is invalid', async () => {
       jwtService.verify.mockRejectedValue(
         new JsonWebTokenError('Invalid token'),
       )
 
-      expect(accessJwtService.verify(encodedJwt)).rejects.toThrow(
+      await expect(accessJwtService.verify(encodedJwt)).rejects.toThrow(
         new JsonWebTokenError('Invalid token'),
       )
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
     })
 
-    test('should be throw TokenExpiredError when token is expired', () => {
+    test('should be throw TokenExpiredError when token is expired', async () => {
       jwtService.verify.mockRejectedValue(
         new TokenExpiredError('Token expired', new Date()),
       )
 
-      expect(accessJwtService.verify(encodedJwt)).rejects.toThrow(
+      await expect(accessJwtService.verify(encodedJwt)).rejects.toThrow(
         new TokenExpiredError('Token expired', new Date()),
       )
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
