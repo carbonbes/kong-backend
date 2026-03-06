@@ -47,11 +47,7 @@ export class OtpsService {
 
     await this.repository.expireAt(entityId, expiresAt)
 
-    this.eventEmitter.emit(OTP_CREATED, {
-      email,
-      code,
-      type,
-    } as OtpCreatedEvent)
+    this.eventEmitter.emit(OTP_CREATED, new OtpCreatedEvent(otp))
 
     return { ...otp, code }
   }
