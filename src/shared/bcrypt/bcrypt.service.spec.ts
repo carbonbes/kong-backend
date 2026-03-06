@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing'
 import * as bcrypt from 'bcrypt'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { BcryptService } from './bcrypt.service'
-import { BCRYPT_MODULE_OPTIONS } from './bcrypt.consts'
-import { BcryptModuleOptions, HashOptions } from './bcrypt.types'
+import { BcryptModuleOptions, HashOptions } from './types'
+import { MODULE_OPTIONS_TOKEN } from '@/shared/bcrypt/bcrypt.module-definition'
 
 vi.mock('bcrypt', { spy: true })
 
@@ -18,11 +18,11 @@ describe('BcryptService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BcryptService,
-        { provide: BCRYPT_MODULE_OPTIONS, useValue: options },
+        { provide: MODULE_OPTIONS_TOKEN, useValue: options },
       ],
     }).compile()
 
-    bcryptService = module.get(BcryptService)
+    bcryptService = module.get<BcryptService>(BcryptService)
   })
 
   describe('hash', () => {
@@ -45,26 +45,26 @@ describe('BcryptService', () => {
   describe('compare', () => {
     test('should be return true when values match', async () => {
       const value = 'password123'
-      const encoded = 'hashedPassword123'
+      const hashed = 'hashedPassword123'
 
       vi.mocked(bcrypt.compare).mockImplementation(() => true)
 
-      const result = await bcryptService.compare({ value, encoded })
+      const result = await bcryptService.compare({ value, hash: hashed })
 
       expect(result).toBe(true)
-      expect(bcrypt.compare).toHaveBeenCalledWith(value, encoded)
+      expect(bcrypt.compare).toHaveBeenCalledWith(value, hashed)
     })
 
     test('should be return false when values do not match', async () => {
       const value = 'wrongPassword'
-      const encoded = 'hashedPassword123'
+      const hashed = 'hashedPassword123'
 
       vi.mocked(bcrypt.compare).mockImplementation(() => false)
 
-      const result = await bcryptService.compare({ value, encoded })
+      const result = await bcryptService.compare({ value, hash: hashed })
 
       expect(result).toBe(false)
-      expect(bcrypt.compare).toHaveBeenCalledWith(value, encoded)
+      expect(bcrypt.compare).toHaveBeenCalledWith(value, hashed)
     })
   })
 })
