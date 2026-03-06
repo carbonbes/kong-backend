@@ -2,10 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { JwtService, TokenExpiredError, JsonWebTokenError } from '@nestjs/jwt'
 import { UuidService } from '@/shared/uuid/uuid.service'
 import { RefreshJwtService } from './refresh-jwt.service'
-import { getFakeEmail, getFakeInt, getFakeJwt, getFakeUuid } from '@/test/utils'
+import { getFakeEmail, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { getDecodedJwt } from '@/shared/utils'
 import { EncodedJwt } from '@/shared/types'
+import { REFRESH_TOKEN_NAME } from '@/shared/consts'
 
 describe('RefreshJwtService', () => {
   let refreshJwtService: RefreshJwtService
@@ -40,7 +41,7 @@ describe('RefreshJwtService', () => {
       const sub = getFakeEmail()
       const jti = getFakeUuid()
       const encodedJwt = getFakeJwt({
-        type: 'refreshToken',
+        type: REFRESH_TOKEN_NAME,
         payload: { jti, sub },
       })
 
