@@ -17,23 +17,25 @@ import { PrismaService } from '@/prisma/prisma.service'
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  create(data: CreateOptions): CreateReturn {
-    return this.prismaService.user.create({ data })
+  create(options: CreateOptions): CreateReturn {
+    return this.prismaService.user.create({ data: options })
   }
 
-  findOne(opts: FindOneOptions): FindOneReturn {
-    return this.prismaService.user.findUnique(opts)
+  findOne(options: FindOneOptions): FindOneReturn {
+    return this.prismaService.user.findUnique(options)
   }
 
-  update(opts: UpdateOptions): UpdateReturn {
-    return this.prismaService.user.update(opts)
+  update(options: UpdateOptions): UpdateReturn {
+    return this.prismaService.user.update(options)
   }
 
-  async isExist(opts: IsExistOptions): IsExistReturn {
-    return !!(await this.findOne(opts))
+  async isExist(options: IsExistOptions): IsExistReturn {
+    return !!(await this.findOne(options))
   }
 
-  setActive({ where, value }: SetActiveOptions): SetActiveReturn {
+  setActive(options: SetActiveOptions): SetActiveReturn {
+    const { where, value } = options
+
     return this.update({ where, data: { isActive: value } })
   }
 }
