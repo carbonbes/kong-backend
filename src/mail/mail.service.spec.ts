@@ -12,14 +12,7 @@ describe('MailService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        {
-          provide: MailService,
-          inject: [MailerService],
-          useFactory: (mailerService: MailerService) =>
-            new MailService(mailerService),
-        },
-      ],
+      providers: [MailService],
     })
       .useMocker(mock)
       .compile()
