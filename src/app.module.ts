@@ -14,7 +14,6 @@ import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'
 import { MailModule } from '@/mail/mail.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { OtpsModule } from '@/otps/otps.module'
-import { OtpCreatedListener } from '@/listeners/otp-created.listener'
 import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
 import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 import { JwtCreatedListener } from '@/listeners/jwt-created.listener'
@@ -32,25 +31,30 @@ import { JwtCreatedListener } from '@/listeners/jwt-created.listener'
     }),
     PrismaModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
-        connectionString: configService.get('database.url'),
+        connectionString: configService.get('database.url')!,
       }),
       inject: [ConfigService],
     }),
     RedisOmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
-        url: configService.get('redis.url'),
+        url: configService.get('redis.url')!,
       }),
       inject: [ConfigService],
     }),
     MailModule,
     SignedJwtsModule,
     RevokedJwtsModule,
-    OtpsModule,
+    OtpsModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get('otp.secret')!,
+        period: Number(configService.get('otp.expiresIn')),
+      }),
+      inject: [ConfigService],
+    }),
     AuthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessJwtAuthGuard },
-    OtpCreatedListener,
     JwtCreatedListener,
   ],
 })

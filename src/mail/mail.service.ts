@@ -6,7 +6,7 @@ import { SendOtpOptions, SendOtpReturn } from './types'
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
 
-  async sendOtp({ email, code, type }: SendOtpOptions): SendOtpReturn {
+  async sendOtp({ token, type, email }: SendOtpOptions): SendOtpReturn {
     await this.mailerService.sendMail({
       to: email,
 
@@ -15,7 +15,7 @@ export class MailService {
           ? 'Подтверждение входа'
           : 'Подтверждение регистрации',
 
-      html: `<p>Ваш код подтверждения: ${code}</p>`,
+      html: `<p>Ваш код подтверждения: ${token}</p>`,
     })
   }
 }
