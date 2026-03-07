@@ -1,13 +1,34 @@
-import { Module } from '@nestjs/common'
+import { Global, Module } from '@nestjs/common'
 import { OtpsService } from './otps.service'
-import { OtpCreatedListener } from '@/otps/listeners'
-import { ConfigurableModuleClass } from '@/otps/otps.module-definition'
 import { RedisOmModule } from '@/redis-om/redis-om.module'
-import { otpTimeStepSchema } from '@/otps/schemas'
+import { otpSchema } from '@/otps/schemas'
+import { ConfigService } from '@nestjs/config'
+import { NanoidModule } from '@/nanoid/nanoid.module'
+import { BcryptModule } from '@/bcrypt/bcrypt.module'
+import { UuidModule } from '@/shared/uuid/uuid.module'
 
+@Global()
 @Module({
-  imports: [RedisOmModule.forFeature([otpTimeStepSchema])],
-  providers: [OtpsService, OtpCreatedListener],
+  imports: [
+    RedisOmModule.forFeature([otpSchema]),
+    UuidModule,
+    NanoidModule.registerAsync({
+      useFactory: (configService: ConfigService) => ({
+        customAlphabet: {
+          alphabet: configService.get('otp.alphabet')!,
+          defaultSize: Number(configService.get('otp.size')),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    BcryptModule.registerAsync({
+      useFactory: (configService: ConfigService) => ({
+        rounds: Number(configService.get('otp.hashRounds')),
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+  providers: [OtpsService],
   exports: [OtpsService],
 })
-export class OtpsModule extends ConfigurableModuleClass {}
+export class OtpsModule {}

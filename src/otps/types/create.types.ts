@@ -1,4 +1,4 @@
 import { Otp } from './otp.type'
 
 export type CreateOptions = Pick<Otp, 'type' | 'email'>
-export type CreateReturn = Promise<string>
+export type CreateReturn = Promise<Otp>

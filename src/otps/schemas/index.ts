@@ -1,1 +1,1 @@
-export * from './otp-time-step.schema'
+export * from './otp.schema'
