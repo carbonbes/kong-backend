@@ -20,13 +20,13 @@ import { BcryptService } from '@/bcrypt/bcrypt.service'
 @Injectable()
 export class OtpsService {
   constructor(
-    private readonly configService: ConfigService,
-    private readonly eventEmitter: EventEmitter2,
     @InjectRedisOmRepository(otpSchema)
     private readonly repository: Repository<OtpSchema>,
     private readonly uuidService: UuidService,
     private readonly nanoidService: NanoidService,
     private readonly bcryptService: BcryptService,
+    private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create({ type, email }: CreateOptions): CreateReturn {
