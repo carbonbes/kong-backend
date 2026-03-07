@@ -1,13 +1,10 @@
 import { Otp } from '@/otps/types'
-import { User } from '@/users/types'
-import { Uuid } from '@/shared/uuid/types'
-import { OtpType } from '@/otps/enums'
 
 export class OtpCreatedEvent implements Otp {
-  id: Uuid
-  code: string
-  type: OtpType
-  email: User['email']
+  readonly id: Otp['id']
+  readonly code: Otp['code']
+  readonly type: Otp['type']
+  readonly email: Otp['email']
 
   constructor(otp: Otp) {
     this.id = otp.id

@@ -10,8 +10,8 @@ import {
   VerifyReturn,
 } from '@/shared/auth-jwt/types'
 import { EventEmitter2 } from '@nestjs/event-emitter'
-import { JWT_CREATED } from '@/events/jwt-created/consts'
-import { JwtCreatedEvent } from '@/events/jwt-created/jwt-created.event'
+import { JWT_CREATED } from '@/shared/auth-jwt/consts'
+import { JwtCreatedEvent } from '@/shared/auth-jwt/events/jwt-created.event'
 
 export abstract class AuthJwtService {
   protected constructor(

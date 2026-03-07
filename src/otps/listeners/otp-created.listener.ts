@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { MailService } from '@/mail/mail.service'
 import { OnEvent } from '@nestjs/event-emitter'
-import type { OtpCreatedEvent } from '@/events/otp-created/otp-created.event'
-import { OTP_CREATED } from '@/events/otp-created/consts'
+import type { OtpCreatedEvent } from '@/otps/events'
+import { OTP_CREATED } from '@/otps/consts'
 
 @Injectable()
 export class OtpCreatedListener {

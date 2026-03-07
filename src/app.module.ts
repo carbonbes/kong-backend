@@ -14,10 +14,9 @@ import { AccessJwtAuthGuard } from '@/shared/guards/access-jwt.guard'
 import { MailModule } from '@/mail/mail.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { OtpsModule } from '@/otps/otps.module'
-import { OtpCreatedListener } from '@/listeners/otp-created.listener'
 import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
 import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
-import { JwtCreatedListener } from '@/listeners/jwt-created.listener'
+import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
 
 @Module({
   imports: [
@@ -50,7 +49,6 @@ import { JwtCreatedListener } from '@/listeners/jwt-created.listener'
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessJwtAuthGuard },
-    OtpCreatedListener,
     JwtCreatedListener,
   ],
 })

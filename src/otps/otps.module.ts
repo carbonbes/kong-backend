@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config'
 import { NanoidModule } from '@/nanoid/nanoid.module'
 import { BcryptModule } from '@/bcrypt/bcrypt.module'
 import { UuidModule } from '@/shared/uuid/uuid.module'
+import { OtpCreatedListener } from '@/otps/listeners'
 
 @Global()
 @Module({
@@ -28,7 +29,7 @@ import { UuidModule } from '@/shared/uuid/uuid.module'
       inject: [ConfigService],
     }),
   ],
-  providers: [OtpsService],
+  providers: [OtpsService, OtpCreatedListener],
   exports: [OtpsService],
 })
 export class OtpsModule {}
