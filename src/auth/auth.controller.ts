@@ -44,12 +44,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  logout(
-    @AuthHeader() accessToken: EncodedJwt,
-    @Body() { refreshToken }: RefreshJwtDto,
-  ) {
-    const jwts: AuthJwts = { accessToken, refreshToken }
-
-    return this.authService.logout(jwts)
+  logout(@Body() { refreshToken }: RefreshJwtDto) {
+    return this.authService.logout(refreshToken)
   }
 }

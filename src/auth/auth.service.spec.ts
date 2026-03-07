@@ -215,12 +215,12 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     test('should be revoke auth-jwts', async () => {
-      const authJwts = getFakeAuthJwts()
+      const refreshToken = getFakeJwt()
 
-      const result = await authService.logout(authJwts)
+      const result = await authService.logout(refreshToken)
 
       expect(result).toBeUndefined()
-      expect(authJwtsService.revoke).toHaveBeenCalledWith(authJwts)
+      expect(authJwtsService.revoke).toHaveBeenCalledWith(refreshToken)
     })
   })
 })

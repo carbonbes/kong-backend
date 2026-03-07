@@ -1,15 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthService } from './auth.service'
-import { LoginReturn, LogoutOptions, UpdateOptions } from './types'
 import { OtpType } from '@/otps/enums'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
 import { getMockReq } from 'vitest-mock-express'
-import { getFakeAuthJwts, getFakeOtp, getFakeUser } from '@/test/utils'
+import {
+  getFakeAuthJwts,
+  getFakeEmail,
+  getFakeJwt,
+  getFakeOtp,
+  getFakeUser,
+} from '@/test/utils'
 import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { RefreshJwtDto } from '@/refresh-jwt/dtos'
-import { AccessJwtDto } from '@/access-jwt/dtos'
 
 describe('AuthController', () => {
   let authController: AuthController
@@ -36,16 +40,13 @@ describe('AuthController', () => {
 
     test('should be return the otp ID and user ID', async () => {
       const user = getFakeUser({ ...body })
-      const otp = getFakeOtp({ type: OtpType.SIGN_UP, userId: user.id })
+      const otp = getFakeOtp({ type: OtpType.SIGN_UP, email: user.email })
 
-      const result: LoginReturn = {
-        otpId: otp.id,
-        userId: otp.userId,
-      }
+      authService.signUp.mockResolvedValue({ otpId: otp.id })
 
-      authService.signUp.mockResolvedValue(result)
+      const result = await authController.signUp(body)
 
-      expect(await authController.signUp(body)).toEqual(result)
+      expect(result).toEqual({ otpId: otp.id })
       expect(authService.signUp).toHaveBeenCalledWith(body)
     })
 
@@ -63,22 +64,18 @@ describe('AuthController', () => {
     let body: SignInDto
 
     beforeEach(() => {
-      const { email } = getFakeUser()
-      body = { email }
+      body = { email: getFakeEmail() }
     })
 
     test('should be return the otp ID and user ID', async () => {
       const user = getFakeUser({ ...body })
-      const otp = getFakeOtp({ type: OtpType.SIGN_IN, userId: user.id })
+      const otp = getFakeOtp({ type: OtpType.SIGN_IN, email: user.email })
 
-      const result: LoginReturn = {
-        otpId: otp.id,
-        userId: otp.userId,
-      }
+      authService.signIn.mockResolvedValue({ otpId: otp.id })
 
-      authService.signIn.mockResolvedValue(result)
+      const result = await authController.signIn(body)
 
-      expect(await authController.signIn(body)).toEqual(result)
+      expect(result).toEqual({ otpId: otp.id })
       expect(authService.signIn).toHaveBeenCalledWith(body)
     })
 
@@ -100,11 +97,13 @@ describe('AuthController', () => {
     })
 
     test('should be return JWT pair', async () => {
-      const jwts = getFakeAuthJwts()
+      const authJwts = getFakeAuthJwts()
 
-      authService.verifyOtp.mockResolvedValue(jwts)
+      authService.verifyOtp.mockResolvedValue(authJwts)
 
-      expect(await authController.verifyOtp(body)).toEqual(jwts)
+      const result = await authController.verifyOtp(body)
+
+      expect(result).toEqual(authJwts)
       expect(authService.verifyOtp).toHaveBeenCalledWith(body)
     })
 
@@ -123,40 +122,36 @@ describe('AuthController', () => {
       const user = getFakeUser()
       const req = getMockReq({ user })
 
-      expect(await authController.me(req)).toEqual(user)
+      const result = await authController.me(req)
+
+      expect(result).toEqual(user)
     })
   })
 
   describe('update', () => {
     test('should be return new JWT pair', async () => {
-      const oldJwts = getFakeAuthJwts()
-      const newJwts = getFakeAuthJwts()
-      const refreshToken = oldJwts.refreshToken
+      const oldAuthJwts = getFakeAuthJwts()
+      const newAuthJwts = getFakeAuthJwts()
+      const refreshToken = oldAuthJwts.refreshToken
 
-      authService.update.mockResolvedValue(newJwts)
+      authService.update.mockResolvedValue(newAuthJwts)
 
-      const authServiceRotateOptions: UpdateOptions = refreshToken
+      const result = await authController.update(refreshToken)
 
-      expect(await authController.update(refreshToken)).toEqual(newJwts)
-      expect(authService.update).toHaveBeenCalledWith(authServiceRotateOptions)
+      expect(result).toEqual(newAuthJwts)
+      expect(authService.update).toHaveBeenCalledWith(refreshToken)
     })
   })
 
   describe('logout', () => {
     test('should be return undefined', async () => {
-      const jwts = getFakeAuthJwts()
-      const body: RefreshJwtDto = { refreshToken: jwts.refreshToken }
-      const accessToken = jwts.accessToken
+      const refreshToken = getFakeJwt()
+      const body: RefreshJwtDto = { refreshToken }
 
       authService.logout.mockResolvedValue(undefined)
 
-      const authServiceLogoutOptions: LogoutOptions = {
-        accessToken,
-        refreshToken: body.refreshToken,
-      }
-
-      expect(await authController.logout(accessToken, body)).toBeUndefined()
-      expect(authService.logout).toHaveBeenCalledWith(authServiceLogoutOptions)
+      expect(await authController.logout(body)).toBeUndefined()
+      expect(authService.logout).toHaveBeenCalledWith(body.refreshToken)
     })
   })
 })

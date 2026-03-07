@@ -1,4 +1,4 @@
-import { AuthJwts } from './auth-jwts.type'
+import { EncodedJwt } from '@/shared/types'
 
-export type RevokeOptions = AuthJwts
+export type RevokeOptions = EncodedJwt
 export type RevokeReturn = Promise<void>

@@ -32,17 +32,11 @@ export class AuthJwtsService {
   }
 
   async revoke(options: RevokeOptions): RevokeReturn {
-    await Promise.all([
-      Object.values(options).map(async (jwt, i) => {
-        const type = i === 0 ? ACCESS_TOKEN_NAME : REFRESH_TOKEN_NAME
-
-        await this.revokeJwt({ jwt, type })
-      }),
-    ])
+    this.revokeJwt(options)
   }
 
   async rotate(options: RotateOptions): RotateReturn {
-    await this.revokeJwt({ jwt: options, type: REFRESH_TOKEN_NAME })
+    await this.revokeJwt(options)
 
     const { sub } = this.refreshJwtService.decode(options)
 
@@ -50,13 +44,8 @@ export class AuthJwtsService {
   }
 
   private async revokeJwt(options: RevokeJwtOptions): RevokeJwtReturn {
-    const { jwt, type } = options
-
     try {
-      const { jti, sub, exp } =
-        type === ACCESS_TOKEN_NAME
-          ? this.accessJwtService.verify(jwt)
-          : this.refreshJwtService.verify(jwt)
+      const { jti, sub, exp } = this.refreshJwtService.verify(options)
 
       await this.revokedJwtsService.add({ jti, sub, exp })
     } catch {}
