@@ -53,8 +53,6 @@
     "@nestjs/testing": "^10.0.0",
     "@prisma/language-server": "7.0.0",
     "@swc/core": "^1.11.31",
-    "@testcontainers/postgresql": "^11.11.0",
-    "@testcontainers/redis": "^11.11.0",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
     "@types/node": "^20.3.1",

@@ -5,14 +5,14 @@ import { EntityId, Repository } from 'redis-om'
 import { Otp, OtpSchema } from '@/otps/types'
 import { getRedisOmRepositoryToken } from '@/redis-om/utils'
 import { otpSchema } from '@/otps/schemas'
-import { NanoidService } from '@/shared/nanoid/nanoid.service'
-import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
+import { NanoidService } from '@/nanoid/nanoid.service'
+import { BcryptService } from '@/bcrypt/bcrypt.service'
 import { ConfigService } from '@nestjs/config'
 import { getFakeBcryptHash, getFakeOtp } from '@/test/utils'
 import {
   HashOptions as BcryptServiceHashOptions,
   CompareOptions as BcryptServiceCompareOptions,
-} from '@/shared/bcrypt/types'
+} from '@/bcrypt/types'
 import { UuidService } from '@/shared/uuid/uuid.service'
 import { createMockRedisSearch } from '@/test/mocks'
 

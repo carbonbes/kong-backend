@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { ConfigurableModuleClass } from '@/shared/nanoid/nanoid.module-definition'
-import { NanoidService } from '@/shared/nanoid/nanoid.service'
+import { ConfigurableModuleClass } from '@/nanoid/nanoid.module-definition'
+import { NanoidService } from '@/nanoid/nanoid.service'
 
 @Module({
   providers: [NanoidService],

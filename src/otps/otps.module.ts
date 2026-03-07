@@ -3,8 +3,8 @@ import { OtpsService } from './otps.service'
 import { RedisOmModule } from '@/redis-om/redis-om.module'
 import { otpSchema } from '@/otps/schemas'
 import { ConfigService } from '@nestjs/config'
-import { NanoidModule } from '@/shared/nanoid/nanoid.module'
-import { BcryptModule } from '@/shared/bcrypt/bcrypt.module'
+import { NanoidModule } from '@/nanoid/nanoid.module'
+import { BcryptModule } from '@/bcrypt/bcrypt.module'
 import { UuidModule } from '@/shared/uuid/uuid.module'
 
 @Global()

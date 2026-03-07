@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { BcryptService } from './bcrypt.service'
 import { BcryptModuleOptions, HashOptions } from './types'
-import { MODULE_OPTIONS_TOKEN } from '@/shared/bcrypt/bcrypt.module-definition'
+import { MODULE_OPTIONS_TOKEN } from '@/bcrypt/bcrypt.module-definition'
 
 vi.mock('bcrypt', { spy: true })
 

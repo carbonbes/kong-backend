@@ -5,20 +5,10 @@ import { UsersModule } from '@/users/users.module'
 import { PassportModule } from '@nestjs/passport'
 import { AccessJwtStrategy } from '@/shared/strategies/access-jwt.strategy'
 import { RefreshJwtStrategy } from '@/shared/strategies/refresh-jwt.strategy'
-import { AccessJwtModule } from '@/access-jwt/access-jwt.module'
-import { RefreshJwtModule } from '@/refresh-jwt/refresh-jwt.module'
-import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
-import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
+import { AuthJwtsModule } from '@/auth-jwts/auth-jwts.module'
 
 @Module({
-  imports: [
-    UsersModule,
-    AccessJwtModule,
-    RefreshJwtModule,
-    SignedJwtsModule,
-    RevokedJwtsModule,
-    PassportModule,
-  ],
+  imports: [UsersModule, AuthJwtsModule, PassportModule],
   providers: [AuthService, AccessJwtStrategy, RefreshJwtStrategy],
   controllers: [AuthController],
 })

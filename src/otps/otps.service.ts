@@ -10,12 +10,12 @@ import {
   VerifyReturn,
 } from '@/otps/types'
 import { ConfigService } from '@nestjs/config'
-import { NanoidService } from '@/shared/nanoid/nanoid.service'
+import { NanoidService } from '@/nanoid/nanoid.service'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { OTP_CREATED } from '@/events/otp-created/consts'
 import { OtpCreatedEvent } from '@/events/otp-created/otp-created.event'
 import { UuidService } from '@/shared/uuid/uuid.service'
-import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
+import { BcryptService } from '@/bcrypt/bcrypt.service'
 
 @Injectable()
 export class OtpsService {

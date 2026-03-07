@@ -15,6 +15,9 @@ import { MailModule } from '@/mail/mail.module'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { OtpsModule } from '@/otps/otps.module'
 import { OtpCreatedListener } from '@/listeners/otp-created.listener'
+import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
+import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
+import { JwtCreatedListener } from '@/listeners/jwt-created.listener'
 
 @Module({
   imports: [
@@ -40,12 +43,15 @@ import { OtpCreatedListener } from '@/listeners/otp-created.listener'
       inject: [ConfigService],
     }),
     MailModule,
+    SignedJwtsModule,
+    RevokedJwtsModule,
     OtpsModule,
     AuthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessJwtAuthGuard },
     OtpCreatedListener,
+    JwtCreatedListener,
   ],
 })
 export class AppModule {}

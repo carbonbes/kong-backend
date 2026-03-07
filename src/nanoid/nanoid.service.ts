@@ -3,8 +3,8 @@ import { customAlphabet } from 'nanoid'
 import {
   CustomAlphabetReturn,
   type NanoidModuleOptions,
-} from '@/shared/nanoid/types'
-import { InjectNanoidModuleOptions } from '@/shared/nanoid/decorators'
+} from '@/nanoid/types'
+import { InjectNanoidModuleOptions } from '@/nanoid/decorators'
 
 @Injectable()
 export class NanoidService {

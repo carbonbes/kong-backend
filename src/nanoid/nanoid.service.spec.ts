@@ -5,7 +5,7 @@ import { customAlphabet } from 'nanoid'
 import { NanoidService } from './nanoid.service'
 import { NanoidModuleOptions } from './types'
 import { getFakeNanoid } from '@/test/utils'
-import { MODULE_OPTIONS_TOKEN } from '@/shared/nanoid/nanoid.module-definition'
+import { MODULE_OPTIONS_TOKEN } from '@/nanoid/nanoid.module-definition'
 
 vi.mock('nanoid', { spy: true })
 

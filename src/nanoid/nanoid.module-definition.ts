@@ -1,5 +1,5 @@
 import { ConfigurableModuleBuilder } from '@nestjs/common'
-import { NanoidModuleOptions } from '@/shared/nanoid/types'
+import { NanoidModuleOptions } from '@/nanoid/types'
 
 export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
   new ConfigurableModuleBuilder<NanoidModuleOptions>()

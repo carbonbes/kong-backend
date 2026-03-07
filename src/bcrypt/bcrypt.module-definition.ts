@@ -1,5 +1,5 @@
 import { ConfigurableModuleBuilder } from '@nestjs/common'
-import { BcryptModuleOptions } from '@/shared/bcrypt/types'
+import { BcryptModuleOptions } from '@/bcrypt/types'
 
 export const {
   ConfigurableModuleClass,

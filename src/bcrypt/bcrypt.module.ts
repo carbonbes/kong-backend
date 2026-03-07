@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { ConfigurableModuleClass } from '@/shared/bcrypt/bcrypt.module-definition'
-import { BcryptService } from '@/shared/bcrypt/bcrypt.service'
+import { ConfigurableModuleClass } from '@/bcrypt/bcrypt.module-definition'
+import { BcryptService } from '@/bcrypt/bcrypt.service'
 
 @Module({
   providers: [BcryptService],
