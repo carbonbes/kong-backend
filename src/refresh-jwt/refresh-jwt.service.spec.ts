@@ -7,20 +7,27 @@ import { mock, MockProxy } from 'vitest-mock-extended'
 import { getDecodedJwt } from '@/shared/utils'
 import { EncodedJwt } from '@/shared/types'
 import { REFRESH_TOKEN_NAME } from '@/shared/consts'
+import { EventEmitter2 } from '@nestjs/event-emitter'
+import { JWT_CREATED } from '@/events/jwt-created/consts'
+import { JwtCreatedEvent } from '@/events/jwt-created/jwt-created.event'
 
 describe('RefreshJwtService', () => {
   let refreshJwtService: RefreshJwtService
   let jwtService: MockProxy<JwtService>
   let uuidService: MockProxy<UuidService>
+  let eventEmitter: MockProxy<EventEmitter2>
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
           provide: RefreshJwtService,
-          inject: [JwtService, UuidService],
-          useFactory: (jwtService: JwtService, uuidService: UuidService) =>
-            new RefreshJwtService(jwtService, uuidService),
+          useFactory: (
+            jwtService: JwtService,
+            uuidService: UuidService,
+            eventEmitter: EventEmitter2,
+          ) => new RefreshJwtService(jwtService, uuidService, eventEmitter),
+          inject: [JwtService, UuidService, EventEmitter2],
         },
       ],
     })
@@ -30,6 +37,7 @@ describe('RefreshJwtService', () => {
     refreshJwtService = module.get<RefreshJwtService>(RefreshJwtService)
     jwtService = module.get<MockProxy<JwtService>>(JwtService)
     uuidService = module.get<MockProxy<UuidService>>(UuidService)
+    eventEmitter = module.get<MockProxy<EventEmitter2>>(EventEmitter2)
   })
 
   describe('sign', () => {
@@ -58,6 +66,10 @@ describe('RefreshJwtService', () => {
       expect(decodedJwt.exp).toBe(currentDate + refreshJwtExpiresIn)
       expect(uuidService.generate).toHaveBeenCalled()
       expect(jwtService.sign).toHaveBeenCalledWith({ jti, sub })
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        JWT_CREATED,
+        new JwtCreatedEvent(encodedJwt),
+      )
 
       vi.useRealTimers()
     })
@@ -103,4 +115,6 @@ describe('RefreshJwtService', () => {
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
     })
   })
+
+
 })
