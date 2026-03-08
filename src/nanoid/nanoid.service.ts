@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { customAlphabet } from 'nanoid'
-import {
-  CustomAlphabetReturn,
-  type NanoidModuleOptions,
-} from '@/nanoid/types'
+import { CustomAlphabetReturn, type NanoidModuleOptions } from '@/nanoid/types'
 import { InjectNanoidModuleOptions } from '@/nanoid/decorators'
 
 @Injectable()

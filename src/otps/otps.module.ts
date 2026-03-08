@@ -4,15 +4,13 @@ import { RedisOmModule } from '@/redis-om/redis-om.module'
 import { otpSchema } from '@/otps/schemas'
 import { ConfigService } from '@nestjs/config'
 import { NanoidModule } from '@/nanoid/nanoid.module'
-import { BcryptModule } from '@/bcrypt/bcrypt.module'
-import { UuidModule } from '@/shared/uuid/uuid.module'
 import { OtpCreatedListener } from '@/otps/listeners'
+import { HashModule } from '@/hash/hash.module'
 
 @Global()
 @Module({
   imports: [
     RedisOmModule.forFeature([otpSchema]),
-    UuidModule,
     NanoidModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         customAlphabet: {
@@ -22,9 +20,10 @@ import { OtpCreatedListener } from '@/otps/listeners'
       }),
       inject: [ConfigService],
     }),
-    BcryptModule.registerAsync({
+    HashModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
-        rounds: Number(configService.get('otp.hashRounds')),
+        algorithm: 'sha512',
+        secret: configService.get('otp.secret')!,
       }),
       inject: [ConfigService],
     }),

@@ -115,6 +115,4 @@ describe('RefreshJwtService', () => {
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
     })
   })
-
-
 })

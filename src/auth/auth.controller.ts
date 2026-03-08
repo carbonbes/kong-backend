@@ -5,7 +5,6 @@ import { type Request } from 'express'
 import { type EncodedJwt } from '@/shared/types'
 import { Public } from '@/shared/decorators'
 import { RefreshJwtAuthGuard } from '@/shared/guards'
-import { AuthJwts } from '@/auth-jwts/types'
 import { AuthHeader } from '@/shared/decorators'
 import { RefreshJwtDto } from '@/refresh-jwt/dtos'
 

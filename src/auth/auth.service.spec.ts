@@ -54,7 +54,7 @@ describe('AuthService', () => {
 
       const result = await authService.signUp(options)
 
-      expect(result).toEqual({ otpId: otp.id })
+      expect(result).toEqual(undefined)
       expect(usersService.isExist).toHaveBeenCalledWith({
         where: { email: user.email },
       })
@@ -95,7 +95,7 @@ describe('AuthService', () => {
 
       const result = await authService.signIn(options)
 
-      expect(result).toEqual({ otpId: otp.id })
+      expect(result).toEqual(undefined)
       expect(usersService.findOne).toHaveBeenCalledWith({
         where: { email: user.email },
       })

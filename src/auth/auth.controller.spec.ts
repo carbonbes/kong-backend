@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthService } from './auth.service'
-import { OtpType } from '@/otps/enums'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
 import { getMockReq } from 'vitest-mock-express'
@@ -38,15 +37,12 @@ describe('AuthController', () => {
       body = { email, name, gender }
     })
 
-    test('should be return the otp ID and user ID', async () => {
-      const user = getFakeUser({ ...body })
-      const otp = getFakeOtp({ type: OtpType.SIGN_UP, email: user.email })
-
-      authService.signUp.mockResolvedValue({ otpId: otp.id })
+    test('should be return 201', async () => {
+      authService.signUp.mockResolvedValue(undefined)
 
       const result = await authController.signUp(body)
 
-      expect(result).toEqual({ otpId: otp.id })
+      expect(result).toEqual(undefined)
       expect(authService.signUp).toHaveBeenCalledWith(body)
     })
 
@@ -67,15 +63,12 @@ describe('AuthController', () => {
       body = { email: getFakeEmail() }
     })
 
-    test('should be return the otp ID and user ID', async () => {
-      const user = getFakeUser({ ...body })
-      const otp = getFakeOtp({ type: OtpType.SIGN_IN, email: user.email })
-
-      authService.signIn.mockResolvedValue({ otpId: otp.id })
+    test('should be return 201', async () => {
+      authService.signIn.mockResolvedValue(undefined)
 
       const result = await authController.signIn(body)
 
-      expect(result).toEqual({ otpId: otp.id })
+      expect(result).toEqual(undefined)
       expect(authService.signIn).toHaveBeenCalledWith(body)
     })
 

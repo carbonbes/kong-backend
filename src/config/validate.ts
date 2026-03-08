@@ -33,13 +33,13 @@ class EnvVariables {
   REFRESH_JWT_EXPIRES_IN: number
 
   @IsString()
+  OTP_SECRET: string
+
+  @IsString()
   OTP_ALPHABET: string
 
   @IsNumber()
   OTP_SIZE: number
-
-  @IsNumber()
-  OTP_HASH_ROUNDS: number
 
   @IsNumber()
   OTP_EXPIRES_IN: number
