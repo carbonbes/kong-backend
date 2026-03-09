@@ -7,6 +7,8 @@ services:
       - "5432:5432"
     env_file:
       - .env
+    volumes:
+      - db-data:/var/lib/db/data
 
   db-test:
     image: postgres:18-alpine
@@ -23,6 +25,8 @@ services:
     container_name: kong-redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/var/lib/redis/data
 
   redis-test:
     image: redis:8-alpine

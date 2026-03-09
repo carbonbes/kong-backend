@@ -5,12 +5,9 @@ import { execSync } from 'child_process'
 import { AppModule } from '@/app.module'
 import { MailService } from '@/mail/mail.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { getFakeUser } from '@/test/utils'
 import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { OtpType } from '@/otps/enums'
-import { OtpsService } from '@/otps/otps.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import { PrismaService } from '@/prisma/prisma.service'
 import {
   USER_EXIST_AND_ACTIVE,
   USER_EXIST_AND_NOT_ACTIVE,
@@ -22,13 +19,12 @@ describe('AuthController (e2e)', () => {
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
-  let prismaService: PrismaService
-  let otpsService: OtpsService
 
   beforeAll(async () => {
     execSync('docker-compose up db-test redis-test mail -d')
     execSync('yarn dlx prisma migrate dev')
-    execSync('yarn dlx prisma db seed')
+    execSync('tsx ./src/test/seeds/prisma/seed.ts')
+    execSync('tsx ./src/test/seeds/redis-om/seed.ts')
 
     mailService = mock<MailService>()
 
@@ -43,9 +39,6 @@ describe('AuthController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
     server = app.getHttpServer()
     await app.init()
-
-    prismaService = app.get<PrismaService>(PrismaService)
-    otpsService = app.get<OtpsService>(OtpsService)
   })
 
   afterAll(async () => {
@@ -65,10 +58,7 @@ describe('AuthController (e2e)', () => {
         gender: 'MALE',
       }
 
-      const response = await request(server)
-        .post('/auth/signup')
-        .send(body)
-        .expect(201)
+      await request(server).post('/auth/signup').send(body).expect(201)
     })
 
     test('should be return 403 when user with some email already exists', async () => {
@@ -114,10 +104,7 @@ describe('AuthController (e2e)', () => {
     test('should be return 201 when user exists and is active', async () => {
       const body: SignInDto = { email: USER_EXIST_AND_ACTIVE }
 
-      const response = await request(server)
-        .post('/auth/signin')
-        .send(body)
-        .expect(201)
+      await request(server).post('/auth/signin').send(body).expect(201)
     })
 
     test('should be return 403 when user does not exist', async () => {
@@ -210,19 +197,9 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/update', () => {
     test('should be return 201 and new JWT pair with valid refresh token', async () => {
-      const user = getFakeUser({ isActive: true })
-      const { id: userId } = await prismaClient.user.create({ data: user })
-
-      const { access_token, refresh_token } = await jwtService.sign({
-        sub: userId,
-      })
-
-      const body: AccessTokenDto = { access_token }
-
       const response = await request(server)
         .post('/auth/update')
         .set('Authorization', `Bearer ${refresh_token}`)
-        .send(body)
         .expect(201)
 
       expect(response.body).toHaveProperty(ACCESS_TOKEN_NAME)
@@ -230,31 +207,19 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 401 when no refresh token provided', async () => {
-      const body = { access_token: 'some-token' }
-
-      await request(server).post('/auth/update').send(body).expect(401)
+      await request(server).post('/auth/update').expect(401)
     })
 
     test('should be return 401 when invalid refresh token provided', async () => {
-      const body = { access_token: 'some-token' }
-
       await request(server)
         .post('/auth/update')
-        .set('Authorization', 'Bearer invalid-token')
-        .send(body)
+        .set('Authorization', '')
         .expect(401)
     })
   })
 
   describe('POST /auth/logout', () => {
     test('should be return 200 and revoke tokens successfully', async () => {
-      const user = getFakeUser({ isActive: true })
-      const { id: userId } = await prismaService.user.create({ data: user })
-
-      const { access_token, refresh_token } = await jwtService.sign({
-        sub: userId,
-      })
-
       const body: RefreshTokenDto = { refresh_token }
 
       await request(server)
@@ -267,15 +232,11 @@ describe('AuthController (e2e)', () => {
     test('should be return 401 when no access token provided', async () => {
       await request(server)
         .post('/auth/logout')
-        .send({ refresh_token: 'some-token' })
+        .send({ refresh_token: '' })
         .expect(401)
     })
 
     test('should be return 400 when refresh token is missing in body', async () => {
-      const { access_token } = await jwtService.sign({
-        sub: userId,
-      })
-
       await request(server)
         .post('/auth/logout')
         .set('Authorization', `Bearer ${access_token}`)
