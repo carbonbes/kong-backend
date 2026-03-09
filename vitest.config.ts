@@ -1,19 +1,18 @@
-import { resolve } from 'path'
 import swc from 'unplugin-swc'
 import { defineConfig } from 'vitest/config'
+import { resolve } from 'path'
 
 export default defineConfig({
-  test: {
-    globals: true,
-    root: './',
-    setupFiles: ['dotenv/config'],
-  },
-
   plugins: [
     swc.vite({
       module: { type: 'es6' },
     }),
   ],
+
+  test: {
+    globals: true,
+    root: './',
+  },
 
   resolve: {
     alias: {

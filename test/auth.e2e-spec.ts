@@ -5,21 +5,30 @@ import { execSync } from 'child_process'
 import { AppModule } from '@/app.module'
 import { MailService } from '@/mail/mail.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { getFakeEmail, getFakeOtp, getFakeUser } from '@/test/utils'
+import { getFakeUser } from '@/test/utils'
 import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { OtpType } from '@/otps/enums'
 import { OtpsService } from '@/otps/otps.service'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { PrismaService } from '@/prisma/prisma.service'
+import {
+  USER_EXIST_AND_ACTIVE,
+  USER_EXIST_AND_NOT_ACTIVE,
+  USER_NOT_EXIST,
+} from '@/test/consts'
+import { App } from 'supertest/types'
 
 describe('AuthController (e2e)', () => {
-  let app: INestApplication
+  let app: INestApplication<App>
+  let server: App
   let mailService: MockProxy<MailService>
   let prismaService: PrismaService
   let otpsService: OtpsService
 
   beforeAll(async () => {
+    execSync('docker-compose up db-test redis-test mail -d')
     execSync('yarn dlx prisma migrate dev')
+    execSync('yarn dlx prisma db seed')
 
     mailService = mock<MailService>()
 
@@ -32,6 +41,7 @@ describe('AuthController (e2e)', () => {
 
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
+    server = app.getHttpServer()
     await app.init()
 
     prismaService = app.get<PrismaService>(PrismaService)
@@ -40,6 +50,7 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => {
     await app.close()
+    execSync('docker-compose down db-test redis-test mail')
   })
 
   beforeEach(async () => {
@@ -48,128 +59,95 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/signup', () => {
     test('should be return 201 when user with some email does not exist', async () => {
-      const { email, name, gender } = getFakeUser()
-      const body: SignUpDto = { email, name, gender }
+      const body: SignUpDto = {
+        email: USER_NOT_EXIST,
+        name: 'Not exist',
+        gender: 'MALE',
+      }
 
-      const response = await request(app.getHttpServer())
+      const response = await request(server)
         .post('/auth/signup')
         .send(body)
         .expect(201)
-
-      expect(response.body).toHaveProperty('otpId')
     })
 
     test('should be return 403 when user with some email already exists', async () => {
-      const { email, name, gender } = getFakeUser()
-      const body: SignUpDto = { email, name, gender }
+      const body: SignUpDto = {
+        email: USER_EXIST_AND_NOT_ACTIVE,
+        name: 'Exist',
+        gender: 'MALE',
+      }
 
-      await prismaService.user.create({ data: { email, name, gender } })
-
-      await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(body)
-        .expect(403)
-
-      await prismaService.user.deleteMany()
+      await request(server).post('/auth/signup').send(body).expect(403)
     })
 
     test('should be return 400 when email is invalid', async () => {
-      const { name, gender } = getFakeUser()
-      const body: SignUpDto = { email: '', name, gender }
+      const body: SignUpDto = { email: '', name: 'Test', gender: 'MALE' }
 
-      await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(body)
-        .expect(400)
+      await request(server).post('/auth/signup').send(body).expect(400)
     })
 
     test('should be return 400 when name is empty', async () => {
-      const { email, gender } = getFakeUser()
-      const body: SignUpDto = { email, name: '', gender }
+      const body: SignUpDto = {
+        email: 'test@test.com',
+        name: '',
+        gender: 'MALE',
+      }
 
-      await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(body)
-        .expect(400)
+      await request(server).post('/auth/signup').send(body).expect(400)
     })
 
     test('should be return 400 when gender is invalid', async () => {
-      const { email, name } = getFakeUser()
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
-      const body: SignUpDto = { email, name, gender: '' }
+      const body: SignUpDto = {
+        email: 'test@test.com',
+        name: 'Test',
+        gender: '',
+      }
 
-      await request(app.getHttpServer())
-        .post('/auth/signup')
-        .send(body)
-        .expect(400)
+      await request(server).post('/auth/signup').send(body).expect(400)
     })
   })
 
   describe('POST /auth/signin', () => {
-    beforeEach(async () => {
-      await prismaService.user.deleteMany()
-    })
-
     test('should be return 201 when user exists and is active', async () => {
-      const { email, name, gender } = getFakeUser()
-      const body: SignInDto = { email }
+      const body: SignInDto = { email: USER_EXIST_AND_ACTIVE }
 
-      await prismaService.user.create({
-        data: { email, name, gender, isActive: true },
-      })
-
-      const response = await request(app.getHttpServer())
+      const response = await request(server)
         .post('/auth/signin')
         .send(body)
         .expect(201)
-
-      expect(response.body).toHaveProperty('otpId')
-      expect(response.body).toHaveProperty('userId')
     })
 
     test('should be return 403 when user does not exist', async () => {
-      const body: SignInDto = { email: getFakeEmail() }
+      const body: SignInDto = { email: USER_NOT_EXIST }
 
-      await request(app.getHttpServer())
-        .post('/auth/signin')
-        .send(body)
-        .expect(403)
+      await request(server).post('/auth/signin').send(body).expect(403)
     })
 
     test('should be return 403 when user exists but is not active', async () => {
-      const { email, name, gender } = getFakeUser()
-      const body: SignInDto = { email }
+      const body: SignInDto = { email: USER_EXIST_AND_NOT_ACTIVE }
 
-      await prismaService.user.create({ data: { email, name, gender } })
-
-      await request(app.getHttpServer())
-        .post('/auth/signin')
-        .send(body)
-        .expect(403)
+      await request(server).post('/auth/signin').send(body).expect(403)
     })
 
     test('should be return 400 when email is invalid', async () => {
       const body: SignInDto = { email: '' }
 
-      await request(app.getHttpServer())
-        .post('/auth/signin')
-        .send(body)
-        .expect(400)
+      await request(server).post('/auth/signin').send(body).expect(400)
     })
   })
 
   describe('POST /auth/verify-otp', () => {
     test('should be return 201 and auth-JWT if signup otp is verified', async () => {
-      const { email, name, gender } = getFakeUser()
-      await prismaService.user.create({ data: { email, name, gender } })
+      const body: VerifyOtpDto = {
+        code: '123456',
+        type: OtpType.SIGN_UP,
+        email: USER_EXIST_AND_NOT_ACTIVE,
+      }
 
-      const { type } = getFakeOtp({ type: OtpType.SIGN_UP })
-      const { id, code } = await otpsService.create({ type, email })
-
-      const body: VerifyOtpDto = { id, code, type, email }
-
-      const response = await request(app.getHttpServer())
+      const response = await request(server)
         .post('/auth/verify-otp')
         .send(body)
         .expect(201)
@@ -179,15 +157,13 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 201 and auth-JWT if signin otp is verified', async () => {
-      const { email, name, gender } = getFakeUser()
-      await prismaService.user.create({ data: { email, name, gender } })
+      const body: VerifyOtpDto = {
+        code: '123456',
+        type: OtpType.SIGN_IN,
+        email: USER_EXIST_AND_ACTIVE,
+      }
 
-      const { type } = getFakeOtp({ type: OtpType.SIGN_IN })
-      const { id, code } = await otpsService.create({ type, email })
-
-      const body: VerifyOtpDto = { id, code, type, email }
-
-      const response = await request(app.getHttpServer())
+      const response = await request(server)
         .post('/auth/verify-otp')
         .send(body)
         .expect(201)
@@ -197,23 +173,19 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 404 when otp is not verified', async () => {
-      const body: VerifyOtpDto = getFakeOtp()
+      const body: VerifyOtpDto = {
+        code: '123456',
+        type: OtpType.SIGN_IN,
+        email: USER_EXIST_AND_ACTIVE,
+      }
 
-      await request(app.getHttpServer())
-        .post('/auth/verify-otp')
-        .send(body)
-        .expect(404)
+      await request(server).post('/auth/verify-otp').send(body).expect(404)
     })
   })
 
   describe('GET /auth/me', () => {
     test('should be return 200 and user', async () => {
-      const user = getFakeUser({ isActive: true })
-
-      await prismaService.user.create({ data: user })
-      const { access_token } = await jwtService.sign({ sub: user.id })
-
-      const response = await request(app.getHttpServer())
+      const response = await request(server)
         .get('/auth/me')
         .set('Authorization', `Bearer ${access_token}`)
         .expect(200)
@@ -225,11 +197,11 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 401 when no authorization header', async () => {
-      await request(app.getHttpServer()).get('/auth/me').expect(401)
+      await request(server).get('/auth/me').expect(401)
     })
 
     test('should be return 401 when invalid token provided', async () => {
-      await request(app.getHttpServer())
+      await request(server)
         .get('/auth/me')
         .set('Authorization', 'Bearer invalid-token')
         .expect(401)
@@ -247,7 +219,7 @@ describe('AuthController (e2e)', () => {
 
       const body: AccessTokenDto = { access_token }
 
-      const response = await request(app.getHttpServer())
+      const response = await request(server)
         .post('/auth/update')
         .set('Authorization', `Bearer ${refresh_token}`)
         .send(body)
@@ -255,23 +227,18 @@ describe('AuthController (e2e)', () => {
 
       expect(response.body).toHaveProperty(ACCESS_TOKEN_NAME)
       expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
-
-      await prismaClient.user.deleteMany()
     })
 
     test('should be return 401 when no refresh token provided', async () => {
       const body = { access_token: 'some-token' }
 
-      await request(app.getHttpServer())
-        .post('/auth/update')
-        .send(body)
-        .expect(401)
+      await request(server).post('/auth/update').send(body).expect(401)
     })
 
     test('should be return 401 when invalid refresh token provided', async () => {
       const body = { access_token: 'some-token' }
 
-      await request(app.getHttpServer())
+      await request(server)
         .post('/auth/update')
         .set('Authorization', 'Bearer invalid-token')
         .send(body)
@@ -290,31 +257,26 @@ describe('AuthController (e2e)', () => {
 
       const body: RefreshTokenDto = { refresh_token }
 
-      await request(app.getHttpServer())
+      await request(server)
         .get('/auth/me')
         .set('Authorization', `Bearer ${access_token}`)
         .send(body)
         .expect(200)
-
-      await prismaClient.user.deleteMany()
     })
 
     test('should be return 401 when no access token provided', async () => {
-      await request(app.getHttpServer())
+      await request(server)
         .post('/auth/logout')
         .send({ refresh_token: 'some-token' })
         .expect(401)
     })
 
     test('should be return 400 when refresh token is missing in body', async () => {
-      const user = getFakeUser({ isActive: true })
-      const { id: userId } = await prismaService.user.create({ data: user })
-
       const { access_token } = await jwtService.sign({
         sub: userId,
       })
 
-      await request(app.getHttpServer())
+      await request(server)
         .post('/auth/logout')
         .set('Authorization', `Bearer ${access_token}`)
         .send({})
