@@ -1,13 +1,12 @@
-import { describe, expect, test } from 'vitest'
 import { getDecodedJwt } from './getDecodedJwt'
-import { getFakeJwt, getFakeUuid } from '@/test/utils'
+import { getFakeEmail, getFakeJwt, getFakeUuid } from '@/test/utils'
 import { JwtPayload } from '@/shared/types'
 
 describe('getDecodedJwt', () => {
   test('should be decode a valid JWT and return payload', () => {
     const payload: JwtPayload = {
       jti: getFakeUuid(),
-      sub: 123,
+      sub: getFakeEmail(),
       iat: 1700000000,
       exp: 1700003600,
     }
