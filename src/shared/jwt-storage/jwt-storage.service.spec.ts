@@ -32,9 +32,9 @@ describe('JwtStorageService', () => {
         },
         {
           provide: JwtStorageService,
-          inject: [getRedisOmRepositoryToken(testJwtSchema)],
           useFactory: (repository: Repository<StoragedJwtSchema>) =>
             new JwtStorageService(repository),
+          inject: [getRedisOmRepositoryToken(testJwtSchema)],
         },
       ],
     }).compile()
