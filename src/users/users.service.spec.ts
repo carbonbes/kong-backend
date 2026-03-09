@@ -7,7 +7,7 @@ import {
   SetActiveOptions,
   UpdateOptions,
 } from '@/users/types'
-import { getFakeUser } from '@/test/utils'
+import { getFakeEmail, getFakeUser } from '@/test/utils'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
 import { PrismaService } from '@/prisma/prisma.service'
 
@@ -30,36 +30,38 @@ describe('UsersService', () => {
     test('should be create a user', async () => {
       const { email, name, gender } = getFakeUser()
       const options: CreateOptions = { email, name, gender }
-
       const user = getFakeUser()
 
       prismaService.user.create.mockResolvedValue(user)
 
-      expect(await usersService.create(options)).toEqual(user)
+      const result = await usersService.create(options)
+
+      expect(result).toEqual(user)
       expect(prismaService.user.create).toHaveBeenCalledWith({ data: options })
     })
   })
 
   describe('findOne', () => {
     test('should be find a one user', async () => {
-      const { email } = getFakeUser()
-      const options: FindOneOptions = { where: { email } }
-
+      const options: FindOneOptions = { where: { email: getFakeEmail() } }
       const user = getFakeUser()
 
       prismaService.user.findUnique.mockResolvedValue(user)
 
-      expect(await usersService.findOne(options)).toEqual(user)
+      const result = await usersService.findOne(options)
+
+      expect(result).toEqual(user)
       expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
     })
 
     test('should be return a null', async () => {
-      const { email } = getFakeUser()
-      const options: FindOneOptions = { where: { email } }
+      const options: FindOneOptions = { where: { email: getFakeEmail() } }
 
       prismaService.user.findUnique.mockResolvedValue(null)
 
-      expect(await usersService.findOne(options)).toBeNull()
+      const result = await usersService.findOne(options)
+
+      expect(result).toBeNull()
       expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
     })
   })
@@ -68,60 +70,61 @@ describe('UsersService', () => {
     test('should be update a user', async () => {
       const { email, name } = getFakeUser()
       const options: UpdateOptions = { where: { email }, data: { name } }
-
       const user = getFakeUser()
 
       prismaService.user.update.mockResolvedValue(user)
 
-      expect(await usersService.update(options)).toEqual(user)
+      const result = await usersService.update(options)
+
+      expect(result).toEqual(user)
       expect(prismaService.user.update).toHaveBeenCalledWith(options)
     })
   })
 
   describe('isExist', () => {
     test('should be return a true', async () => {
-      const { email } = getFakeUser()
-      const options: IsExistOptions = { where: { email } }
-
+      const options: IsExistOptions = { where: { email: getFakeEmail() } }
       const user = getFakeUser()
 
       prismaService.user.findUnique.mockResolvedValue(user)
 
-      expect(await usersService.isExist(options)).toBeTruthy()
+      const result = await usersService.isExist(options)
+
+      expect(result).toBeTruthy()
       expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
     })
 
     test('should be return false', async () => {
-      const { email } = getFakeUser()
-      const options: IsExistOptions = { where: { email } }
+      const options: IsExistOptions = { where: { email: getFakeEmail() } }
 
       prismaService.user.findUnique.mockResolvedValue(null)
 
-      expect(await usersService.isExist(options)).toBeFalsy()
+      const result = await usersService.isExist(options)
+
+      expect(result).toBeFalsy()
       expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
     })
   })
 
   describe('setActive', () => {
     test('should be activate user', async () => {
-      const { email } = getFakeUser()
-      const options: SetActiveOptions = { where: { email }, value: true }
-
+      const options: SetActiveOptions = {
+        where: { email: getFakeEmail() },
+        value: true,
+      }
       const user = getFakeUser()
 
       prismaService.user.update.mockResolvedValue(user)
 
+      const result = await usersService.setActive(options)
+
       const { where, value } = options
 
-      const usersRepositoryUpdateOptions: UpdateOptions = {
+      expect(result).toEqual(user)
+      expect(prismaService.user.update).toHaveBeenCalledWith({
         where,
         data: { isActive: value },
-      }
-
-      expect(await usersService.setActive(options)).toEqual(user)
-      expect(prismaService.user.update).toHaveBeenCalledWith(
-        usersRepositoryUpdateOptions,
-      )
+      })
     })
   })
 })
