@@ -22,7 +22,7 @@ export class AuthJwtsService {
     private readonly revokedJwtsService: RevokedJwtsService,
   ) {}
 
-  async sign(options: SignOptions): SignReturn {
+  sign(options: SignOptions): SignReturn {
     const { sub } = options
 
     return {
