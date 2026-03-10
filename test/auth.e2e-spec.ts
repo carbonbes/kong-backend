@@ -317,7 +317,7 @@ describe('AuthController (e2e)', () => {
       await prismaService.user.deleteMany()
     })
 
-    test('should be return 201 and new JWT pair with valid refresh token', async () => {
+    test('should be return 201 and new auth jwts pair with valid refresh token', async () => {
       await prismaService.user.create({
         data: {
           email: 'test@test.com',
