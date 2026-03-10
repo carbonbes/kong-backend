@@ -8,23 +8,24 @@ import { mock, MockProxy } from 'vitest-mock-extended'
 import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { OtpType } from '@/otps/enums'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
-import {
-  USER_EXIST_AND_ACTIVE,
-  USER_EXIST_AND_NOT_ACTIVE,
-  USER_NOT_EXIST,
-} from '@/test/consts'
 import { App } from 'supertest/types'
+import { PrismaService } from '@/prisma/prisma.service'
+import { RedisClient } from '@/redis-om/types'
+import { REDIS_CLIENT } from '@/redis-om/consts'
+import { OtpsService } from '@/otps/otps.service'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
+  let prismaService: PrismaService
+  let redisClient: RedisClient
+  let otpsService: OtpsService
 
   beforeAll(async () => {
-    execSync('docker-compose up db-test redis-test mail -d')
-    execSync('yarn dlx prisma migrate dev')
-    execSync('tsx ./src/test/seeds/prisma/seed.ts')
-    execSync('tsx ./src/test/seeds/redis-om/seed.ts')
+    execSync('docker-compose up db-test redis-om-test mail -d')
+    execSync('yarn prisma db push')
+    execSync('yarn prisma generate')
 
     mailService = mock<MailService>()
 
@@ -35,6 +36,10 @@ describe('AuthController (e2e)', () => {
       .useValue(mailService)
       .compile()
 
+    prismaService = module.get<PrismaService>(PrismaService)
+    redisClient = module.get<RedisClient>(REDIS_CLIENT)
+    otpsService = module.get<OtpsService>(OtpsService)
+
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
     server = app.getHttpServer()
@@ -43,17 +48,18 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => {
     await app.close()
-    execSync('docker-compose down db-test redis-test mail')
-  })
-
-  beforeEach(async () => {
-    mailService.sendOtp.mockClear()
+    execSync('docker-compose down db-test redis-om-test mail')
   })
 
   describe('POST /auth/signup', () => {
+    afterEach(async () => {
+      await prismaService.user.deleteMany()
+      await redisClient.FLUSHALL()
+    })
+
     test('should be return 201 when user with some email does not exist', async () => {
       const body: SignUpDto = {
-        email: USER_NOT_EXIST,
+        email: 'user@not-exist.com',
         name: 'Not exist',
         gender: 'MALE',
       }
@@ -62,8 +68,12 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 403 when user with some email already exists', async () => {
+      await prismaService.user.create({
+        data: { email: 'user@exist.com', name: 'Exist', gender: 'MALE' },
+      })
+
       const body: SignUpDto = {
-        email: USER_EXIST_AND_NOT_ACTIVE,
+        email: 'user@exist.com',
         name: 'Exist',
         gender: 'MALE',
       }
@@ -88,8 +98,6 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 400 when gender is invalid', async () => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
@@ -101,20 +109,50 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/signin', () => {
+    afterEach(async () => {
+      await prismaService.user.deleteMany()
+      await redisClient.FLUSHALL()
+    })
+
     test('should be return 201 when user exists and is active', async () => {
-      const body: SignInDto = { email: USER_EXIST_AND_ACTIVE }
+      await prismaService.user.create({
+        data: {
+          email: 'user@exist.com',
+          name: 'Exist',
+          gender: 'MALE',
+          isActive: true,
+        },
+      })
+
+      const body: SignInDto = { email: 'user@exist.com' }
 
       await request(server).post('/auth/signin').send(body).expect(201)
     })
 
     test('should be return 403 when user does not exist', async () => {
-      const body: SignInDto = { email: USER_NOT_EXIST }
+      await prismaService.user.create({
+        data: {
+          email: 'user@exist.com',
+          name: 'Exist',
+          gender: 'MALE',
+        },
+      })
+
+      const body: SignInDto = { email: 'random@random.com' }
 
       await request(server).post('/auth/signin').send(body).expect(403)
     })
 
     test('should be return 403 when user exists but is not active', async () => {
-      const body: SignInDto = { email: USER_EXIST_AND_NOT_ACTIVE }
+      await prismaService.user.create({
+        data: {
+          email: 'user@exist.com',
+          name: 'Exist',
+          gender: 'MALE',
+        },
+      })
+
+      const body: SignInDto = { email: 'user@exist.com' }
 
       await request(server).post('/auth/signin').send(body).expect(403)
     })
@@ -127,12 +165,22 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/verify-otp', () => {
-    test('should be return 201 and auth-JWT if signup otp is verified', async () => {
-      const body: VerifyOtpDto = {
-        code: '123456',
+    afterEach(async () => {
+      await prismaService.user.deleteMany()
+      await redisClient.FLUSHALL()
+    })
+
+    test('should be return 201 and auth-jwts if signup otp is verified', async () => {
+      await prismaService.user.create({
+        data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
+      })
+
+      const { code, type, email } = await otpsService.create({
         type: OtpType.SIGN_UP,
-        email: USER_EXIST_AND_NOT_ACTIVE,
-      }
+        email: 'test@test.com',
+      })
+
+      const body: VerifyOtpDto = { code, type, email }
 
       const response = await request(server)
         .post('/auth/verify-otp')
@@ -143,12 +191,17 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
     })
 
-    test('should be return 201 and auth-JWT if signin otp is verified', async () => {
-      const body: VerifyOtpDto = {
-        code: '123456',
+    test('should be return 201 and auth-jwts if signin otp is verified', async () => {
+      await prismaService.user.create({
+        data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
+      })
+
+      const { code, type, email } = await otpsService.create({
         type: OtpType.SIGN_IN,
-        email: USER_EXIST_AND_ACTIVE,
-      }
+        email: 'test@test.com',
+      })
+
+      const body: VerifyOtpDto = { code, type, email }
 
       const response = await request(server)
         .post('/auth/verify-otp')
@@ -160,17 +213,27 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 404 when otp is not verified', async () => {
-      const body: VerifyOtpDto = {
-        code: '123456',
-        type: OtpType.SIGN_IN,
-        email: USER_EXIST_AND_ACTIVE,
-      }
+      await prismaService.user.create({
+        data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
+      })
+
+      const { type, email } = await otpsService.create({
+        type: OtpType.SIGN_UP,
+        email: 'test@test.com',
+      })
+
+      const body: VerifyOtpDto = { code: 'random', type, email }
 
       await request(server).post('/auth/verify-otp').send(body).expect(404)
     })
   })
 
   describe('GET /auth/me', () => {
+    afterEach(async () => {
+      await prismaService.user.deleteMany()
+      await redisClient.FLUSHALL()
+    })
+
     test('should be return 200 and user', async () => {
       const response = await request(server)
         .get('/auth/me')
