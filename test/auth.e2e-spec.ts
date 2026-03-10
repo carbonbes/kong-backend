@@ -54,7 +54,6 @@ describe('AuthController (e2e)', () => {
   describe('POST /auth/signup', () => {
     afterEach(async () => {
       await prismaService.user.deleteMany()
-      await redisClient.FLUSHALL()
     })
 
     test('should be return 201 when user with some email does not exist', async () => {
@@ -111,7 +110,6 @@ describe('AuthController (e2e)', () => {
   describe('POST /auth/signin', () => {
     afterEach(async () => {
       await prismaService.user.deleteMany()
-      await redisClient.FLUSHALL()
     })
 
     test('should be return 201 when user exists and is active', async () => {
@@ -167,7 +165,6 @@ describe('AuthController (e2e)', () => {
   describe('POST /auth/verify-otp', () => {
     afterEach(async () => {
       await prismaService.user.deleteMany()
-      await redisClient.FLUSHALL()
     })
 
     test('should be return 201 and auth-jwts if signup otp is verified', async () => {
@@ -231,7 +228,6 @@ describe('AuthController (e2e)', () => {
   describe('GET /auth/me', () => {
     afterEach(async () => {
       await prismaService.user.deleteMany()
-      await redisClient.FLUSHALL()
     })
 
     test('should be return 200 and user', async () => {
