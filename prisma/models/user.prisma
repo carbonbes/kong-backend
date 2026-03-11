@@ -19,4 +19,5 @@ model User {
   role      UserRole   @default(USER)
   isActive  Boolean    @default(false)
   createdAt DateTime   @default(now())
+  articles  Article[]
 }
