@@ -19,17 +19,7 @@ describe('RefreshJwtService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        {
-          provide: RefreshJwtService,
-          useFactory: (
-            jwtService: JwtService,
-            uuidService: UuidService,
-            eventEmitter: EventEmitter2,
-          ) => new RefreshJwtService(jwtService, uuidService, eventEmitter),
-          inject: [JwtService, UuidService, EventEmitter2],
-        },
-      ],
+      providers: [RefreshJwtService],
     })
       .useMocker(mock)
       .compile()
@@ -43,6 +33,7 @@ describe('RefreshJwtService', () => {
   describe('sign', () => {
     test('should be sign refresh JWT', () => {
       vi.useFakeTimers()
+
       const currentDate = Date.now() / 1000
       const refreshJwtExpiresIn = 2592000
 

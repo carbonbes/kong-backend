@@ -19,17 +19,7 @@ describe('AccessJwtService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        {
-          provide: AccessJwtService,
-          useFactory: (
-            jwtService: JwtService,
-            uuidService: UuidService,
-            eventEmitter: EventEmitter2,
-          ) => new AccessJwtService(jwtService, uuidService, eventEmitter),
-          inject: [JwtService, UuidService, EventEmitter2],
-        },
-      ],
+      providers: [AccessJwtService],
     })
       .useMocker(mock)
       .compile()
@@ -43,6 +33,7 @@ describe('AccessJwtService', () => {
   describe('sign', () => {
     test('should be sign access JWT', () => {
       vi.useFakeTimers()
+
       const currentDate = Date.now() / 1000
       const accessJwtExpiresIn = 300
 

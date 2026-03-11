@@ -20,8 +20,8 @@ type GetFakeJwtsOptions = {
 }
 
 export const getFakeJwt = (options: GetFakeJwtOptions = {}): EncodedJwt => {
-  const accessJwtExp = Number(process.env.ACCESS_JWT_EXPIRES_IN)
-  const refreshJwtExp = Number(process.env.REFRESH_JWT_EXPIRES_IN)
+  const accessJwtExp = 300
+  const refreshJwtExp = 2592000
   const jwtType: FakeJwtType = options.type ?? ACCESS_TOKEN_NAME
 
   const currentTime = Date.now() / 1000
