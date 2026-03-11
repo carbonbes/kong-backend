@@ -117,6 +117,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
+        // @ts-expect-error UserGender
         gender: '',
       }
 
@@ -127,6 +128,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
+        // @ts-expect-error UserGender
         gender: 'invalid',
       }
 
