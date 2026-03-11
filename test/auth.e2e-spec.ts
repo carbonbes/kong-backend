@@ -22,7 +22,6 @@ describe('AuthController (e2e)', () => {
   let authJwtsService: AuthJwtsService
 
   beforeAll(async () => {
-    execSync('docker-compose up db-test redis-om-test mail -d')
     execSync('yarn prisma db push')
     execSync('yarn prisma generate')
 
@@ -47,7 +46,6 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => {
     await app.close()
-    execSync('docker-compose down db-test redis-om-test mail')
   })
 
   describe('POST /auth/signup', () => {
