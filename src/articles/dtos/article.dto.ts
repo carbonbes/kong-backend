@@ -1,6 +1,6 @@
 import { Article, ArticleStatus } from '@/articles/types'
 import { IsDate, IsEnum, IsInt, IsObject } from 'class-validator'
-import type { JsonValue } from '@prisma/client/runtime/client'
+import type { JsonValue } from '@/prisma/types'
 
 export class ArticleDto implements Article {
   @IsInt()
