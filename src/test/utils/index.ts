@@ -1,4 +1,5 @@
 export * from './getAlphanumericString'
+export * from './getFakeArticle'
 export * from './getFakeBcryptHash'
 export * from './getFakeEmail'
 export * from './getFakeInt'
