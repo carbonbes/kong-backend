@@ -1,32 +1,39 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from '@/prisma/prisma.service'
+import {
+  CreateOptions,
+  CreateReturn,
+  FindUniqueOptions,
+  FindUniqueReturn,
+  FindManyOptions,
+  FindManyReturn,
+  UpdateOptions,
+  UpdateReturn,
+  DeleteOptions,
+  DeleteReturn,
+} from '@/articles/types'
 
 @Injectable()
 export class ArticlesService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  create() {
-    return this.prismaService.article.create({
-      data: { authorId: 1, content: [{ type: 'paragraph', value: 'Привет!' }] },
-    })
+  create(options: CreateOptions): CreateReturn {
+    return this.prismaService.article.create(options)
   }
 
-  findUnique() {
-    return this.prismaService.article.findUnique({ where: { id: 1 } })
+  findUnique(options: FindUniqueOptions): FindUniqueReturn {
+    return this.prismaService.article.findUnique(options)
   }
 
-  findMany() {
-    return this.prismaService.article.findMany({ where: { authorId: 1 } })
+  findMany(options: FindManyOptions): FindManyReturn {
+    return this.prismaService.article.findMany(options)
   }
 
-  update() {
-    return this.prismaService.article.update({
-      where: { id: 1 },
-      data: { content: [{ type: 'paragraph', value: 'Как дела?' }] },
-    })
+  update(options: UpdateOptions): UpdateReturn {
+    return this.prismaService.article.update(options)
   }
 
-  delete() {
-    return this.prismaService.article.delete({ where: { id: 1 } })
+  delete(options: DeleteOptions): DeleteReturn {
+    return this.prismaService.article.delete(options)
   }
 }
