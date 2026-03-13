@@ -25,13 +25,7 @@ describe('getFakeTextNodes', () => {
       ],
     })
 
-    expect(nodes.map((node) => node.text)).toEqual([
-      'a',
-      'b',
-      'cd',
-      'e',
-      'f',
-    ])
+    expect(nodes.map((node) => node.text)).toEqual(['a', 'b', 'cd', 'e', 'f'])
     expect(nodes[1].marks?.map((mark) => mark.type)).toEqual(['bold'])
     expect(nodes[2].marks?.map((mark) => mark.type)).toEqual(['bold', 'italic'])
     expect(nodes[3].marks?.map((mark) => mark.type)).toEqual(['italic'])

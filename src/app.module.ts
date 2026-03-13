@@ -17,6 +17,7 @@ import { OtpsModule } from '@/otps/otps.module'
 import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
 import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
+import { CaslModule } from './casl/casl.module'
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
       inject: [ConfigService],
     }),
     MailModule,
+    CaslModule,
     SignedJwtsModule,
     RevokedJwtsModule,
     OtpsModule,
