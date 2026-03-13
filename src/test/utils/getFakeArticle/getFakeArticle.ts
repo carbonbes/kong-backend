@@ -1,6 +1,7 @@
 import { Article, ArticleStatus } from '@/articles/types'
 import { faker } from '@faker-js/faker/locale/ru'
 import { getFakeInt } from '@/test/utils/getFakeInt'
+import { getFakeDocNode } from '@/test/utils'
 
 type GetFakeArticleOptions = Partial<Article>
 
@@ -16,10 +17,7 @@ export const getFakeArticle = ({
 }: GetFakeArticleOptions = {}): Article => ({
   id: id ?? getFakeInt(),
   authorId: authorId ?? getFakeInt(),
-  content: content ?? {
-    title: faker.lorem.sentence(),
-    body: faker.lorem.paragraph(),
-  },
+  content: content ?? getFakeDocNode(),
   status: status ?? faker.helpers.arrayElement(statuses),
   createdAt: createdAt ?? faker.date.past(),
   updatedAt: updatedAt ?? faker.date.recent(),
