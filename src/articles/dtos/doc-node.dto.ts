@@ -10,7 +10,7 @@ import {
 } from './nodes'
 import { DOC_NODE_CHILD_NODES } from '@/articles/consts'
 
-class DocChildNodeDto {
+class DocChildNodesDto {
   @IsIn(DOC_NODE_CHILD_NODES)
   type: (typeof DOC_NODE_CHILD_NODES)[number]
 }
@@ -21,7 +21,7 @@ export class DocNodeDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => DocChildNodeDto, {
+  @Type(() => DocChildNodesDto, {
     discriminator: {
       property: 'type',
       subTypes: [
@@ -35,5 +35,5 @@ export class DocNodeDto {
     },
     keepDiscriminatorProperty: true,
   })
-  content: DocChildNodeDto[]
+  content: DocChildNodesDto[]
 }

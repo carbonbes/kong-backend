@@ -2,6 +2,8 @@ import { Type } from 'class-transformer'
 import {
   Equals,
   IsArray,
+  IsIn,
+  IsNotEmpty,
   IsOptional,
   IsString,
   ValidateNested,
@@ -12,15 +14,17 @@ import {
   ItalicMarkDto,
   LinkMarkDto,
   StriketroughMarkDto,
-  MarkDto,
 } from '@/articles/dtos'
+import { MARK_NODES } from '@/articles/consts'
+
+class MarkDto {
+  @IsIn(MARK_NODES)
+  type: (typeof MARK_NODES)[number]
+}
 
 export class TextNodeDto {
   @Equals('text')
   type: 'text'
-
-  @IsString()
-  text: string
 
   @IsOptional()
   @IsArray()
@@ -39,4 +43,8 @@ export class TextNodeDto {
     keepDiscriminatorProperty: true,
   })
   marks?: MarkDto[]
+
+  @IsString()
+  @IsNotEmpty()
+  text: string
 }

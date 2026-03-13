@@ -1,16 +1,6 @@
 import { Type } from 'class-transformer'
-import { Equals, IsArray, IsIn, ValidateNested } from 'class-validator'
-import {
-  BulletListNodeDto,
-  OrderedListNodeDto,
-  ParagraphNodeDto,
-} from '@/articles/dtos'
-import { LIST_ITEM_CHILD_NODES } from '@/articles/consts'
-
-class ListItemChildNodeDto {
-  @IsIn(LIST_ITEM_CHILD_NODES)
-  type: (typeof LIST_ITEM_CHILD_NODES)[number]
-}
+import { Equals, IsArray, ValidateNested } from 'class-validator'
+import { ParagraphNodeDto } from '@/articles/dtos'
 
 export class ListItemNodeDto {
   @Equals('listItem')
@@ -18,16 +8,6 @@ export class ListItemNodeDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ListItemChildNodeDto, {
-    discriminator: {
-      property: 'type',
-      subTypes: [
-        { name: 'paragraph', value: ParagraphNodeDto },
-        { name: 'bulletList', value: BulletListNodeDto },
-        { name: 'orderedList', value: OrderedListNodeDto },
-      ],
-    },
-    keepDiscriminatorProperty: true,
-  })
-  content: ListItemChildNodeDto[]
+  @Type(() => ParagraphNodeDto)
+  content: ParagraphNodeDto[]
 }

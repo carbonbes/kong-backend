@@ -8,9 +8,9 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator'
-import { InlineNodeDto, TextNodeDto } from '@/articles/dtos'
+import { TextNodeDto } from '@/articles/dtos'
 
-class HeadingNodeAttrs {
+class HeadingNodeAttrsDto {
   @IsInt()
   @Min(1)
   @Max(6)
@@ -23,17 +23,11 @@ export class HeadingNodeDto {
 
   @IsObject()
   @ValidateNested()
-  @Type(() => HeadingNodeAttrs)
-  attrs: HeadingNodeAttrs
+  @Type(() => HeadingNodeAttrsDto)
+  attrs: HeadingNodeAttrsDto
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => InlineNodeDto, {
-    discriminator: {
-      property: 'type',
-      subTypes: [{ name: 'text', value: TextNodeDto }],
-    },
-    keepDiscriminatorProperty: true,
-  })
-  content: InlineNodeDto[]
+  @Type(() => TextNodeDto)
+  content: TextNodeDto[]
 }
