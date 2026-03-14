@@ -19,7 +19,7 @@ class OrderedListNodeAttrsDto {
 
 export class OrderedListNodeDto {
   @Equals('orderedList')
-  type: 'orderedList'
+  type: string
 
   @IsOptional()
   @IsObject()

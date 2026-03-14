@@ -19,12 +19,12 @@ import { MARK_NODES } from '@/articles/consts'
 
 class MarkDto {
   @IsIn(MARK_NODES)
-  type: (typeof MARK_NODES)[number]
+  type: string
 }
 
 export class TextNodeDto {
   @Equals('text')
-  type: 'text'
+  type: string
 
   @IsOptional()
   @IsArray()

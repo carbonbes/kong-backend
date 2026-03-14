@@ -4,7 +4,7 @@ import { ParagraphNodeDto } from '@/articles/dtos'
 
 export class ListItemNodeDto {
   @Equals('listItem')
-  type: 'listItem'
+  type: string
 
   @IsArray()
   @ValidateNested({ each: true })

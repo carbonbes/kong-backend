@@ -17,6 +17,7 @@ import { OtpsModule } from '@/otps/otps.module'
 import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
 import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
+import { ArticlesModule } from '@/articles/articles.module'
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
     RevokedJwtsModule,
     OtpsModule,
     AuthModule,
+    ArticlesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessJwtAuthGuard },

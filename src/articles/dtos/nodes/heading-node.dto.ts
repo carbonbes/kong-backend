@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import {
+  ArrayNotEmpty,
   Equals,
   IsArray,
   IsInt,
@@ -19,7 +20,7 @@ class HeadingNodeAttrsDto {
 
 export class HeadingNodeDto {
   @Equals('heading')
-  type: 'heading'
+  type: string
 
   @IsObject()
   @ValidateNested()
@@ -27,6 +28,7 @@ export class HeadingNodeDto {
   attrs: HeadingNodeAttrsDto
 
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => TextNodeDto)
   content: TextNodeDto[]

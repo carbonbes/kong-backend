@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    container_name: kong-db-e2e
+    ports:
+      - "5433:5432"
+    env_file:
+      - .env.e2e
+
+  redis-om:
+    image: redis/redis-stack:7.2.0-v20
+    restart: unless-stopped
+    container_name: kong-redis-e2e
+    ports:
+      - "6380:6379"
+      - "8002:8001"
+
+  mail:
+    image: axllent/mailpit:v1.29
+    restart: unless-stopped
+    container_name: kong-mail-e2e
+    ports:
+      - "8026:8025"
+      - "1026:1025"

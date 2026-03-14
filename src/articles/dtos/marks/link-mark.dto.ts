@@ -24,7 +24,7 @@ class LinkMarkAttrs {
 
 export class LinkMarkDto {
   @Equals('link')
-  type: 'link'
+  type: string
 
   @IsObject()
   @ValidateNested()

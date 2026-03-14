@@ -4,7 +4,7 @@ import { ParagraphNodeDto } from '@/articles/dtos'
 
 export class BlockquoteNodeDto {
   @Equals('blockquote')
-  type: 'blockquote'
+  type: string
 
   @IsArray()
   @ValidateNested({ each: true })

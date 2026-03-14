@@ -10,15 +10,6 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
-  db-test:
-    image: postgres:18-alpine
-    restart: unless-stopped
-    container_name: kong-db-test
-    ports:
-      - "5433:5432"
-    env_file:
-      - .env.e2e
-
   redis-om:
     image: redis/redis-stack:7.2.0-v20
     restart: always
@@ -28,14 +19,6 @@ services:
       - "8001:8001"
     volumes:
       - redis-om-data:/data
-
-  redis-om-test:
-    image: redis/redis-stack:7.2.0-v20
-    restart: unless-stopped
-    container_name: kong-redis-test
-    ports:
-      - "6380:6379"
-      - "8002:8001"
 
   mail:
     image: axllent/mailpit:v1.29

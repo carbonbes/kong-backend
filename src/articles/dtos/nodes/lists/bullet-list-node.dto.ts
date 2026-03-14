@@ -4,7 +4,7 @@ import { ListItemNodeDto } from './shared'
 
 export class BulletListNodeDto {
   @Equals('bulletList')
-  type: 'bulletList'
+  type: string
 
   @IsArray()
   @ValidateNested({ each: true })

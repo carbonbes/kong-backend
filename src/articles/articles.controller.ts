@@ -9,14 +9,19 @@ import {
 } from '@nestjs/common'
 import { ArticlesService } from './articles.service'
 import { CreateArticleDto, UpdateArticleDto } from './dtos'
+import { Session } from '@/shared/decorators'
+import type { User } from '@/users/types'
+import { CreateOptions } from '@/articles/types'
 
 @Controller('articles')
 export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
   @Post()
-  create(@Body() body: CreateArticleDto) {
-    return this.articlesService.create({ data: body })
+  create(@Body() body: CreateArticleDto, @Session() { id }: User) {
+    const options: CreateOptions = { data: { ...body, authorId: id } }
+
+    return this.articlesService.create(options)
   }
 
   @Get(':id')
