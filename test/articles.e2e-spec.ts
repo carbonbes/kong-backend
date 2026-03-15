@@ -55,400 +55,390 @@ describe('ArticlesController (e2e)', () => {
   })
 
   describe('POST /articles', () => {
-    describe('201', () => {
-      test('and return an article', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                attrs: { level: 1 },
-                content: [{ type: 'text', text: 'Test' }],
-              },
-            ],
-          },
-        }
+    test('should return 200 and article', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: 'Test' }],
+            },
+          ],
+        },
+      }
 
-        const result = await request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
+      const result = await request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
 
-        expect(result.status).toBe(201)
-        expect(result.body).toEqual({ ...result.body, ...body })
-      })
+      expect(result.status).toBe(201)
+      expect(result.body).toEqual({ ...result.body, ...body })
     })
 
-    describe('400', () => {
-      test('if body is empty', async () => {
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send({})
-          .expect(400)
-      })
-
-      test('if body content is empty', async () => {
-        const body: CreateArticleDto = {
-          content: {},
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if DocNode type is invalid', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'ecreer',
-            content: [
-              {
-                type: 'heading',
-                attrs: { level: 1 },
-                content: [{ type: 'text', text: 'Test' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if DocNode content not provided', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if DocNode content is empty', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if DocNode content contains not allowed node', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [{ type: 'erfrfer' }],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if HeadingNode attributes not provided', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                content: [{ type: 'text', text: 'Test' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if HeadingNode level attribute not provided', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                attrs: {},
-                content: [{ type: 'text', text: 'Test' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if HeadingNode level attribute is invalid', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                attrs: { level: 0 },
-                content: [{ type: 'text', text: 'Test' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if HeadingNode content not provided', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                attrs: { level: 1 },
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if HeadingNode content is empty', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                attrs: { level: 1 },
-                content: [],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if HeadingNode content contains not allowed node', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                attrs: { level: 1 },
-                content: [{ type: 'paragraph' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if HeadingNode content contains invalid node', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                attrs: { level: 1 },
-                content: [{ type: 'text', text: '' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if ParagraphNode content not provided', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'paragraph',
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if ParagraphNode content is empty', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'paragraph',
-                content: [],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if ParagraphNode content contains not allowed node', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'paragraph',
-                content: [{ type: 'ercdtgt' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if ParagraphNode content contains invalid node', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'paragraph',
-                content: [{ type: 'text', text: '' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
-
-      test('if BlockquoteNode is invalid', async () => {
-        const body: CreateArticleDto = {
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'paragraph',
-                content: [{ type: 'text', value: 'Test' }],
-              },
-            ],
-          },
-        }
-
-        return request(server)
-          .post('/articles')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .send(body)
-          .expect(400)
-      })
+    test('should return 400 if body is empty', async () => {
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({})
+        .expect(400)
     })
 
-    describe('401', () => {
-      test('if user is not authenticated', async () => {
-        return request(server).post('/articles').expect(401)
-      })
+    test('should return 400 if body content is empty', async () => {
+      const body: CreateArticleDto = {
+        content: {},
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if DocNode type is invalid', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'ecreer',
+          content: [
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: 'Test' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if DocNode content not provided', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if DocNode content is empty', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if DocNode content contains not allowed node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [{ type: 'erfrfer' }],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if HeadingNode attributes not provided', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              content: [{ type: 'text', text: 'Test' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if HeadingNode level attribute not provided', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              attrs: {},
+              content: [{ type: 'text', text: 'Test' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if HeadingNode level attribute is invalid', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              attrs: { level: 0 },
+              content: [{ type: 'text', text: 'Test' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if HeadingNode content not provided', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if HeadingNode content is empty', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if HeadingNode content contains not allowed node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'paragraph' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if HeadingNode content contains invalid node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              attrs: { level: 1 },
+              content: [{ type: 'text', text: '' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if ParagraphNode content not provided', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if ParagraphNode content is empty', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if ParagraphNode content contains not allowed node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'ercdtgt' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if ParagraphNode content contains invalid node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: '' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if BlockquoteNode is invalid', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', value: 'Test' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 401 if user is not authenticated', async () => {
+      return request(server).post('/articles').expect(401)
     })
   })
 
   describe('GET /articles/1', () => {
-    describe('200', () => {
-      test('and return an article', async () => {
-        const article = await prismaService.article.create({
-          data: {
-            authorId: 1,
-            content: {
-              type: 'doc',
-              content: [
-                {
-                  type: 'heading',
-                  attrs: { level: 1 },
-                  content: [{ type: 'text', text: 'Test' }],
-                },
-              ],
-            },
+    test('should return 200 and article', async () => {
+      const article = await prismaService.article.create({
+        data: {
+          authorId: 1,
+          content: {
+            type: 'doc',
+            content: [
+              {
+                type: 'heading',
+                attrs: { level: 1 },
+                content: [{ type: 'text', text: 'Test' }],
+              },
+            ],
           },
-        })
-
-        return request(server)
-          .get('/articles/1')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .expect(200)
-          .expect(article)
+        },
       })
+
+      return request(server)
+        .get('/articles/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200)
+        .expect(article)
     })
 
-    describe('401', () => {
-      test('if user is not authenticated', async () => {
-        return request(server).get('/articles/1').expect(401)
-      })
+    test('should return 401 if user is not authenticated', async () => {
+      return request(server).get('/articles/1').expect(401)
     })
   })
 })
