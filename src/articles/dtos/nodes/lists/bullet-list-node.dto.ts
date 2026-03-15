@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { Equals, IsArray, ValidateNested } from 'class-validator'
+import { ArrayNotEmpty, Equals, IsArray, ValidateNested } from 'class-validator'
 import { ListItemNodeDto } from './shared'
 
 export class BulletListNodeDto {
@@ -7,6 +7,7 @@ export class BulletListNodeDto {
   type: string
 
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => ListItemNodeDto)
   content: ListItemNodeDto[]

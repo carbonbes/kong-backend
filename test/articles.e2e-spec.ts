@@ -55,6 +55,10 @@ describe('ArticlesController (e2e)', () => {
   })
 
   describe('POST /articles', () => {
+    beforeEach(async () => {
+      await prismaService.$executeRaw`TRUNCATE TABLE "Article" RESTART IDENTITY CASCADE;`
+    })
+
     test('should return 200 and article', async () => {
       const body: CreateArticleDto = {
         content: {
@@ -387,14 +391,276 @@ describe('ArticlesController (e2e)', () => {
         .expect(400)
     })
 
-    test('should return 400 if BlockquoteNode is invalid', async () => {
+    test('should return 400 if BulletListNode content not provided', async () => {
       const body: CreateArticleDto = {
         content: {
           type: 'doc',
           content: [
             {
-              type: 'paragraph',
-              content: [{ type: 'text', value: 'Test' }],
+              type: 'bulletList',
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if BulletListNode content is empty', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'bulletList',
+              content: [],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if BulletListNode content contains not allowed node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'bulletList',
+              content: [{ type: 'paragraph' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if BulletListNode content contains invalid node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'bulletList',
+              content: [{ type: 'listItem', content: [{ type: 'paragraph' }] }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if OrderedListNode start attribute is invalid', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'orderedList',
+              attrs: { start: 0 },
+              content: [
+                {
+                  type: 'listItem',
+                  content: [
+                    {
+                      type: 'paragraph',
+                      content: [
+                        {
+                          type: 'text',
+                          text: 'Test',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if OrderedListNode content not provided', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'orderedList',
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if OrderedListNode content is empty', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'orderedList',
+              content: [],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if OrderedListNode content contains not allowed node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'orderedList',
+              content: [{ type: 'paragraph' }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if OrderedListNode content contains invalid node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'orderedList',
+              content: [{ type: 'listItem', content: [{ type: 'paragraph' }] }],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if BlockquoteNode content not provided', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'blockquote',
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if BlockquoteNode content is empty', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'blockquote',
+              content: [],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if BlockquoteNode content contains not allowed node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'blockquote',
+              content: [
+                {
+                  type: 'heading',
+                },
+              ],
+            },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if BlockquoteNode content contains invalid node', async () => {
+      const body: CreateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'blockquote',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: '' }],
+                },
+              ],
             },
           ],
         },

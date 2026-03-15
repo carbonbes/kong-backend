@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { Equals, IsArray, ValidateNested } from 'class-validator'
+import { ArrayNotEmpty, Equals, IsArray, ValidateNested } from 'class-validator'
 import { ParagraphNodeDto } from '@/articles/dtos'
 
 export class ListItemNodeDto {
@@ -7,6 +7,7 @@ export class ListItemNodeDto {
   type: string
 
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => ParagraphNodeDto)
   content: ParagraphNodeDto[]

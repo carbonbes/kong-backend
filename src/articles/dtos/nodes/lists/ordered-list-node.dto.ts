@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import {
+  ArrayNotEmpty,
   Equals,
   IsArray,
   IsInt,
@@ -28,6 +29,7 @@ export class OrderedListNodeDto {
   attrs?: OrderedListNodeAttrsDto
 
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => ListItemNodeDto)
   content: ListItemNodeDto[]
