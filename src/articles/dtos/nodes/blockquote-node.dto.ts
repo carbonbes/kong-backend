@@ -4,7 +4,7 @@ import { ParagraphNodeDto } from '@/articles/dtos'
 
 export class BlockquoteNodeDto {
   @Equals('blockquote')
-  type: string
+  type: 'blockquote'
 
   @IsArray()
   @ArrayNotEmpty()

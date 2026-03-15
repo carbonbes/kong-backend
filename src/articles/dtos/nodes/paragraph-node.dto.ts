@@ -4,7 +4,7 @@ import { TextNodeDto } from '@/articles/dtos'
 
 export class ParagraphNodeDto {
   @Equals('paragraph')
-  type: string
+  type: 'paragraph'
 
   @IsArray()
   @ArrayNotEmpty()

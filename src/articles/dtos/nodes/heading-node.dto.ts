@@ -15,12 +15,12 @@ class HeadingNodeAttrsDto {
   @IsInt()
   @Min(1)
   @Max(6)
-  level: number
+  level: 1 | 2 | 3 | 4 | 5 | 6
 }
 
 export class HeadingNodeDto {
   @Equals('heading')
-  type: string
+  type: 'heading'
 
   @IsObject()
   @ValidateNested()
