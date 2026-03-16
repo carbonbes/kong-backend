@@ -7,7 +7,7 @@ import {
   ValidateNested,
 } from 'class-validator'
 import { Article, ArticleStatus } from '@/articles/types'
-import { DocNodeDto } from '@/articles/dtos/doc-node.dto'
+import { DocNodeDto } from '@/articles/dtos'
 import type { JsonValue } from '@/prisma/types'
 
 export class ArticleDto implements Article {

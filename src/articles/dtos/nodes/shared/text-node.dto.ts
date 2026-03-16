@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import {
+  ArrayNotEmpty,
   Equals,
   IsArray,
   IsIn,
@@ -13,7 +14,7 @@ import {
   BoldMarkDto,
   ItalicMarkDto,
   LinkMarkDto,
-  StriketroughMarkDto,
+  StrikeMarkDto,
 } from '@/articles/dtos'
 import { MARK_NODES } from '@/articles/consts'
 
@@ -28,6 +29,7 @@ export class TextNodeDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => MarkDto, {
     discriminator: {
@@ -37,7 +39,7 @@ export class TextNodeDto {
         { name: 'italic', value: ItalicMarkDto },
         { name: 'link', value: LinkMarkDto },
         { name: 'blur', value: BlurMarkDto },
-        { name: 'strike', value: StriketroughMarkDto },
+        { name: 'strike', value: StrikeMarkDto },
       ],
     },
     keepDiscriminatorProperty: true,

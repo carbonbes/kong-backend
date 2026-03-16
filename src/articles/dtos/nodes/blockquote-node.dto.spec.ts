@@ -12,10 +12,23 @@ describe('BlockquoteNodeDto', () => {
     metatype: BlockquoteNodeDto,
   }
 
-  test('should throw a BadRequestException if type field is invalid', async () => {
-    // @ts-expect-error content field
+  test('should success if node is valid', async () => {
     const body: BlockquoteNodeDto = {
-      type: 'blockquot',
+      type: 'blockquote',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
+      ],
+    }
+
+    await expect(target.transform(body, metadata)).resolves.toBeTruthy()
+  })
+
+  test('should throw a BadRequestException if type field is not provided', async () => {
+    // @ts-expect-error type field
+    const body: BlockquoteNodeDto = {
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
+      ],
     }
 
     await expect(target.transform(body, metadata)).rejects.toThrow(
@@ -23,7 +36,21 @@ describe('BlockquoteNodeDto', () => {
     )
   })
 
-  test('should throw a BadRequestException if content field not provided', async () => {
+  test('should throw a BadRequestException if type field is invalid', async () => {
+    const body: BlockquoteNodeDto = {
+      // @ts-expect-error type field
+      type: 'blockquot',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
+      ],
+    }
+
+    await expect(target.transform(body, metadata)).rejects.toThrow(
+      BadRequestException,
+    )
+  })
+
+  test('should throw a BadRequestException if content field is not provided', async () => {
     // @ts-expect-error content field
     const body: BlockquoteNodeDto = {
       type: 'blockquote',
@@ -48,7 +75,7 @@ describe('BlockquoteNodeDto', () => {
   test('should throw a BadRequestException if content contains not allowed node', async () => {
     const body: BlockquoteNodeDto = {
       type: 'blockquote',
-      // @ts-expect-error invalid node child
+      // @ts-expect-error type field
       content: [{ type: 'text', text: 'Test' }],
     }
 

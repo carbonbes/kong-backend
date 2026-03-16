@@ -4,7 +4,7 @@ import type {
   BoldMarkDto,
   ItalicMarkDto,
   LinkMarkDto,
-  StriketroughMarkDto,
+  StrikeMarkDto,
   TextNodeDto,
 } from '@/articles/dtos'
 
@@ -13,7 +13,7 @@ type TextMark =
   | BoldMarkDto
   | ItalicMarkDto
   | LinkMarkDto
-  | StriketroughMarkDto
+  | StrikeMarkDto
 
 type GetFakeTextNodeOptions = {
   text?: string

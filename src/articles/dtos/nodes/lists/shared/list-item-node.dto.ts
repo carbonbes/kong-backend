@@ -4,7 +4,7 @@ import { ParagraphNodeDto } from '@/articles/dtos'
 
 export class ListItemNodeDto {
   @Equals('listItem')
-  type: string
+  type: 'listItem'
 
   @IsArray()
   @ArrayNotEmpty()

@@ -5,7 +5,7 @@ import type {
   BoldMarkDto,
   ItalicMarkDto,
   LinkMarkDto,
-  StriketroughMarkDto,
+  StrikeMarkDto,
   TextNodeDto,
 } from '@/articles/dtos'
 import { getFakeBlurMark } from '@/test/utils/getFakeArticle/getFakeBlurMark'
@@ -22,7 +22,7 @@ type TextMark =
   | BoldMarkDto
   | ItalicMarkDto
   | LinkMarkDto
-  | StriketroughMarkDto
+  | StrikeMarkDto
 
 type LinkMarkAttrs = Partial<LinkMarkDto['attrs']>
 

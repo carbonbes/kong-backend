@@ -8,7 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator'
 
-class LinkMarkAttrs {
+class LinkMarkAttrsDto {
   @IsString()
   @IsNotEmpty()
   href: string
@@ -24,10 +24,10 @@ class LinkMarkAttrs {
 
 export class LinkMarkDto {
   @Equals('link')
-  type: string
+  type: 'link'
 
   @IsObject()
   @ValidateNested()
-  @Type(() => LinkMarkAttrs)
-  attrs: LinkMarkAttrs
+  @Type(() => LinkMarkAttrsDto)
+  attrs: LinkMarkAttrsDto
 }

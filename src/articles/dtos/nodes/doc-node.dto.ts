@@ -13,8 +13,16 @@ import {
   HorizontalRuleNodeDto,
   OrderedListNodeDto,
   ParagraphNodeDto,
-} from './nodes'
+} from './'
 import { DOC_NODE_CHILD_NODES } from '@/articles/consts'
+
+type DocChildNodes =
+  | ParagraphNodeDto
+  | HeadingNodeDto
+  | BulletListNodeDto
+  | OrderedListNodeDto
+  | BlockquoteNodeDto
+  | HorizontalRuleNodeDto
 
 class DocChildNodesDto {
   @IsIn(DOC_NODE_CHILD_NODES)
@@ -23,7 +31,7 @@ class DocChildNodesDto {
 
 export class DocNodeDto {
   @Equals('doc')
-  type: string
+  type: 'doc'
 
   @IsArray()
   @ArrayNotEmpty()
@@ -34,13 +42,13 @@ export class DocNodeDto {
       subTypes: [
         { name: 'paragraph', value: ParagraphNodeDto },
         { name: 'heading', value: HeadingNodeDto },
-        { name: 'blockquote', value: BlockquoteNodeDto },
         { name: 'bulletList', value: BulletListNodeDto },
         { name: 'orderedList', value: OrderedListNodeDto },
+        { name: 'blockquote', value: BlockquoteNodeDto },
         { name: 'horizontalRule', value: HorizontalRuleNodeDto },
       ],
     },
     keepDiscriminatorProperty: true,
   })
-  content: DocChildNodesDto[]
+  content: DocChildNodes[]
 }

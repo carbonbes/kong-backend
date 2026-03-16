@@ -4,7 +4,7 @@ import { ListItemNodeDto } from './shared'
 
 export class BulletListNodeDto {
   @Equals('bulletList')
-  type: string
+  type: 'bulletList'
 
   @IsArray()
   @ArrayNotEmpty()

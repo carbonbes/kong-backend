@@ -1,6 +1,6 @@
 import { Equals } from 'class-validator'
 
-export class StriketroughMarkDto {
+export class StrikeMarkDto {
   @Equals('strike')
-  type: string
+  type: 'strike'
 }

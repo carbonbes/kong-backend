@@ -1,5 +1,5 @@
-import type { StriketroughMarkDto } from '@/articles/dtos'
+import type { StrikeMarkDto } from '@/articles/dtos'
 
-export const getFakeStriketroughMark = (): StriketroughMarkDto => ({
+export const getFakeStriketroughMark = (): StrikeMarkDto => ({
   type: 'strike',
 })

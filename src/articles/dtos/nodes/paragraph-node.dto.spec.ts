@@ -21,10 +21,56 @@ describe('ParagraphNodeDto', () => {
     await expect(target.transform(body, metadata)).resolves.toBeTruthy()
   })
 
+  test('should throw a BadRequestException if type field is not provide', async () => {
+    // @ts-expect-error type field
+    const body: ParagraphNodeDto = {
+      content: [{ type: 'text', text: 'Test' }],
+    }
+
+    await expect(target.transform(body, metadata)).rejects.toThrow(
+      BadRequestException,
+    )
+  })
+
   test('should throw a BadRequestException if type field is not valid', async () => {
     const body: ParagraphNodeDto = {
-      // @ts-expect-error type field not valid
+      // @ts-expect-error type field
       type: 'paragrap',
+      content: [{ type: 'text', text: 'Test' }],
+    }
+
+    await expect(target.transform(body, metadata)).rejects.toThrow(
+      BadRequestException,
+    )
+  })
+
+  test('should throw a BadRequestException if content field is not provided', async () => {
+    // @ts-expect-error body field
+    const body: ParagraphNodeDto = {
+      type: 'paragraph',
+    }
+
+    await expect(target.transform(body, metadata)).rejects.toThrow(
+      BadRequestException,
+    )
+  })
+
+  test('should throw a BadRequestException if content field is empty', async () => {
+    const body: ParagraphNodeDto = {
+      type: 'paragraph',
+      content: [],
+    }
+
+    await expect(target.transform(body, metadata)).rejects.toThrow(
+      BadRequestException,
+    )
+  })
+
+  test('should throw a BadRequestException if content field contains not allowed node', async () => {
+    const body: ParagraphNodeDto = {
+      type: 'paragraph',
+      // @ts-expect-error type field
+      content: [{ type: 'heading' }],
     }
 
     await expect(target.transform(body, metadata)).rejects.toThrow(

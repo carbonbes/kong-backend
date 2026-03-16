@@ -4,6 +4,7 @@ import {
   Equals,
   IsArray,
   IsInt,
+  IsNotEmptyObject,
   IsObject,
   IsOptional,
   Min,
@@ -20,10 +21,11 @@ class OrderedListNodeAttrsDto {
 
 export class OrderedListNodeDto {
   @Equals('orderedList')
-  type: string
+  type: 'orderedList'
 
   @IsOptional()
   @IsObject()
+  @IsNotEmptyObject({ nullable: false })
   @ValidateNested()
   @Type(() => OrderedListNodeAttrsDto)
   attrs?: OrderedListNodeAttrsDto
