@@ -16,7 +16,7 @@ import type {
   VerifyOtpOptions,
   VerifyOtpReturn,
 } from './types'
-import { Transactional } from '@transactional/core'
+import { Transactional } from '@nestjs-cls/transactional'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/enums'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'

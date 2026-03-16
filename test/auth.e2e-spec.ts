@@ -9,19 +9,21 @@ import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { OtpType } from '@/otps/enums'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { App } from 'supertest/types'
-import { PrismaService } from '@/prisma/prisma.service'
+import { PrismaClient } from '@/prisma/client'
 import { OtpsService } from '@/otps/otps.service'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
+import { PRISMA_CLIENT } from '@/prisma/consts'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
-  let prismaService: PrismaService
+  let prismaClient: PrismaClient
   let otpsService: OtpsService
   let authJwtsService: AuthJwtsService
 
   beforeAll(async () => {
+    execSync('docker compose -f compose.e2e.yaml up -d')
     execSync('yarn prisma db push')
     execSync('yarn prisma generate')
 
@@ -34,7 +36,7 @@ describe('AuthController (e2e)', () => {
       .useValue(mailService)
       .compile()
 
-    prismaService = module.get<PrismaService>(PrismaService)
+    prismaClient = module.get<PrismaClient>(PRISMA_CLIENT)
     otpsService = module.get<OtpsService>(OtpsService)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
@@ -46,11 +48,12 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => {
     await app.close()
+    execSync('docker compose -f compose.e2e.yaml down')
   })
 
   describe('POST /auth/signup', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await prismaClient.user.deleteMany()
     })
 
     test('should be return 201 when user with some email does not exist', async () => {
@@ -64,7 +67,7 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 403 when user with some email already exists', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
       })
 
@@ -138,11 +141,11 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/signin', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await prismaClient.user.deleteMany()
     })
 
     test('should be return 201 when user exists and is active', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: {
           email: 'test@test.com',
           name: 'Test',
@@ -157,7 +160,7 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 403 when user does not exist', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: {
           email: 'test@test.com',
           name: 'Test',
@@ -171,7 +174,7 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 403 when user exists but is not active', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: {
           email: 'test@test.com',
           name: 'Test',
@@ -199,11 +202,11 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/verify-otp', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await prismaClient.user.deleteMany()
     })
 
     test('should be return 201 and auth-jwts if signup otp is verified', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
       })
 
@@ -228,7 +231,7 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 201 and auth-jwts if signin otp is verified', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
       })
 
@@ -253,7 +256,7 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should be return 404 when otp is not verified', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
       })
 
@@ -274,11 +277,11 @@ describe('AuthController (e2e)', () => {
 
   describe('GET /auth/me', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await prismaClient.user.deleteMany()
     })
 
     test('should be return 200 and user', async () => {
-      const user = await prismaService.user.create({
+      const user = await prismaClient.user.create({
         data: {
           email: 'test@test.com',
           name: 'Test',
@@ -289,15 +292,11 @@ describe('AuthController (e2e)', () => {
 
       const { accessToken } = authJwtsService.sign({ sub: 'test@test.com' })
 
-      const response = await request(server)
+      return request(server)
         .get('/auth/me')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
-
-      expect(response.body).toEqual({
-        ...user,
-        createdAt: user.createdAt.toISOString(),
-      })
+        .expect(user)
     })
 
     test('should be return 401 when no authorization header', async () => {
@@ -314,11 +313,11 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/update', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await prismaClient.user.deleteMany()
     })
 
     test('should be return 201 and new auth jwts pair with valid refresh token', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: {
           email: 'test@test.com',
           name: 'Test',
@@ -351,11 +350,11 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/logout', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await prismaClient.user.deleteMany()
     })
 
     test('should be return 200 and revoke token successfully', async () => {
-      await prismaService.user.create({
+      await prismaClient.user.create({
         data: {
           email: 'test@test.com',
           name: 'Test',

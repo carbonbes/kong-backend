@@ -729,6 +729,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nestjs-cls/transactional-adapter-prisma@npm:^1.3.4":
+  version: 1.3.4
+  resolution: "@nestjs-cls/transactional-adapter-prisma@npm:1.3.4"
+  peerDependencies:
+    "@nestjs-cls/transactional": ^3.2.0
+    "@prisma/client": "> 4 < 8"
+    nestjs-cls: ^6.2.0
+    prisma: "> 4 < 8"
+  checksum: 10c0/ae9224e1080f8d2eacd4f8f60f9a9cc4d4844765c9db0c93485c7052db7311a9100cfb9608fc2f3b475842c94d1c6f2c952f6d47260c65b3cb02c504d78fae79
+  languageName: node
+  linkType: hard
+
+"@nestjs-cls/transactional@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "@nestjs-cls/transactional@npm:3.2.0"
+  peerDependencies:
+    "@nestjs/common": ">= 10 < 12"
+    "@nestjs/core": ">= 10 < 12"
+    nestjs-cls: ^6.2.0
+    reflect-metadata: "*"
+    rxjs: ">= 7"
+  checksum: 10c0/89f27622db0607dbdc2665bc7b37f770ce9829794b2eddecb2969418e6b4ecfcc336969d50f395d122aae98c33b24436ca40e0ffcf1141bfd980738e4d04a6a9
+  languageName: node
+  linkType: hard
+
 "@nestjs-modules/mailer@npm:^2.0.2":
   version: 2.0.2
   resolution: "@nestjs-modules/mailer@npm:2.0.2"
@@ -1751,23 +1776,6 @@ __metadata:
   version: 0.3.0
   resolution: "@tokenizer/token@npm:0.3.0"
   checksum: 10c0/7ab9a822d4b5ff3f5bca7f7d14d46bdd8432528e028db4a52be7fbf90c7f495cc1af1324691dda2813c6af8dc4b8eb29de3107d4508165f9aa5b53e7d501f155
-  languageName: node
-  linkType: hard
-
-"@transactional/core@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "@transactional/core@npm:1.2.0"
-  checksum: 10c0/11ed8a8769e49bc1aedc813ce290aa2f0fac96138f69bf752c25c5aa187fd802a913964a099f65b6d335c48e6bad4bd9b9b3f9242a2db8b3cf080a135542cd63
-  languageName: node
-  linkType: hard
-
-"@transactional/prisma@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "@transactional/prisma@npm:1.2.0"
-  peerDependencies:
-    "@prisma/client": ^6.0.0
-    "@transactional/core": ^1.2.0
-  checksum: 10c0/4787bd474cb74b6ab6ae6a0e1e9c44d76ab3ead300d54ad7400116ff55b2180f93fcf6831b9e465f37bab8f4aa2b6bac4681b2aef2fc0661d8241fb1ef3a7a33
   languageName: node
   linkType: hard
 
@@ -6040,6 +6048,8 @@ __metadata:
   resolution: "kong-backend@workspace:."
   dependencies:
     "@faker-js/faker": "npm:^10.1.0"
+    "@nestjs-cls/transactional": "npm:^3.2.0"
+    "@nestjs-cls/transactional-adapter-prisma": "npm:^1.3.4"
     "@nestjs-modules/mailer": "npm:^2.0.2"
     "@nestjs/cli": "npm:^10.0.0"
     "@nestjs/common": "npm:^10.0.0"
@@ -6056,8 +6066,6 @@ __metadata:
     "@prisma/client": "npm:^7.2.0"
     "@prisma/language-server": "npm:7.0.0"
     "@swc/core": "npm:^1.11.31"
-    "@transactional/core": "npm:^1.2.0"
-    "@transactional/prisma": "npm:^1.2.0"
     "@types/bcrypt": "npm:^6.0.0"
     "@types/express": "npm:^5.0.0"
     "@types/node": "npm:^20.3.1"
@@ -6076,6 +6084,7 @@ __metadata:
     eslint-config-prettier: "npm:^9.0.0"
     eslint-plugin-prettier: "npm:^5.0.0"
     nanoid: "npm:^5.1.6"
+    nestjs-cls: "npm:^6.2.0"
     nodemailer: "npm:^7.0.10"
     passport: "npm:^0.7.0"
     passport-jwt: "npm:^4.0.1"
@@ -7159,6 +7168,18 @@ __metadata:
   version: 2.6.2
   resolution: "neo-async@npm:2.6.2"
   checksum: 10c0/c2f5a604a54a8ec5438a342e1f356dff4bc33ccccdb6dc668d94fe8e5eccfc9d2c2eea6064b0967a767ba63b33763f51ccf2cd2441b461a7322656c1f06b3f5d
+  languageName: node
+  linkType: hard
+
+"nestjs-cls@npm:^6.2.0":
+  version: 6.2.0
+  resolution: "nestjs-cls@npm:6.2.0"
+  peerDependencies:
+    "@nestjs/common": ">= 10 < 12"
+    "@nestjs/core": ">= 10 < 12"
+    reflect-metadata: "*"
+    rxjs: ">= 7"
+  checksum: 10c0/f9234cd3358c57306ae512ce6e636cdc6da295b94512707eca2cf55b5ece7835ba637b57af5ee94a1c867eb0208178d9907dfc5c28a00827cb63df6413cb8326
   languageName: node
   linkType: hard
 

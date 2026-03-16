@@ -11,22 +11,28 @@ import {
   UpdateOptions,
   UpdateReturn,
 } from '@/users/types'
-import { PrismaService } from '@/prisma/prisma.service'
+import { PrismaClient } from '@/prisma/client'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaClient: TransactionHost<
+      TransactionalAdapterPrisma<PrismaClient>
+    >,
+  ) {}
 
   create(options: CreateOptions): CreateReturn {
-    return this.prismaService.user.create({ data: options })
+    return this.prismaClient.tx.user.create({ data: options })
   }
 
   findOne(options: FindOneOptions): FindOneReturn {
-    return this.prismaService.user.findUnique(options)
+    return this.prismaClient.tx.user.findUnique(options)
   }
 
   update(options: UpdateOptions): UpdateReturn {
-    return this.prismaService.user.update(options)
+    return this.prismaClient.tx.user.update(options)
   }
 
   async isExist(options: IsExistOptions): IsExistReturn {

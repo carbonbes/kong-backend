@@ -9,21 +9,25 @@ import {
 } from '@/users/types'
 import { getFakeEmail, getFakeUser } from '@/test/utils'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
-import { PrismaService } from '@/prisma/prisma.service'
+import { PrismaClient } from '@/prisma/client'
+import { PRISMA_CLIENT } from '@/prisma/consts'
 
 describe('UsersService', () => {
   let usersService: UsersService
-  let prismaService: DeepMockProxy<PrismaService>
+  let prismaClient: DeepMockProxy<PrismaClient>
 
   beforeEach(async () => {
+    prismaClient = mockDeep<PrismaClient>()
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
-    })
-      .useMocker(mockDeep)
-      .compile()
+      providers: [
+        UsersService,
+        { provide: PRISMA_CLIENT, useValue: prismaClient },
+      ],
+    }).compile()
 
     usersService = module.get<UsersService>(UsersService)
-    prismaService = module.get<DeepMockProxy<PrismaService>>(PrismaService)
+    prismaClient = module.get<DeepMockProxy<PrismaClient>>(PRISMA_CLIENT)
   })
 
   describe('create', () => {
@@ -32,12 +36,12 @@ describe('UsersService', () => {
       const options: CreateOptions = { email, name, gender }
       const user = getFakeUser()
 
-      prismaService.user.create.mockResolvedValue(user)
+      prismaClient.user.create.mockResolvedValue(user)
 
       const result = await usersService.create(options)
 
       expect(result).toEqual(user)
-      expect(prismaService.user.create).toHaveBeenCalledWith({ data: options })
+      expect(prismaClient.user.create).toHaveBeenCalledWith({ data: options })
     })
   })
 
@@ -46,23 +50,23 @@ describe('UsersService', () => {
       const options: FindOneOptions = { where: { email: getFakeEmail() } }
       const user = getFakeUser()
 
-      prismaService.user.findUnique.mockResolvedValue(user)
+      prismaClient.user.findUnique.mockResolvedValue(user)
 
       const result = await usersService.findOne(options)
 
       expect(result).toEqual(user)
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
+      expect(prismaClient.user.findUnique).toHaveBeenCalledWith(options)
     })
 
     test('should be return a null', async () => {
       const options: FindOneOptions = { where: { email: getFakeEmail() } }
 
-      prismaService.user.findUnique.mockResolvedValue(null)
+      prismaClient.user.findUnique.mockResolvedValue(null)
 
       const result = await usersService.findOne(options)
 
       expect(result).toBeNull()
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
+      expect(prismaClient.user.findUnique).toHaveBeenCalledWith(options)
     })
   })
 
@@ -72,12 +76,12 @@ describe('UsersService', () => {
       const options: UpdateOptions = { where: { email }, data: { name } }
       const user = getFakeUser()
 
-      prismaService.user.update.mockResolvedValue(user)
+      prismaClient.user.update.mockResolvedValue(user)
 
       const result = await usersService.update(options)
 
       expect(result).toEqual(user)
-      expect(prismaService.user.update).toHaveBeenCalledWith(options)
+      expect(prismaClient.user.update).toHaveBeenCalledWith(options)
     })
   })
 
@@ -86,23 +90,23 @@ describe('UsersService', () => {
       const options: IsExistOptions = { where: { email: getFakeEmail() } }
       const user = getFakeUser()
 
-      prismaService.user.findUnique.mockResolvedValue(user)
+      prismaClient.user.findUnique.mockResolvedValue(user)
 
       const result = await usersService.isExist(options)
 
       expect(result).toBeTruthy()
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
+      expect(prismaClient.user.findUnique).toHaveBeenCalledWith(options)
     })
 
     test('should be return false', async () => {
       const options: IsExistOptions = { where: { email: getFakeEmail() } }
 
-      prismaService.user.findUnique.mockResolvedValue(null)
+      prismaClient.user.findUnique.mockResolvedValue(null)
 
       const result = await usersService.isExist(options)
 
       expect(result).toBeFalsy()
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
+      expect(prismaClient.user.findUnique).toHaveBeenCalledWith(options)
     })
   })
 
@@ -114,14 +118,14 @@ describe('UsersService', () => {
       }
       const user = getFakeUser()
 
-      prismaService.user.update.mockResolvedValue(user)
+      prismaClient.user.update.mockResolvedValue(user)
 
       const result = await usersService.setActive(options)
 
       const { where, value } = options
 
       expect(result).toEqual(user)
-      expect(prismaService.user.update).toHaveBeenCalledWith({
+      expect(prismaClient.user.update).toHaveBeenCalledWith({
         where,
         data: { isActive: value },
       })

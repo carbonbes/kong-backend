@@ -3,7 +3,6 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
 import { AppModule } from '@/app.module'
 import { App } from 'supertest/types'
-import { PrismaService } from '@/prisma/prisma.service'
 import { execSync } from 'child_process'
 import { CreateArticleDto } from '@/articles/dtos'
 import { User } from '@/users/types'
@@ -11,12 +10,14 @@ import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { EncodedJwt } from '@/shared/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { MailService } from '@/mail/mail.service'
+import { PrismaClient } from '@/prisma/client'
+import { PRISMA_CLIENT } from '@/prisma/consts'
 
 describe('ArticlesController (e2e)', () => {
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
-  let prismaService: PrismaService
+  let prismaClient: PrismaClient
   let authJwtsService: AuthJwtsService
   let user: User
   let accessToken: EncodedJwt
@@ -40,10 +41,10 @@ describe('ArticlesController (e2e)', () => {
     server = app.getHttpServer()
     await app.init()
 
-    prismaService = module.get<PrismaService>(PrismaService)
+    prismaClient = module.get<PrismaClient>(PRISMA_CLIENT)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
-    user = await prismaService.user.create({
+    user = await prismaClient.user.create({
       data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
     })
     accessToken = authJwtsService.sign({ sub: user.email }).accessToken
@@ -56,7 +57,7 @@ describe('ArticlesController (e2e)', () => {
 
   describe('POST /articles', () => {
     beforeEach(async () => {
-      await prismaService.$executeRaw`TRUNCATE TABLE "Article" RESTART IDENTITY CASCADE;`
+      await prismaClient.$executeRaw`TRUNCATE TABLE "Article" RESTART IDENTITY CASCADE;`
     })
 
     test('should return 200 and article', async () => {
@@ -124,7 +125,7 @@ describe('ArticlesController (e2e)', () => {
 
   describe('GET /articles/1', () => {
     test('should return 200 and article', async () => {
-      const article = await prismaService.article.create({
+      const article = await prismaClient.article.create({
         data: {
           authorId: 1,
           content: {

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { PrismaService } from '@/prisma/prisma.service'
 import {
   CreateOptions,
   CreateReturn,
@@ -12,28 +11,35 @@ import {
   DeleteOptions,
   DeleteReturn,
 } from '@/articles/types'
+import { PrismaClient } from '../../generated/prisma/client'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 
 @Injectable()
 export class ArticlesService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaClient: TransactionHost<
+      TransactionalAdapterPrisma<PrismaClient>
+    >,
+  ) {}
 
   create(options: CreateOptions): CreateReturn {
-    return this.prismaService.article.create(options)
+    return this.prismaClient.tx.article.create(options)
   }
 
   findUnique(options: FindUniqueOptions): FindUniqueReturn {
-    return this.prismaService.article.findUnique(options)
+    return this.prismaClient.tx.article.findUnique(options)
   }
 
   findMany(options: FindManyOptions): FindManyReturn {
-    return this.prismaService.article.findMany(options)
+    return this.prismaClient.tx.article.findMany(options)
   }
 
   update(options: UpdateOptions): UpdateReturn {
-    return this.prismaService.article.update(options)
+    return this.prismaClient.tx.article.update(options)
   }
 
   delete(options: DeleteOptions): DeleteReturn {
-    return this.prismaService.article.delete(options)
+    return this.prismaClient.tx.article.delete(options)
   }
 }

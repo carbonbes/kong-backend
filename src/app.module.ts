@@ -18,6 +18,10 @@ import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
 import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
 import { ArticlesModule } from '@/articles/articles.module'
+import { ClsModule } from 'nestjs-cls'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import { ClsPluginTransactional } from '@nestjs-cls/transactional'
+import { PRISMA_CLIENT } from '@/prisma/consts'
 
 @Module({
   imports: [
@@ -35,6 +39,17 @@ import { ArticlesModule } from '@/articles/articles.module'
         connectionString: configService.get('database.url'),
       }),
       inject: [ConfigService],
+    }),
+    ClsModule.forRoot({
+      plugins: [
+        new ClsPluginTransactional({
+          imports: [PrismaModule],
+          adapter: new TransactionalAdapterPrisma({
+            prismaInjectionToken: PRISMA_CLIENT,
+            sqlFlavor: 'postgresql',
+          }),
+        }),
+      ],
     }),
     RedisOmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
