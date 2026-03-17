@@ -8,7 +8,8 @@ import {
   IsString,
   Length,
 } from 'class-validator'
-import { User, UserGender, UserRole } from '@/users/types'
+import { User } from '@/users/types'
+import { UserGender, UserRole } from '@/users/enums'
 
 export class UserDto implements User {
   @IsInt()
@@ -33,4 +34,7 @@ export class UserDto implements User {
 
   @IsDate()
   createdAt: Date
+
+  @IsDate()
+  updatedAt: Date
 }
