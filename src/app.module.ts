@@ -18,9 +18,10 @@ import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
 import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
 import { ArticlesModule } from '@/articles/articles.module'
-import { User } from '@/users/entities'
 import { addTransactionalDataSource } from 'typeorm-transactional'
 import { DataSource } from 'typeorm'
+import { User } from '@/users/entities'
+import { Article } from '@/articles/entities'
 
 @Module({
   imports: [
@@ -37,8 +38,9 @@ import { DataSource } from 'typeorm'
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get('database.url')!,
-        entities: [User],
-        migrations: [__dirname + '/migration/**/*{.js,.ts}'],
+        entities: [User, Article],
+        synchronize: process.env.ENV === 'development',
+        migrations: [__dirname + '/migrations/**/*{.js,.ts}'],
       }),
       async dataSourceFactory(options) {
         if (!options) {

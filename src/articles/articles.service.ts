@@ -31,7 +31,7 @@ export class ArticlesService {
   }
 
   findMany(options: FindManyOptions): FindManyReturn {
-    return this.articlesRepository.find(options)
+    return this.articlesRepository.findBy(options)
   }
 
   async update(options: UpdateOptions): UpdateReturn {

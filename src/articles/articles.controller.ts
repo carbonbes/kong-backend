@@ -18,15 +18,15 @@ export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
   @Post()
-  create(@Body() body: CreateArticleDto, @Session() { id }: User) {
-    const options: CreateOptions = { data: { ...body, authorId: id } }
+  create(@Body() body: CreateArticleDto, @Session() user: User) {
+    const options: CreateOptions = { ...body, author: user }
 
     return this.articlesService.create(options)
   }
 
   @Get(':id')
-  findUnique(@Param('id') id: number) {
-    return this.articlesService.findUnique({ where: { id } })
+  findOne(@Param('id') id: number) {
+    return this.articlesService.findOne({ id })
   }
 
   @Patch(':id')
@@ -36,6 +36,6 @@ export class ArticlesController {
 
   @Delete(':id')
   delete(@Param('id') id: number) {
-    return this.articlesService.delete({ where: { id } })
+    return this.articlesService.delete({ id })
   }
 }

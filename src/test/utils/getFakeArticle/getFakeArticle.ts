@@ -1,24 +1,23 @@
-import { Article, ArticleStatus } from '@/articles/types'
+import { Article } from '@/articles/types'
+import { ArticleStatus } from '@/articles/enums'
 import { faker } from '@faker-js/faker/locale/ru'
 import { getFakeInt } from '@/test/utils/getFakeInt'
-import { getFakeDocNode } from '@/test/utils'
+import { getFakeDocNode, getFakeUser } from '@/test/utils'
 
 type GetFakeArticleOptions = Partial<Article>
 
-const statuses: ArticleStatus[] = ['DRAFT', 'SCHEDULED', 'PUBLISHED']
-
 export const getFakeArticle = ({
   id,
-  authorId,
+  author,
   content,
   status,
   createdAt,
   updatedAt,
 }: GetFakeArticleOptions = {}): Article => ({
   id: id ?? getFakeInt(),
-  authorId: authorId ?? getFakeInt(),
+  author: author ?? getFakeUser(),
   content: content ?? getFakeDocNode(),
-  status: status ?? faker.helpers.arrayElement(statuses),
+  status: status ?? faker.helpers.enumValue(ArticleStatus),
   createdAt: createdAt ?? faker.date.past(),
   updatedAt: updatedAt ?? faker.date.recent(),
 })

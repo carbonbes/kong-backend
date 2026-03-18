@@ -8,7 +8,7 @@ import {
 } from 'typeorm'
 import { User } from '@/users/entities'
 import { ArticleStatus } from '@/articles/enums'
-import { JSONContent } from '@tiptap/core'
+import type { JSONContent } from '@tiptap/core'
 
 @Entity()
 export class Article {
@@ -22,7 +22,7 @@ export class Article {
   author: User
 
   @Column({ type: 'jsonb' })
-  content: JSONContent[]
+  content: JSONContent
 
   @Column({ type: 'enum', enum: ArticleStatus, default: ArticleStatus.DRAFT })
   status: ArticleStatus

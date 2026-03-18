@@ -15,6 +15,10 @@ import { Repository } from 'typeorm'
 import { User } from '@/users/entities'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { UserGender } from '@/users/enums'
+import {
+  initializeTransactionalContext,
+  StorageDriver,
+} from 'typeorm-transactional'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>
@@ -25,10 +29,11 @@ describe('AuthController (e2e)', () => {
   let authJwtsService: AuthJwtsService
 
   beforeAll(async () => {
-    execSync(
-      'yarn typeorm migration:generate -d src/lib/typeorm/data-source.ts',
-    )
-    execSync('yarn typeorm migration:run -d src/lib/typeorm/data-source.ts')
+    execSync('docker compose -f compose.e2e.yaml up -d')
+
+    initializeTransactionalContext({
+      storageDriver: StorageDriver.ASYNC_LOCAL_STORAGE,
+    })
 
     mailService = mock<MailService>()
 
@@ -51,6 +56,7 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => {
     await app.close()
+    execSync('docker compose -f compose.e2e.yaml down')
   })
 
   describe('POST /auth/signup', () => {

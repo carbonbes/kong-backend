@@ -10,7 +10,7 @@ import { Article } from '@/articles/types'
 import { ArticleStatus } from '@/articles/enums'
 import { DocNodeDto } from '@/articles/dtos'
 import { User } from '@/users/entities'
-import { JSONContent } from '@tiptap/core'
+import type { JSONContent } from '@tiptap/core'
 import { UserDto } from '@/users/dtos'
 
 export class ArticleDto implements Article {
@@ -25,7 +25,7 @@ export class ArticleDto implements Article {
   @IsObject()
   @ValidateNested()
   @Type(() => DocNodeDto)
-  content: JSONContent[]
+  content: JSONContent
 
   @IsEnum(ArticleStatus)
   status: ArticleStatus
