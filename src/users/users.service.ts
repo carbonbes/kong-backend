@@ -11,22 +11,30 @@ import {
   UpdateOptions,
   UpdateReturn,
 } from '@/users/types'
-import { PrismaService } from '@/prisma/prisma.service'
+import { InjectRepository } from '@nestjs/typeorm'
+import { User } from '@/users/entities'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    @InjectRepository(User) private readonly usersRepository: Repository<User>,
+  ) {}
 
   create(options: CreateOptions): CreateReturn {
-    return this.prismaService.user.create({ data: options })
+    return this.usersRepository.save(options)
   }
 
   findOne(options: FindOneOptions): FindOneReturn {
-    return this.prismaService.user.findUnique(options)
+    return this.usersRepository.findOneBy(options)
   }
 
-  update(options: UpdateOptions): UpdateReturn {
-    return this.prismaService.user.update(options)
+  async update(options: UpdateOptions): UpdateReturn {
+    const { where, data } = options
+
+    await this.usersRepository.update(where, data)
+
+    return (await this.findOne(where))!
   }
 
   async isExist(options: IsExistOptions): IsExistReturn {
@@ -34,8 +42,6 @@ export class UsersService {
   }
 
   setActive(options: SetActiveOptions): SetActiveReturn {
-    const { where, value } = options
-
-    return this.update({ where, data: { isActive: value } })
+    return this.update(options)
   }
 }

@@ -1,26 +1,27 @@
-import { User, UserGender, UserRole } from '@/users/types'
+import { User } from '@/users/types'
+import { UserGender, UserRole } from '@/users/enums'
 import { faker } from '@faker-js/faker/locale/ru'
 import { getFakeInt } from '@/test/utils/getFakeInt'
+import { getFakeEmail } from '@/test/utils/getFakeEmail'
 
 type GetFakeUserOptions = Partial<User>
 
-const genders: UserGender[] = ['MALE', 'FEMALE', 'NON_BINARY', 'OTHER']
-const roles: UserRole[] = ['USER', 'MODER', 'ADMIN']
-
 export const getFakeUser = ({
-  name,
   id,
   email,
+  name,
   gender,
   role,
   isActive,
   createdAt,
+  updatedAt,
 }: GetFakeUserOptions = {}): User => ({
-  name: name ?? faker.internet.username(),
   id: id ?? getFakeInt(),
-  email: email ?? faker.internet.email(),
-  gender: gender ?? faker.helpers.arrayElement(genders),
-  role: role ?? faker.helpers.arrayElement(roles),
+  email: email ?? getFakeEmail(),
+  name: name ?? faker.internet.username(),
+  gender: gender ?? faker.helpers.enumValue(UserGender),
+  role: role ?? faker.helpers.enumValue(UserRole),
   isActive: isActive ?? faker.datatype.boolean(),
   createdAt: createdAt ?? faker.date.past(),
+  updatedAt: updatedAt ?? faker.date.future(),
 })

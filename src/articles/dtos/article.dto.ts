@@ -6,21 +6,26 @@ import {
   IsObject,
   ValidateNested,
 } from 'class-validator'
-import { Article, ArticleStatus } from '@/articles/types'
+import { Article } from '@/articles/types'
+import { ArticleStatus } from '@/articles/enums'
 import { DocNodeDto } from '@/articles/dtos'
-import type { JsonValue } from '@/prisma/types'
+import { User } from '@/users/entities'
+import { JSONContent } from '@tiptap/core'
+import { UserDto } from '@/users/dtos'
 
 export class ArticleDto implements Article {
   @IsInt()
   id: number
 
-  @IsInt()
-  authorId: number
+  @IsObject()
+  @ValidateNested()
+  @Type(() => UserDto)
+  author: User
 
   @IsObject()
   @ValidateNested()
   @Type(() => DocNodeDto)
-  content: JsonValue
+  content: JSONContent[]
 
   @IsEnum(ArticleStatus)
   status: ArticleStatus

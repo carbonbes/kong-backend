@@ -1,8 +1,4 @@
-import { Prisma } from '@/prisma/types'
 import { User } from './user.type'
 
-export type CreateOptions = Omit<
-  Prisma.UserCreateInput,
-  'role' | 'isActive' | 'createdAt'
->
+export type CreateOptions = Pick<User, 'email' | 'name' | 'gender'>
 export type CreateReturn = Promise<User>

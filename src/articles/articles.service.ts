@@ -1,10 +1,9 @@
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '@/prisma/prisma.service'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import {
   CreateOptions,
   CreateReturn,
-  FindUniqueOptions,
-  FindUniqueReturn,
+  FindOneOptions,
+  FindOneReturn,
   FindManyOptions,
   FindManyReturn,
   UpdateOptions,
@@ -12,28 +11,46 @@ import {
   DeleteOptions,
   DeleteReturn,
 } from '@/articles/types'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { Article } from '@/articles/entities'
 
 @Injectable()
 export class ArticlesService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    @InjectRepository(Article)
+    private readonly articlesRepository: Repository<Article>,
+  ) {}
 
   create(options: CreateOptions): CreateReturn {
-    return this.prismaService.article.create(options)
+    return this.articlesRepository.save(options)
   }
 
-  findUnique(options: FindUniqueOptions): FindUniqueReturn {
-    return this.prismaService.article.findUnique(options)
+  findOne(options: FindOneOptions): FindOneReturn {
+    return this.articlesRepository.findOneBy(options)
   }
 
   findMany(options: FindManyOptions): FindManyReturn {
-    return this.prismaService.article.findMany(options)
+    return this.articlesRepository.find(options)
   }
 
-  update(options: UpdateOptions): UpdateReturn {
-    return this.prismaService.article.update(options)
+  async update(options: UpdateOptions): UpdateReturn {
+    const { where, data } = options
+
+    await this.articlesRepository.update(where, data)
+
+    return (await this.findOne(where))!
   }
 
-  delete(options: DeleteOptions): DeleteReturn {
-    return this.prismaService.article.delete(options)
+  async delete(options: DeleteOptions): DeleteReturn {
+    const article = await this.findOne(options)
+
+    if (!article) {
+      throw new NotFoundException()
+    }
+
+    await this.articlesRepository.delete(options)
+
+    return article
   }
 }

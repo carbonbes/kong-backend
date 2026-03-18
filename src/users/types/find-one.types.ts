@@ -1,5 +1,4 @@
-import { Prisma } from '@/prisma/types'
 import { User } from './user.type'
 
-export type FindOneOptions = Prisma.UserFindUniqueArgs
+export type FindOneOptions = Partial<User>
 export type FindOneReturn = Promise<User | null>

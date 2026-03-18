@@ -1,5 +1,4 @@
-import { ArticleFindManyArgs } from './article-find-many.type'
 import { Article } from './article.type'
 
-export type FindManyOptions = ArticleFindManyArgs
+export type FindManyOptions = Partial<Article>
 export type FindManyReturn = Promise<Article[]>

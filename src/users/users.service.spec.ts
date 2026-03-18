@@ -7,124 +7,132 @@ import {
   SetActiveOptions,
   UpdateOptions,
 } from '@/users/types'
+import { User } from '@/users/entities'
 import { getFakeEmail, getFakeUser } from '@/test/utils'
-import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
-import { PrismaService } from '@/prisma/prisma.service'
+import { mock, MockProxy } from 'vitest-mock-extended'
+import { Repository } from 'typeorm'
+import { getRepositoryToken } from '@nestjs/typeorm'
 
 describe('UsersService', () => {
   let usersService: UsersService
-  let prismaService: DeepMockProxy<PrismaService>
+  let usersRepository: MockProxy<Repository<User>>
 
   beforeEach(async () => {
+    usersRepository = mock<Repository<User>>()
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
-    })
-      .useMocker(mockDeep)
-      .compile()
+      providers: [
+        UsersService,
+        { provide: getRepositoryToken(User), useValue: usersRepository },
+      ],
+    }).compile()
 
     usersService = module.get<UsersService>(UsersService)
-    prismaService = module.get<DeepMockProxy<PrismaService>>(PrismaService)
   })
 
   describe('create', () => {
-    test('should be create a user', async () => {
+    test('should create a user', async () => {
       const { email, name, gender } = getFakeUser()
       const options: CreateOptions = { email, name, gender }
       const user = getFakeUser()
 
-      prismaService.user.create.mockResolvedValue(user)
+      usersRepository.save.mockResolvedValue(user)
 
       const result = await usersService.create(options)
 
+      expect(usersRepository.save).toHaveBeenCalledWith(options)
       expect(result).toEqual(user)
-      expect(prismaService.user.create).toHaveBeenCalledWith({ data: options })
     })
   })
 
   describe('findOne', () => {
-    test('should be find a one user', async () => {
-      const options: FindOneOptions = { where: { email: getFakeEmail() } }
+    test('should find a one user', async () => {
+      const options: FindOneOptions = { email: getFakeEmail() }
       const user = getFakeUser()
 
-      prismaService.user.findUnique.mockResolvedValue(user)
+      usersRepository.findOneBy.mockResolvedValue(user)
 
       const result = await usersService.findOne(options)
 
+      expect(usersRepository.findOneBy).toHaveBeenCalledWith(options)
       expect(result).toEqual(user)
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
     })
 
-    test('should be return a null', async () => {
-      const options: FindOneOptions = { where: { email: getFakeEmail() } }
+    test('should return a null', async () => {
+      const options: FindOneOptions = { email: getFakeEmail() }
 
-      prismaService.user.findUnique.mockResolvedValue(null)
+      usersRepository.findOneBy.mockResolvedValue(null)
 
       const result = await usersService.findOne(options)
 
+      expect(usersRepository.findOneBy).toHaveBeenCalledWith(options)
       expect(result).toBeNull()
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
     })
   })
 
   describe('update', () => {
-    test('should be update a user', async () => {
+    test('should update a user', async () => {
       const { email, name } = getFakeUser()
       const options: UpdateOptions = { where: { email }, data: { name } }
       const user = getFakeUser()
 
-      prismaService.user.update.mockResolvedValue(user)
+      usersRepository.findOneBy.mockResolvedValue(user)
 
       const result = await usersService.update(options)
 
+      expect(usersRepository.update).toHaveBeenCalledWith(
+        options.where,
+        options.data,
+      )
+      expect(usersRepository.findOneBy).toHaveBeenCalledWith(options.where)
       expect(result).toEqual(user)
-      expect(prismaService.user.update).toHaveBeenCalledWith(options)
     })
   })
 
   describe('isExist', () => {
-    test('should be return a true', async () => {
-      const options: IsExistOptions = { where: { email: getFakeEmail() } }
+    test('should return a true', async () => {
+      const options: IsExistOptions = { email: getFakeEmail() }
       const user = getFakeUser()
 
-      prismaService.user.findUnique.mockResolvedValue(user)
+      usersRepository.findOneBy.mockResolvedValue(user)
 
       const result = await usersService.isExist(options)
 
+      expect(usersRepository.findOneBy).toHaveBeenCalledWith(options)
       expect(result).toBeTruthy()
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
     })
 
-    test('should be return false', async () => {
-      const options: IsExistOptions = { where: { email: getFakeEmail() } }
+    test('should return false', async () => {
+      const options: IsExistOptions = { email: getFakeEmail() }
 
-      prismaService.user.findUnique.mockResolvedValue(null)
+      usersRepository.findOneBy.mockResolvedValue(null)
 
       const result = await usersService.isExist(options)
 
+      expect(usersRepository.findOneBy).toHaveBeenCalledWith(options)
       expect(result).toBeFalsy()
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith(options)
     })
   })
 
   describe('setActive', () => {
-    test('should be activate user', async () => {
+    test('should activate user', async () => {
+      const user = getFakeUser({ isActive: false })
       const options: SetActiveOptions = {
-        where: { email: getFakeEmail() },
-        value: true,
+        where: { email: user.email },
+        data: { isActive: true },
       }
-      const user = getFakeUser()
+      const activeUser: User = { ...user, isActive: true }
 
-      prismaService.user.update.mockResolvedValue(user)
+      usersRepository.findOneBy.mockResolvedValue(activeUser)
 
       const result = await usersService.setActive(options)
 
-      const { where, value } = options
-
-      expect(result).toEqual(user)
-      expect(prismaService.user.update).toHaveBeenCalledWith({
-        where,
-        data: { isActive: value },
-      })
+      expect(usersRepository.update).toHaveBeenCalledWith(
+        options.where,
+        options.data,
+      )
+      expect(usersRepository.findOneBy).toHaveBeenCalledWith(options.where)
+      expect(result).toEqual(activeUser)
     })
   })
 })

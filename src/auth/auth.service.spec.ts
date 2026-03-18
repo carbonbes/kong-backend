@@ -17,6 +17,10 @@ import { User } from '@/users/types'
 import { REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 
+vi.mock('typeorm-transactional', () => ({
+  Transactional: () => () => ({}),
+}))
+
 describe('AuthService', () => {
   let authService: AuthService
   let usersService: MockProxy<UsersService>
@@ -44,7 +48,7 @@ describe('AuthService', () => {
       options = { email, name, gender }
     })
 
-    test('should be return a user ID and otp ID if a user not exist', async () => {
+    test('should return a user ID and otp ID if a user not exist', async () => {
       const user = getFakeUser({ ...options })
       const otp = getFakeOtp({ type: OtpType.SIGN_UP, email: user.email })
 
@@ -54,18 +58,16 @@ describe('AuthService', () => {
 
       const result = await authService.signUp(options)
 
-      expect(result).toEqual(undefined)
-      expect(usersService.isExist).toHaveBeenCalledWith({
-        where: { email: user.email },
-      })
+      expect(usersService.isExist).toHaveBeenCalledWith({ email: user.email })
       expect(usersService.create).toHaveBeenCalledWith(options)
       expect(otpsService.create).toHaveBeenCalledWith({
         type: otp.type,
         email: user.email,
       })
+      expect(result).toEqual(undefined)
     })
 
-    test('should be return 403 if a user has exists', async () => {
+    test('should return 403 if a user has exists', async () => {
       const user = getFakeUser({ ...options })
 
       usersService.isExist.mockResolvedValue(true)
@@ -73,9 +75,7 @@ describe('AuthService', () => {
       await expect(authService.signUp(options)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(usersService.isExist).toHaveBeenCalledWith({
-        where: { email: user.email },
-      })
+      expect(usersService.isExist).toHaveBeenCalledWith({ email: user.email })
     })
   })
 
@@ -86,7 +86,7 @@ describe('AuthService', () => {
       options = { email: getFakeEmail() }
     })
 
-    test('should be return a user ID and otp ID if a user has exist and user is active', async () => {
+    test('should return a user ID and otp ID if a user has exist and user is active', async () => {
       const user = getFakeUser({ ...options, isActive: true })
       const otp = getFakeOtp({ type: OtpType.SIGN_IN, email: user.email })
 
@@ -95,17 +95,15 @@ describe('AuthService', () => {
 
       const result = await authService.signIn(options)
 
-      expect(result).toEqual(undefined)
-      expect(usersService.findOne).toHaveBeenCalledWith({
-        where: { email: user.email },
-      })
+      expect(usersService.findOne).toHaveBeenCalledWith({ email: user.email })
       expect(otpsService.create).toHaveBeenCalledWith({
         type: otp.type,
         email: user.email,
       })
+      expect(result).toEqual(undefined)
     })
 
-    test('should be return a 403 if a user not exist', async () => {
+    test('should return a 403 if a user not exist', async () => {
       const user = getFakeUser({ ...options })
 
       usersService.findOne.mockResolvedValue(null)
@@ -113,12 +111,10 @@ describe('AuthService', () => {
       await expect(authService.signIn(options)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(usersService.findOne).toHaveBeenCalledWith({
-        where: { email: user.email },
-      })
+      expect(usersService.findOne).toHaveBeenCalledWith({ email: user.email })
     })
 
-    test('should be return a 403 if a user does not active', async () => {
+    test('should return a 403 if a user does not active', async () => {
       const user = getFakeUser({ ...options, isActive: false })
 
       usersService.findOne.mockResolvedValue(user)
@@ -126,9 +122,7 @@ describe('AuthService', () => {
       await expect(authService.signIn(options)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(usersService.findOne).toHaveBeenCalledWith({
-        where: { email: user.email },
-      })
+      expect(usersService.findOne).toHaveBeenCalledWith({ email: user.email })
     })
   })
 
@@ -139,7 +133,7 @@ describe('AuthService', () => {
       email = getFakeUser().email
     })
 
-    test('should be return auth-jwts if such an OTP exists and type is SIGN_UP', async () => {
+    test('should return auth-jwts if such an OTP exists and type is SIGN_UP', async () => {
       const options: VerifyOtpOptions = getFakeOtp({
         type: OtpType.SIGN_UP,
         email,
@@ -154,16 +148,16 @@ describe('AuthService', () => {
 
       const result = await authService.verifyOtp(options)
 
-      expect(result).toEqual(authJwts)
       expect(otpsService.verify).toHaveBeenCalledWith(options)
       expect(usersService.setActive).toHaveBeenCalledWith({
         where: { email },
-        value: true,
+        data: { isActive: true },
       })
       expect(authJwtsService.sign).toHaveBeenCalledWith({ sub: email })
+      expect(result).toEqual(authJwts)
     })
 
-    test('should be return auth-jwts if such an OTP exists and type is SIGN_IN', async () => {
+    test('should return auth-jwts if such an OTP exists and type is SIGN_IN', async () => {
       const options: VerifyOtpOptions = getFakeOtp({
         type: OtpType.SIGN_IN,
         email,
@@ -179,12 +173,12 @@ describe('AuthService', () => {
 
       const result = await authService.verifyOtp(options)
 
-      expect(result).toEqual(authJwts)
       expect(otpsService.verify).toHaveBeenCalledWith(options)
       expect(authJwtsService.sign).toHaveBeenCalledWith({ sub: email })
+      expect(result).toEqual(authJwts)
     })
 
-    test('should be return a 404 if a OTP not found', async () => {
+    test('should return a 404 if a OTP not found', async () => {
       const options: VerifyOtpOptions = getFakeOtp({
         type: OtpType.SIGN_UP,
         email,
@@ -200,7 +194,7 @@ describe('AuthService', () => {
   })
 
   describe('update', () => {
-    test('should be return new auth-jwts', async () => {
+    test('should return new auth-jwts', async () => {
       const oldRefreshJwt = getFakeJwt({ type: REFRESH_TOKEN_NAME })
       const newAuthJwts = getFakeAuthJwts()
 
@@ -208,19 +202,19 @@ describe('AuthService', () => {
 
       const result = await authService.update(oldRefreshJwt)
 
-      expect(result).toEqual(newAuthJwts)
       expect(authJwtsService.rotate).toHaveBeenCalledWith(oldRefreshJwt)
+      expect(result).toEqual(newAuthJwts)
     })
   })
 
   describe('logout', () => {
-    test('should be revoke auth-jwts', async () => {
+    test('should revoke auth-jwts', async () => {
       const refreshToken = getFakeJwt()
 
       const result = await authService.logout(refreshToken)
 
-      expect(result).toBeUndefined()
       expect(authJwtsService.revoke).toHaveBeenCalledWith(refreshToken)
+      expect(result).toBeUndefined()
     })
   })
 })

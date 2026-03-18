@@ -9,21 +9,26 @@ import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { OtpType } from '@/otps/enums'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { App } from 'supertest/types'
-import { PrismaService } from '@/prisma/prisma.service'
 import { OtpsService } from '@/otps/otps.service'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
+import { Repository } from 'typeorm'
+import { User } from '@/users/entities'
+import { getRepositoryToken } from '@nestjs/typeorm'
+import { UserGender } from '@/users/enums'
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
-  let prismaService: PrismaService
+  let usersRepository: Repository<User>
   let otpsService: OtpsService
   let authJwtsService: AuthJwtsService
 
   beforeAll(async () => {
-    execSync('yarn prisma db push')
-    execSync('yarn prisma generate')
+    execSync(
+      'yarn typeorm migration:generate -d src/lib/typeorm/data-source.ts',
+    )
+    execSync('yarn typeorm migration:run -d src/lib/typeorm/data-source.ts')
 
     mailService = mock<MailService>()
 
@@ -34,7 +39,7 @@ describe('AuthController (e2e)', () => {
       .useValue(mailService)
       .compile()
 
-    prismaService = module.get<PrismaService>(PrismaService)
+    usersRepository = module.get<Repository<User>>(getRepositoryToken(User))
     otpsService = module.get<OtpsService>(OtpsService)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
@@ -50,85 +55,102 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/signup', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await usersRepository.deleteAll()
     })
 
-    test('should be return 201 when user with some email does not exist', async () => {
+    test('should return 201 when user with some email does not exist', async () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
-        gender: 'MALE',
+        gender: UserGender.MALE,
       }
 
       await request(server).post('/auth/signup').send(body).expect(201)
     })
 
-    test('should be return 403 when user with some email already exists', async () => {
-      await prismaService.user.create({
-        data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
+    test('should return 403 when user with some email already exists', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
       })
 
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
-        gender: 'MALE',
+        gender: UserGender.MALE,
       }
 
       await request(server).post('/auth/signup').send(body).expect(403)
     })
 
-    test('should be return 400 when email is empty', async () => {
-      const body: SignUpDto = { email: '', name: 'Test', gender: 'MALE' }
-
-      await request(server).post('/auth/signup').send(body).expect(400)
-    })
-
-    test('should be return 400 when email is invalid', async () => {
+    test('should return 400 when email is empty', async () => {
       const body: SignUpDto = {
-        email: 'invalid',
+        email: '',
         name: 'Test',
-        gender: 'MALE',
+        gender: UserGender.MALE,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
     })
 
-    test('should be return 400 when name is empty', async () => {
+    test('should return 400 when email is not email', async () => {
+      const body: SignUpDto = {
+        email: 'not email',
+        name: 'Test',
+        gender: UserGender.MALE,
+      }
+
+      await request(server).post('/auth/signup').send(body).expect(400)
+    })
+
+    test('should return 400 when the email is longer than 100 characters', async () => {
+      const body: SignUpDto = {
+        email:
+          'PMXWwZOQDyTyKiHDViGLscBnRCWoalwESoXWShXytJZBXIhAeJGTdhSiSmZuORRuzUcGyzrxjvYttqIOLTZLWhMfAfna@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
+      }
+
+      await request(server).post('/auth/signup').send(body).expect(400)
+    })
+
+    test('should return 400 when name is empty', async () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: '',
-        gender: 'MALE',
+        gender: UserGender.MALE,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
     })
 
-    test('should be return 400 when the name is longer than 150 characters', async () => {
+    test('should return 400 when the name is longer than 100 characters', async () => {
       const body: SignUpDto = {
         email: 'test@test.com',
-        name: 'ndaickzekaxetgqpvbkhesjpiwvmukgmdedomelvrtphbigjuxzlkeqohvaylcghqxlvfbrzwmyjyxukaibiikpmritllnofjorptfkftzwxblkasiqgdyabtjuxkgvijphindqbxcuhwgoqyemlxwq',
-        gender: 'MALE',
+        name: 'MYpmYTLaqoDuasawqeIxGgaqgkwBLjqGogJYxDfyEDUTnTpUkerWnmXuehNzvYhkmjHDZIvwZYZNCIETEqDjzOnMSLYNDDJcvBdxh',
+        gender: UserGender.MALE,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
     })
 
-    test('should be return 400 when gender is empty', async () => {
+    test('should return 400 when gender is empty', async () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
-        // @ts-expect-error UserGender
+        // @ts-expect-error gender field
         gender: '',
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
     })
 
-    test('should be return 400 when gender is invalid', async () => {
+    test('should return 400 when gender is invalid', async () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
-        // @ts-expect-error UserGender
+        // @ts-expect-error gender field
         gender: 'invalid',
       }
 
@@ -138,17 +160,15 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/signin', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await usersRepository.deleteAll()
     })
 
-    test('should be return 201 when user exists and is active', async () => {
-      await prismaService.user.create({
-        data: {
-          email: 'test@test.com',
-          name: 'Test',
-          gender: 'MALE',
-          isActive: true,
-        },
+    test('should return 201 when user exists and is active', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
+        isActive: true,
       })
 
       const body: SignInDto = { email: 'test@test.com' }
@@ -156,13 +176,11 @@ describe('AuthController (e2e)', () => {
       await request(server).post('/auth/signin').send(body).expect(201)
     })
 
-    test('should be return 403 when user does not exist', async () => {
-      await prismaService.user.create({
-        data: {
-          email: 'test@test.com',
-          name: 'Test',
-          gender: 'MALE',
-        },
+    test('should return 403 when user does not exist', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
       })
 
       const body: SignInDto = { email: 'random@random.com' }
@@ -170,13 +188,11 @@ describe('AuthController (e2e)', () => {
       await request(server).post('/auth/signin').send(body).expect(403)
     })
 
-    test('should be return 403 when user exists but is not active', async () => {
-      await prismaService.user.create({
-        data: {
-          email: 'test@test.com',
-          name: 'Test',
-          gender: 'MALE',
-        },
+    test('should return 403 when user exists but is not active', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
       })
 
       const body: SignInDto = { email: 'test@test.com' }
@@ -184,13 +200,13 @@ describe('AuthController (e2e)', () => {
       await request(server).post('/auth/signin').send(body).expect(403)
     })
 
-    test('should be return 400 when email is empty', async () => {
+    test('should return 400 when email is empty', async () => {
       const body: SignInDto = { email: '' }
 
       await request(server).post('/auth/signin').send(body).expect(400)
     })
 
-    test('should be return 400 when email is invalid', async () => {
+    test('should return 400 when email is invalid', async () => {
       const body: SignInDto = { email: 'invalid' }
 
       await request(server).post('/auth/signin').send(body).expect(400)
@@ -199,12 +215,14 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/verify-otp', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await usersRepository.deleteAll()
     })
 
-    test('should be return 201 and auth-jwts if signup otp is verified', async () => {
-      await prismaService.user.create({
-        data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
+    test('should return 201 and auth-jwts if signup otp is verified', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
       })
 
       const { code } = await otpsService.create({
@@ -227,9 +245,11 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
     })
 
-    test('should be return 201 and auth-jwts if signin otp is verified', async () => {
-      await prismaService.user.create({
-        data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
+    test('should return 201 and auth-jwts if signin otp is verified', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
       })
 
       const { code } = await otpsService.create({
@@ -252,9 +272,11 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
     })
 
-    test('should be return 404 when otp is not verified', async () => {
-      await prismaService.user.create({
-        data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
+    test('should return 404 when otp is not verified', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
       })
 
       await otpsService.create({
@@ -274,17 +296,15 @@ describe('AuthController (e2e)', () => {
 
   describe('GET /auth/me', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await usersRepository.deleteAll()
     })
 
-    test('should be return 200 and user', async () => {
-      const user = await prismaService.user.create({
-        data: {
-          email: 'test@test.com',
-          name: 'Test',
-          gender: 'MALE',
-          isActive: true,
-        },
+    test('should return 200 and user', async () => {
+      const user = await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
+        isActive: true,
       })
 
       const { accessToken } = authJwtsService.sign({ sub: 'test@test.com' })
@@ -300,11 +320,11 @@ describe('AuthController (e2e)', () => {
       })
     })
 
-    test('should be return 401 when no authorization header', async () => {
+    test('should return 401 when no authorization header', async () => {
       await request(server).get('/auth/me').expect(401)
     })
 
-    test('should be return 401 when invalid token provided', async () => {
+    test('should return 401 when invalid token provided', async () => {
       await request(server)
         .get('/auth/me')
         .set('Authorization', 'Bearer invalid')
@@ -314,16 +334,14 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/update', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await usersRepository.deleteAll()
     })
 
-    test('should be return 201 and new auth jwts pair with valid refresh token', async () => {
-      await prismaService.user.create({
-        data: {
-          email: 'test@test.com',
-          name: 'Test',
-          gender: 'MALE',
-        },
+    test('should return 201 and new auth jwts pair with valid refresh token', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
       })
 
       const { refreshToken } = authJwtsService.sign({ sub: 'test@test.com' })
@@ -337,11 +355,11 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
     })
 
-    test('should be return 401 when no refresh token provided', async () => {
+    test('should return 401 when no refresh token provided', async () => {
       await request(server).post('/auth/update').expect(401)
     })
 
-    test('should be return 401 when invalid refresh token provided', async () => {
+    test('should return 401 when invalid refresh token provided', async () => {
       await request(server)
         .post('/auth/update')
         .set('Authorization', 'Bearer invalid')
@@ -351,16 +369,14 @@ describe('AuthController (e2e)', () => {
 
   describe('POST /auth/logout', () => {
     afterEach(async () => {
-      await prismaService.user.deleteMany()
+      await usersRepository.deleteAll()
     })
 
-    test('should be return 200 and revoke token successfully', async () => {
-      await prismaService.user.create({
-        data: {
-          email: 'test@test.com',
-          name: 'Test',
-          gender: 'MALE',
-        },
+    test('should return 200 and revoke token successfully', async () => {
+      await usersRepository.save({
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.MALE,
       })
 
       const { accessToken } = authJwtsService.sign({ sub: 'test@test.com' })
@@ -371,7 +387,7 @@ describe('AuthController (e2e)', () => {
         .expect(200)
     })
 
-    test('should be return 401 when refresh token is invalid', async () => {
+    test('should return 401 when refresh token is invalid', async () => {
       await request(server)
         .post('/auth/logout')
         .set('Authorization', 'Bearer invalid')

@@ -8,18 +8,20 @@ import {
   IsString,
   Length,
 } from 'class-validator'
-import { User, UserGender, UserRole } from '@/users/types'
+import { User } from '@/users/types'
+import { UserGender, UserRole } from '@/users/enums'
 
 export class UserDto implements User {
   @IsInt()
   id: number
 
   @IsEmail()
+  @Length(1, 100)
   email: string
 
   @IsString()
   @IsNotEmpty()
-  @Length(1, 150)
+  @Length(1, 100)
   name: string
 
   @IsEnum(UserGender)
@@ -33,4 +35,7 @@ export class UserDto implements User {
 
   @IsDate()
   createdAt: Date
+
+  @IsDate()
+  updatedAt: Date
 }

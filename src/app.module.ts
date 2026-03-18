@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { AuthModule } from '@/auth/auth.module'
 import { RedisOmModule } from '@/redis-om/redis-om.module'
-import { PrismaModule } from '@/prisma/prisma.module'
+import { TypeOrmModule } from '@nestjs/typeorm'
 import database from '@/config/database'
 import jwt from '@/config/jwt'
 import mail from '@/config/mail'
@@ -18,6 +18,9 @@ import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
 import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
 import { ArticlesModule } from '@/articles/articles.module'
+import { User } from '@/users/entities'
+import { addTransactionalDataSource } from 'typeorm-transactional'
+import { DataSource } from 'typeorm'
 
 @Module({
   imports: [
@@ -30,10 +33,20 @@ import { ArticlesModule } from '@/articles/articles.module'
     EventEmitterModule.forRoot({
       delimiter: '_',
     }),
-    PrismaModule.forRootAsync({
+    TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
-        connectionString: configService.get('database.url'),
+        type: 'postgres',
+        url: configService.get('database.url')!,
+        entities: [User],
+        migrations: [__dirname + '/migration/**/*{.js,.ts}'],
       }),
+      async dataSourceFactory(options) {
+        if (!options) {
+          throw new Error('Invalid options passed')
+        }
+
+        return addTransactionalDataSource(new DataSource(options))
+      },
       inject: [ConfigService],
     }),
     RedisOmModule.forRootAsync({

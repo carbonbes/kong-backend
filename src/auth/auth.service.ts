@@ -16,7 +16,7 @@ import type {
   VerifyOtpOptions,
   VerifyOtpReturn,
 } from './types'
-import { Transactional } from '@transactional/core'
+import { Transactional } from 'typeorm-transactional'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/enums'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
@@ -33,9 +33,7 @@ export class AuthService {
   async signUp(options: SignUpOptions): SignUpReturn {
     const { email } = options
 
-    const isExist = await this.usersService.isExist({
-      where: { email },
-    })
+    const isExist = await this.usersService.isExist({ email })
 
     if (isExist) {
       throw new ForbiddenException()
@@ -49,7 +47,7 @@ export class AuthService {
   async signIn(options: SignInOptions): SignInReturn {
     const { email } = options
 
-    const user = await this.usersService.findOne({ where: { email } })
+    const user = await this.usersService.findOne({ email })
 
     if (!user || (user && !user.isActive)) {
       throw new ForbiddenException()
@@ -71,7 +69,7 @@ export class AuthService {
     if (type === 'SIGN_UP') {
       await this.usersService.setActive({
         where: { email },
-        value: true,
+        data: { isActive: true },
       })
     }
 

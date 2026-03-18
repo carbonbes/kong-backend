@@ -1,5 +1,7 @@
 import { Article } from './article.type'
-import { ArticleUpdateArgs } from './article-update.type'
 
-export type UpdateOptions = ArticleUpdateArgs
+export type UpdateOptions = {
+  where: Pick<Article, 'id'>
+  data: Partial<Omit<Article, 'id' | 'createdAt' | 'updatedAt'>>
+}
 export type UpdateReturn = Promise<Article>

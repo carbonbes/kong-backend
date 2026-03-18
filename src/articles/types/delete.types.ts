@@ -1,5 +1,4 @@
-import { ArticleDeleteArgs } from './article-delete.type'
 import { Article } from './article.type'
 
-export type DeleteOptions = ArticleDeleteArgs
+export type DeleteOptions = Pick<Article, 'id'>
 export type DeleteReturn = Promise<Article>

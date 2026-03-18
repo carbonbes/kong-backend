@@ -1,1 +1,3 @@
-export type { Article } from '@/prisma/types'
+import { Article as ArticleEntity } from '@/articles/entities'
+
+export type Article = ArticleEntity

@@ -1,7 +1,7 @@
-import { Prisma } from '@/prisma/types'
 import { User } from './user.type'
 
-export type SetActiveOptions = Pick<Prisma.UserFindUniqueArgs, 'where'> & {
-  value: boolean
+export type SetActiveOptions = {
+  where: Partial<Pick<User, 'id' | 'email'>>
+  data: Pick<User, 'isActive'>
 }
 export type SetActiveReturn = Promise<User>
