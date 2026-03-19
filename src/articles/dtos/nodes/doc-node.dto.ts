@@ -6,15 +6,13 @@ import {
   IsIn,
   ValidateNested,
 } from 'class-validator'
-import {
-  BlockquoteNodeDto,
-  BulletListNodeDto,
-  HeadingNodeDto,
-  HorizontalRuleNodeDto,
-  OrderedListNodeDto,
-  ParagraphNodeDto,
-} from './'
 import { DOC_NODE_CHILD_NODES } from '@/articles/consts'
+import { ParagraphNodeDto } from '@/articles/dtos/nodes/paragraph-node.dto'
+import { HeadingNodeDto } from '@/articles/dtos/nodes/heading-node.dto'
+import { BulletListNodeDto } from '@/articles/dtos/nodes/bullet-list-node.dto'
+import { OrderedListNodeDto } from '@/articles/dtos/nodes/ordered-list-node.dto'
+import { BlockquoteNodeDto } from '@/articles/dtos/nodes/blockquote-node.dto'
+import { HorizontalRuleNodeDto } from '@/articles/dtos/nodes/horizontal-rule-node.dto'
 
 type DocChildNodes =
   | ParagraphNodeDto

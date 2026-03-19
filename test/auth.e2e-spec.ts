@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
-import { execSync } from 'child_process'
 import { AppModule } from '@/app.module'
 import { MailService } from '@/mail/mail.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
@@ -11,7 +10,7 @@ import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { App } from 'supertest/types'
 import { OtpsService } from '@/otps/otps.service'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
-import { Repository } from 'typeorm'
+import { DataSource, Repository } from 'typeorm'
 import { User } from '@/users/entities'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { UserGender } from '@/users/enums'
@@ -19,17 +18,33 @@ import {
   initializeTransactionalContext,
   StorageDriver,
 } from 'typeorm-transactional'
+import {
+  PostgreSqlContainer,
+  StartedPostgreSqlContainer,
+} from '@testcontainers/postgresql'
+import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 
 describe('AuthController (e2e)', () => {
+  let postgresContainer: StartedPostgreSqlContainer
+  let redisContainer: StartedRedisContainer
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
   let usersRepository: Repository<User>
   let otpsService: OtpsService
   let authJwtsService: AuthJwtsService
+  let dataSource: DataSource
 
   beforeAll(async () => {
-    execSync('docker compose -f compose.e2e.yaml up -d')
+    postgresContainer = await new PostgreSqlContainer(
+      'postgres:18-alpine',
+    ).start()
+    redisContainer = await new RedisContainer(
+      'redis/redis-stack:7.2.0-v20',
+    ).start()
+
+    process.env.DATABASE_URL = postgresContainer.getConnectionUri()
+    process.env.REDIS_URL = redisContainer.getConnectionUrl()
 
     initializeTransactionalContext({
       storageDriver: StorageDriver.ASYNC_LOCAL_STORAGE,
@@ -47,16 +62,20 @@ describe('AuthController (e2e)', () => {
     usersRepository = module.get<Repository<User>>(getRepositoryToken(User))
     otpsService = module.get<OtpsService>(OtpsService)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
+    dataSource = module.get<DataSource>(DataSource)
+
+    await dataSource.synchronize()
 
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
     server = app.getHttpServer()
     await app.init()
-  })
+  }, 60000)
 
   afterAll(async () => {
     await app.close()
-    execSync('docker compose -f compose.e2e.yaml down')
+    await postgresContainer.stop()
+    await redisContainer.stop()
   })
 
   describe('POST /auth/signup', () => {
@@ -323,6 +342,7 @@ describe('AuthController (e2e)', () => {
       expect(response.body).toEqual({
         ...user,
         createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
       })
     })
 

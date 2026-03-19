@@ -8,7 +8,7 @@ import {
 } from 'class-validator'
 import { Article } from '@/articles/types'
 import { ArticleStatus } from '@/articles/enums'
-import { DocNodeDto } from '@/articles/dtos'
+import { DocNodeDto } from '@/articles/dtos/nodes/doc-node.dto'
 import { User } from '@/users/entities'
 import type { JSONContent } from '@tiptap/core'
 import { UserDto } from '@/users/dtos'

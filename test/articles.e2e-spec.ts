@@ -3,28 +3,53 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
 import { AppModule } from '@/app.module'
 import { App } from 'supertest/types'
-import { PrismaService } from '@/prisma/prisma.service'
-import { execSync } from 'child_process'
 import { CreateArticleDto } from '@/articles/dtos'
-import { User } from '@/users/types'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { EncodedJwt } from '@/shared/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { MailService } from '@/mail/mail.service'
+import { DataSource, Repository } from 'typeorm'
+import { Article } from '@/articles/entities'
+import { User } from '@/users/entities'
+import { UserGender } from '@/users/enums'
+import { getRepositoryToken } from '@nestjs/typeorm'
+import {
+  initializeTransactionalContext,
+  StorageDriver,
+} from 'typeorm-transactional'
+import {
+  PostgreSqlContainer,
+  StartedPostgreSqlContainer,
+} from '@testcontainers/postgresql'
+import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 
 describe('ArticlesController (e2e)', () => {
+  let postgresContainer: StartedPostgreSqlContainer
+  let redisContainer: StartedRedisContainer
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
-  let prismaService: PrismaService
+  let usersRepository: Repository<User>
+  let articlesRepository: Repository<Article>
   let authJwtsService: AuthJwtsService
   let user: User
   let accessToken: EncodedJwt
+  let dataSource: DataSource
 
   beforeAll(async () => {
-    execSync('docker compose -f compose.e2e.yaml up -d')
-    execSync('yarn prisma db push')
-    execSync('yarn prisma generate')
+    postgresContainer = await new PostgreSqlContainer(
+      'postgres:18-alpine',
+    ).start()
+    redisContainer = await new RedisContainer(
+      'redis/redis-stack:7.2.0-v20',
+    ).start()
+
+    process.env.DATABASE_URL = postgresContainer.getConnectionUri()
+    process.env.REDIS_URL = redisContainer.getConnectionUrl()
+
+    initializeTransactionalContext({
+      storageDriver: StorageDriver.ASYNC_LOCAL_STORAGE,
+    })
 
     mailService = mock<MailService>()
 
@@ -35,28 +60,39 @@ describe('ArticlesController (e2e)', () => {
       .useValue(mailService)
       .compile()
 
+    usersRepository = module.get<Repository<User>>(getRepositoryToken(User))
+    articlesRepository = module.get<Repository<Article>>(
+      getRepositoryToken(Article),
+    )
+    authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
+    dataSource = module.get<DataSource>(DataSource)
+
+    await dataSource.synchronize()
+
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
     server = app.getHttpServer()
     await app.init()
 
-    prismaService = module.get<PrismaService>(PrismaService)
-    authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
-
-    user = await prismaService.user.create({
-      data: { email: 'test@test.com', name: 'Test', gender: 'MALE' },
+    user = await usersRepository.save({
+      email: 'test@test.com',
+      name: 'Test',
+      gender: UserGender.MALE,
     })
     accessToken = authJwtsService.sign({ sub: user.email }).accessToken
-  })
+  }, 60000)
 
   afterAll(async () => {
     await app.close()
-    execSync('docker compose -f compose.e2e.yaml down')
+    await postgresContainer.stop()
+    await redisContainer.stop()
   })
 
   describe('POST /articles', () => {
-    beforeEach(async () => {
-      await prismaService.$executeRaw`TRUNCATE TABLE "Article" RESTART IDENTITY CASCADE;`
+    afterEach(async () => {
+      await articlesRepository.query(
+        'TRUNCATE TABLE "article" RESTART IDENTITY CASCADE',
+      )
     })
 
     test('should return 200 and article', async () => {
@@ -124,19 +160,16 @@ describe('ArticlesController (e2e)', () => {
 
   describe('GET /articles/1', () => {
     test('should return 200 and article', async () => {
-      const article = await prismaService.article.create({
-        data: {
-          authorId: 1,
-          content: {
-            type: 'doc',
-            content: [
-              {
-                type: 'heading',
-                attrs: { level: 1 },
-                content: [{ type: 'text', text: 'Test' }],
-              },
-            ],
-          },
+      const article = await articlesRepository.save({
+        author: user,
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Test' }],
+            },
+          ],
         },
       })
 

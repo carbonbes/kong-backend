@@ -39,7 +39,6 @@ import { Article } from '@/articles/entities'
         type: 'postgres',
         url: configService.get('database.url')!,
         entities: [User, Article],
-        synchronize: process.env.ENV === 'development',
         migrations: [__dirname + '/migrations/**/*{.js,.ts}'],
       }),
       async dataSourceFactory(options) {

@@ -10,7 +10,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator'
-import { ListItemNodeDto } from './shared'
+import { ListItemNodeDto } from '@/articles/dtos/nodes/lists/list-item-node.dto'
 
 class OrderedListNodeAttrsDto {
   @IsOptional()

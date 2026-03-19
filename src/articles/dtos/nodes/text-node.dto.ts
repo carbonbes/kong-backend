@@ -9,14 +9,19 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator'
-import {
-  BlurMarkDto,
-  BoldMarkDto,
-  ItalicMarkDto,
-  LinkMarkDto,
-  StrikeMarkDto,
-} from '@/articles/dtos'
 import { MARK_NODES } from '@/articles/consts'
+import { BoldMarkDto } from '@/articles/dtos/marks/bold-mark.dto'
+import { ItalicMarkDto } from '@/articles/dtos/marks/italic-mark.dto'
+import { LinkMarkDto } from '@/articles/dtos/marks/link-mark.dto'
+import { BlurMarkDto } from '@/articles/dtos/marks/blur-mark.dto'
+import { StrikeMarkDto } from '@/articles/dtos/marks/strike-mark.dto'
+
+type TextMarkNodes =
+  | BoldMarkDto
+  | ItalicMarkDto
+  | LinkMarkDto
+  | BlurMarkDto
+  | StrikeMarkDto
 
 class MarkDto {
   @IsIn(MARK_NODES)
@@ -44,7 +49,7 @@ export class TextNodeDto {
     },
     keepDiscriminatorProperty: true,
   })
-  marks?: MarkDto[]
+  marks?: TextMarkNodes[]
 
   @IsString()
   @IsNotEmpty()
