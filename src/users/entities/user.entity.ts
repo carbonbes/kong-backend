@@ -21,7 +21,7 @@ export class User {
   @Column({ type: 'enum', enum: UserGender })
   gender: UserGender
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.User })
   role: UserRole
 
   @Column({ type: 'boolean', default: false })

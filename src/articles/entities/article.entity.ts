@@ -16,6 +16,7 @@ export class Article {
   id: number
 
   @ManyToOne(() => User, (user) => user.id, {
+    eager: true,
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
@@ -24,7 +25,7 @@ export class Article {
   @Column({ type: 'jsonb' })
   content: JSONContent
 
-  @Column({ type: 'enum', enum: ArticleStatus, default: ArticleStatus.DRAFT })
+  @Column({ type: 'enum', enum: ArticleStatus, default: ArticleStatus.Draft })
   status: ArticleStatus
 
   @CreateDateColumn()

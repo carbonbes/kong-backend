@@ -77,7 +77,7 @@ describe('ArticlesController (e2e)', () => {
     user = await usersRepository.save({
       email: 'test@test.com',
       name: 'Test',
-      gender: UserGender.MALE,
+      gender: UserGender.Male,
     })
     accessToken = authJwtsService.sign({ sub: user.email }).accessToken
   }, 60000)
@@ -177,7 +177,16 @@ describe('ArticlesController (e2e)', () => {
         .get('/articles/1')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
-        .expect(article)
+        .expect({
+          ...article,
+          author: {
+            ...article.author,
+            createdAt: article.author.createdAt.toISOString(),
+            updatedAt: article.author.updatedAt.toISOString(),
+          },
+          createdAt: article.createdAt.toISOString(),
+          updatedAt: article.createdAt.toISOString(),
+        })
     })
 
     test('should return 401 if user is not authenticated', async () => {

@@ -87,7 +87,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(201)
@@ -97,13 +97,13 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       })
 
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(403)
@@ -113,7 +113,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: '',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -123,7 +123,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'not email',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -134,7 +134,7 @@ describe('AuthController (e2e)', () => {
         email:
           'PMXWwZOQDyTyKiHDViGLscBnRCWoalwESoXWShXytJZBXIhAeJGTdhSiSmZuORRuzUcGyzrxjvYttqIOLTZLWhMfAfna@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -144,7 +144,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: '',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -154,7 +154,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'MYpmYTLaqoDuasawqeIxGgaqgkwBLjqGogJYxDfyEDUTnTpUkerWnmXuehNzvYhkmjHDZIvwZYZNCIETEqDjzOnMSLYNDDJcvBdxh',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -192,7 +192,7 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
         isActive: true,
       })
 
@@ -205,7 +205,7 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       })
 
       const body: SignInDto = { email: 'random@random.com' }
@@ -217,7 +217,7 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       })
 
       const body: SignInDto = { email: 'test@test.com' }
@@ -247,7 +247,7 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       })
 
       const { code } = await otpsService.create({
@@ -274,7 +274,7 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       })
 
       const { code } = await otpsService.create({
@@ -301,7 +301,7 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       })
 
       await otpsService.create({
@@ -328,7 +328,7 @@ describe('AuthController (e2e)', () => {
       const user = await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
         isActive: true,
       })
 
@@ -367,7 +367,7 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       })
 
       const { refreshToken } = authJwtsService.sign({ sub: 'test@test.com' })
@@ -402,7 +402,7 @@ describe('AuthController (e2e)', () => {
       await usersRepository.save({
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.MALE,
+        gender: UserGender.Male,
       })
 
       const { accessToken } = authJwtsService.sign({ sub: 'test@test.com' })

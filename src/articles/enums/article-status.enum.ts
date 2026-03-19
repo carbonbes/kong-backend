@@ -1,4 +1,4 @@
 export enum ArticleStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
+  Draft = 'draft',
+  Published = 'published',
 }
