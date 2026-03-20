@@ -1,25 +1,24 @@
 import { Type } from 'class-transformer'
 import {
   Equals,
-  IsNotEmpty,
+  IsIn,
   IsObject,
   IsOptional,
-  IsString,
+  IsUrl,
   ValidateNested,
 } from 'class-validator'
 
 class LinkMarkAttrsDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsUrl({ require_protocol: true, protocols: ['https'] })
   href: string
 
   @IsOptional()
-  @IsString()
-  target?: string
+  @IsIn(['_self', '_blank'])
+  target?: '_self' | '_blank'
 
   @IsOptional()
-  @IsString()
-  rel?: string
+  @Equals('noopener noreferrer nofollow')
+  rel?: 'noopener noreferrer nofollow'
 }
 
 export class LinkMarkDto {
