@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -13,6 +14,7 @@ import type { JSONContent } from '@tiptap/core'
 @Entity()
 export class Article {
   @PrimaryGeneratedColumn()
+  @Index({ unique: true })
   id: number
 
   @ManyToOne(() => User, (user) => user.id, {

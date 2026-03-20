@@ -7,7 +7,7 @@ import {
   FindOneOptions,
   UpdateOptions,
 } from './types'
-import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
+import { getFakeArticle, getFakeInt } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { Repository } from 'typeorm'
 import { Article } from '@/articles/entities'
@@ -74,16 +74,30 @@ describe('ArticlesService', () => {
   })
 
   describe('findMany', () => {
-    test('should find many articles', async () => {
-      const author = getFakeUser()
-      const options: FindManyOptions = { author }
-      const articles = [getFakeArticle({ author }), getFakeArticle({ author })]
+    test('should find an articles', async () => {
+      const options: FindManyOptions = { id: 1 }
 
-      articlesRepository.findBy.mockResolvedValue(articles)
+      const articles = [getFakeArticle({ id: 1 })]
+
+      const queryBuilder = {
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        take: vi.fn().mockReturnThis(),
+        getMany: vi.fn().mockResolvedValue(articles),
+      }
+
+      articlesRepository.createQueryBuilder.mockReturnValue(queryBuilder)
 
       const result = await articlesService.findMany(options)
 
-      expect(articlesRepository.findBy).toHaveBeenCalledWith(options)
+      expect(articlesRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'article',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith('article.id > :id', {
+        id: articles[0].id,
+      })
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith('article.id', 'DESC')
+      expect(queryBuilder.getMany).toHaveBeenCalled()
       expect(result).toEqual(articles)
     })
   })
