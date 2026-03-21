@@ -7,12 +7,13 @@ import {
   FindOneOptions,
   UpdateOptions,
 } from './types'
-import { getFakeArticle, getFakeInt } from '@/test/utils'
+import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { Repository } from 'typeorm'
 import { Article } from '@/articles/entities'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { NotFoundException } from '@nestjs/common'
+import { createMockTypeOrmQueryBuilder } from '@/test/mocks'
 
 describe('ArticlesService', () => {
   let articlesService: ArticlesService
@@ -74,30 +75,25 @@ describe('ArticlesService', () => {
   })
 
   describe('findMany', () => {
-    test('should find an articles', async () => {
-      const options: FindManyOptions = { id: 1 }
+    test('should find an articles by author id', async () => {
+      const user = getFakeUser()
+      const options: FindManyOptions = { where: { author: { id: user.id } } }
 
-      const articles = [getFakeArticle({ id: 1 })]
+      const articles = Array.from({ length: 10 }).map(() =>
+        getFakeArticle({ author: user }),
+      )
 
-      const queryBuilder = {
-        where: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        take: vi.fn().mockReturnThis(),
-        getMany: vi.fn().mockResolvedValue(articles),
-      }
+      const articlesQb = createMockTypeOrmQueryBuilder<Article>({
+        getMany: articles,
+      })
 
-      articlesRepository.createQueryBuilder.mockReturnValue(queryBuilder)
+      articlesRepository.createQueryBuilder.mockReturnValue(articlesQb)
 
       const result = await articlesService.findMany(options)
 
-      expect(articlesRepository.createQueryBuilder).toHaveBeenCalledWith(
-        'article',
-      )
-      expect(queryBuilder.where).toHaveBeenCalledWith('article.id > :id', {
-        id: articles[0].id,
-      })
-      expect(queryBuilder.orderBy).toHaveBeenCalledWith('article.id', 'DESC')
-      expect(queryBuilder.getMany).toHaveBeenCalled()
+      expect(articlesRepository.createQueryBuilder).toHaveBeenCalled()
+      expect(articlesQb.setFindOptions).toHaveBeenCalledWith(options)
+      expect(articlesQb.getMany).toHaveBeenCalled()
       expect(result).toEqual(articles)
     })
   })

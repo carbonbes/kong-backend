@@ -32,10 +32,8 @@ export class ArticlesService {
 
   findMany(options: FindManyOptions): FindManyReturn {
     return this.articlesRepository
-      .createQueryBuilder('article')
-      .where('article.id > :id', { id: options.id })
-      .orderBy('article.id', 'DESC')
-      .take(10)
+      .createQueryBuilder()
+      .setFindOptions(options)
       .getMany()
   }
 
