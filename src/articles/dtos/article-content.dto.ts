@@ -27,7 +27,7 @@ class DocChildNodesDto {
   type: (typeof DOC_NODE_CHILD_NODES)[number]
 }
 
-export class DocNodeDto {
+export class ArticleContentDto {
   @Equals('doc')
   type: 'doc'
 

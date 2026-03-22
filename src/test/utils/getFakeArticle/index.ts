@@ -1,2 +1,2 @@
 export * from './getFakeArticle'
-export * from './getFakeDocNode'
+export * from './getFakeArticleContent'

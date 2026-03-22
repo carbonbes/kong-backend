@@ -3,7 +3,7 @@ import { IsInt, IsObject, ValidateNested } from 'class-validator'
 import { User } from '@/users/entities'
 import { Type } from 'class-transformer'
 import { UserDto } from '@/users/dtos'
-import type { Article } from '@/articles/types'
+import { Article } from '@/articles/entities'
 import { ArticleDto } from '@/articles/dtos'
 import type { JSONContent } from '@tiptap/core'
 

@@ -3,17 +3,17 @@ import {
   BadRequestException,
   ValidationPipe,
 } from '@nestjs/common'
-import { DocNodeDto } from './doc-node.dto'
+import { ArticleContentDto } from './article-content.dto'
 
-describe('DocNodeDto', () => {
+describe('ArticleContentDto', () => {
   const target = new ValidationPipe({ whitelist: true })
   const metadata: ArgumentMetadata = {
     type: 'body',
-    metatype: DocNodeDto,
+    metatype: ArticleContentDto,
   }
 
   test('should success if node is valid', async () => {
-    const body: DocNodeDto = {
+    const body: ArticleContentDto = {
       type: 'doc',
       content: [
         { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
@@ -25,7 +25,7 @@ describe('DocNodeDto', () => {
 
   test('should throw a BadRequestException if type field is not provided', async () => {
     // @ts-expect-error type field
-    const body: DocNodeDto = {
+    const body: ArticleContentDto = {
       content: [
         { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
       ],
@@ -37,7 +37,7 @@ describe('DocNodeDto', () => {
   })
 
   test('should throw a BadRequestException if type field is not provided', async () => {
-    const body: DocNodeDto = {
+    const body: ArticleContentDto = {
       // @ts-expect-error type field
       type: 'do',
       content: [
@@ -52,7 +52,7 @@ describe('DocNodeDto', () => {
 
   test('should throw a BadRequestException if content field is not provided', async () => {
     // @ts-expect-error content field
-    const body: DocNodeDto = {
+    const body: ArticleContentDto = {
       type: 'doc',
     }
 
@@ -62,7 +62,7 @@ describe('DocNodeDto', () => {
   })
 
   test('should throw a BadRequestException if content field is empty', async () => {
-    const body: DocNodeDto = {
+    const body: ArticleContentDto = {
       type: 'doc',
       content: [],
     }
@@ -73,7 +73,7 @@ describe('DocNodeDto', () => {
   })
 
   test('should throw a BadRequestException if content field contains not allowed node', async () => {
-    const body: DocNodeDto = {
+    const body: ArticleContentDto = {
       type: 'doc',
       // @ts-expect-error type field
       content: [{ type: 'text' }],

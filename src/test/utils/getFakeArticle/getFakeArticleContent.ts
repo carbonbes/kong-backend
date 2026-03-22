@@ -1,10 +1,10 @@
-import type { DocNodeDto } from '@/articles/dtos'
+import type { ArticleContentDto } from '@/articles/dtos'
 import { JSONContent } from '@tiptap/core'
 
-type GetFakeDocNodeOptions = Partial<DocNodeDto>
+type GetFakeArticleContentOptions = Partial<ArticleContentDto>
 
-export const getFakeDocNode = (
-  options: GetFakeDocNodeOptions = {},
+export const getFakeArticleContent = (
+  options: GetFakeArticleContentOptions = {},
 ): JSONContent => {
   const { content } = options
 

@@ -6,9 +6,9 @@ import {
   IsObject,
   ValidateNested,
 } from 'class-validator'
-import { Article } from '@/articles/types'
+import { Article } from '@/articles/entities'
 import { ArticleStatus } from '@/articles/enums'
-import { DocNodeDto } from '@/articles/dtos/nodes/doc-node.dto'
+import { ArticleContentDto } from '@/articles/dtos/article-content.dto'
 import { User } from '@/users/entities'
 import type { JSONContent } from '@tiptap/core'
 import { UserDto } from '@/users/dtos'
@@ -24,7 +24,7 @@ export class ArticleDto implements Article {
 
   @IsObject()
   @ValidateNested()
-  @Type(() => DocNodeDto)
+  @Type(() => ArticleContentDto)
   content: JSONContent
 
   @IsEnum(ArticleStatus)

@@ -1,4 +1,4 @@
-import { Article } from './article.type'
+import { Article } from '@/articles/entities'
 
 export type UpdateOptions = {
   where: Pick<Article, 'id'>

@@ -1,4 +1,3 @@
-export * from './article.type'
 export * from './create.types'
 export * from './delete.types'
 export * from './find-many.types'
