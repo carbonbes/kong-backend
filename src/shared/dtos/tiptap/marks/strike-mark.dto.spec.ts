@@ -3,9 +3,9 @@ import {
   BadRequestException,
   ValidationPipe,
 } from '@nestjs/common'
-import { ParagraphNodeDto } from '@/articles/dtos/nodes/paragraph-node.dto'
+import { ParagraphNodeDto } from '../nodes/paragraph-node.dto'
 
-describe('BlurMarkDto', () => {
+describe('StrikeMarkDto', () => {
   const target = new ValidationPipe({ whitelist: true })
   const metadata: ArgumentMetadata = {
     type: 'body',
@@ -18,7 +18,7 @@ describe('BlurMarkDto', () => {
       content: [
         {
           type: 'text',
-          marks: [{ type: 'blur' }],
+          marks: [{ type: 'strike' }],
           text: 'Test',
         },
       ],
@@ -34,7 +34,7 @@ describe('BlurMarkDto', () => {
         {
           type: 'text',
           // @ts-expect-error type field
-          marks: [{ type: 'blu' }],
+          marks: [{ type: 'strik' }],
           text: 'Test',
         },
       ],

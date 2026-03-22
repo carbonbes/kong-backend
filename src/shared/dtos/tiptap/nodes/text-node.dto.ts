@@ -10,11 +10,11 @@ import {
   ValidateNested,
 } from 'class-validator'
 import { MARK_NODES } from '@/articles/consts'
-import { BoldMarkDto } from '@/articles/dtos/marks/bold-mark.dto'
-import { ItalicMarkDto } from '@/articles/dtos/marks/italic-mark.dto'
-import { LinkMarkDto } from '@/articles/dtos/marks/link-mark.dto'
-import { BlurMarkDto } from '@/articles/dtos/marks/blur-mark.dto'
-import { StrikeMarkDto } from '@/articles/dtos/marks/strike-mark.dto'
+import { BoldMarkDto } from '@/shared/dtos/tiptap/marks/bold-mark.dto'
+import { ItalicMarkDto } from '@/shared/dtos/tiptap/marks/italic-mark.dto'
+import { LinkMarkDto } from '@/shared/dtos/tiptap/marks/link-mark.dto'
+import { BlurMarkDto } from '@/shared/dtos/tiptap/marks/blur-mark.dto'
+import { StrikeMarkDto } from '@/shared/dtos/tiptap/marks/strike-mark.dto'
 
 type TextMarkNodes =
   | BoldMarkDto

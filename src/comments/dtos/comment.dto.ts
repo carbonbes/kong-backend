@@ -1,11 +1,12 @@
 import { Comment } from '@/comments/entities'
-import { IsInt, IsObject, ValidateNested } from 'class-validator'
+import { IsDate, IsInt, IsObject, ValidateNested } from 'class-validator'
 import { User } from '@/users/entities'
 import { Type } from 'class-transformer'
 import { UserDto } from '@/users/dtos'
 import { Article } from '@/articles/entities'
 import { ArticleDto } from '@/articles/dtos'
 import type { JSONContent } from '@tiptap/core'
+import { CommentContentDto } from '@/comments/dtos/comment-content.dto'
 
 export class CommentDto implements Comment {
   @IsInt()
@@ -23,6 +24,12 @@ export class CommentDto implements Comment {
 
   @IsObject()
   @ValidateNested()
-  @Type(() => ArticleDto)
+  @Type(() => CommentContentDto)
   content: JSONContent
+
+  @IsDate()
+  createdAt: Date
+
+  @IsDate()
+  updatedAt: Date
 }

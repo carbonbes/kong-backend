@@ -3,7 +3,7 @@ import {
   BadRequestException,
   ValidationPipe,
 } from '@nestjs/common'
-import { ParagraphNodeDto } from '@/articles/dtos/nodes/paragraph-node.dto'
+import { ParagraphNodeDto } from '../nodes/paragraph-node.dto'
 
 describe('BlurMarkDto', () => {
   const target = new ValidationPipe({ whitelist: true })

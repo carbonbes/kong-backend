@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { ArrayNotEmpty, Equals, IsArray, ValidateNested } from 'class-validator'
-import { ParagraphNodeDto } from '@/articles/dtos/nodes/paragraph-node.dto'
+import { ParagraphNodeDto } from './paragraph-node.dto'
 
 export class BlockquoteNodeDto {
   @Equals('blockquote')

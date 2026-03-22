@@ -9,7 +9,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator'
-import { TextNodeDto } from '@/articles/dtos/nodes/shared/text-node.dto'
+import { TextNodeDto } from '@/shared/dtos/tiptap'
 
 class HeadingNodeAttrsDto {
   @IsInt()
