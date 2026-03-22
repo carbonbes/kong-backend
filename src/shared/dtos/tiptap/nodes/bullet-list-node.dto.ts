@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { ArrayNotEmpty, Equals, IsArray, ValidateNested } from 'class-validator'
-import { ListItemNodeDto } from '@/articles/dtos/nodes/shared/list-item-node.dto'
+import { ListItemNodeDto } from './list-item-node.dto'
 
 export class BulletListNodeDto {
   @Equals('bulletList')

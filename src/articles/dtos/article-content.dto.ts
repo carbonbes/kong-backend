@@ -6,14 +6,17 @@ import {
   IsIn,
   ValidateNested,
 } from 'class-validator'
-import { DOC_NODE_CHILD_NODES } from '@/articles/consts'
-import { ParagraphNodeDto, BlockquoteNodeDto } from '@/shared/dtos/tiptap'
-import { HeadingNodeDto } from '@/articles/dtos/nodes/heading-node.dto'
-import { BulletListNodeDto } from '@/articles/dtos/nodes/bullet-list-node.dto'
-import { OrderedListNodeDto } from '@/articles/dtos/nodes/ordered-list-node.dto'
-import { HorizontalRuleNodeDto } from '@/articles/dtos/nodes/horizontal-rule-node.dto'
+import { ARTICLE_CONTENT_CHILD_NODES } from '@/articles/consts'
+import {
+  ParagraphNodeDto,
+  HeadingNodeDto,
+  BulletListNodeDto,
+  OrderedListNodeDto,
+  BlockquoteNodeDto,
+  HorizontalRuleNodeDto,
+} from '@/shared/dtos/tiptap'
 
-type DocChildNodes =
+type ArticleContentChildNodes =
   | ParagraphNodeDto
   | HeadingNodeDto
   | BulletListNodeDto
@@ -21,9 +24,9 @@ type DocChildNodes =
   | BlockquoteNodeDto
   | HorizontalRuleNodeDto
 
-class DocChildNodesDto {
-  @IsIn(DOC_NODE_CHILD_NODES)
-  type: (typeof DOC_NODE_CHILD_NODES)[number]
+class ArticleContentChildNodesDto {
+  @IsIn(ARTICLE_CONTENT_CHILD_NODES)
+  type: (typeof ARTICLE_CONTENT_CHILD_NODES)[number]
 }
 
 export class ArticleContentDto {
@@ -33,7 +36,7 @@ export class ArticleContentDto {
   @IsArray()
   @ArrayNotEmpty()
   @ValidateNested({ each: true })
-  @Type(() => DocChildNodesDto, {
+  @Type(() => ArticleContentChildNodesDto, {
     discriminator: {
       property: 'type',
       subTypes: [
@@ -47,5 +50,5 @@ export class ArticleContentDto {
     },
     keepDiscriminatorProperty: true,
   })
-  content: DocChildNodes[]
+  content: ArticleContentChildNodes[]
 }

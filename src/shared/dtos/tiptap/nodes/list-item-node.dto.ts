@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { ArrayNotEmpty, Equals, IsArray, ValidateNested } from 'class-validator'
-import { ParagraphNodeDto } from '@/shared/dtos/tiptap'
+import { ParagraphNodeDto } from './paragraph-node.dto'
 
 export class ListItemNodeDto {
   @Equals('listItem')

@@ -1,2 +1,2 @@
-export * from './doc-node-child-nodes.const'
+export * from './article-content-child-nodes.const'
 export * from './mark-nodes.const'

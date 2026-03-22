@@ -1,3 +1,6 @@
 export * from './blockquote-node.dto'
+export * from './bullet-list-node.dto'
+export * from './heading-node.dto'
+export * from './horizontal-rule-node.dto'
+export * from './ordered-list-node.dto'
 export * from './paragraph-node.dto'
-export * from './text-node.dto'

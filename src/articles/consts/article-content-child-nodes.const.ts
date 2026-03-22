@@ -1,4 +1,4 @@
-export const DOC_NODE_CHILD_NODES = [
+export const ARTICLE_CONTENT_CHILD_NODES = [
   'paragraph',
   'heading',
   'blockquote',
