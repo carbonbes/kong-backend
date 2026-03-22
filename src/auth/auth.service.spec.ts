@@ -13,7 +13,7 @@ import { OtpType } from '@/otps/enums'
 import { SignInOptions, SignUpOptions, VerifyOtpOptions } from '@/auth/types'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { User } from '@/users/types'
+import { User } from '@/users/entities'
 import { REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 

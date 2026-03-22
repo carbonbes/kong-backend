@@ -10,7 +10,7 @@ import {
 import { ArticlesService } from './articles.service'
 import { CreateArticleDto, UpdateArticleDto } from './dtos'
 import { Session } from '@/shared/decorators'
-import type { User } from '@/users/types'
+import { User } from '@/users/entities'
 import { CreateOptions } from '@/articles/types'
 
 @Controller('articles')

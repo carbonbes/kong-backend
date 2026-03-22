@@ -1,4 +1,4 @@
-import { User } from './user.type'
+import { User } from '@/users/entities'
 
 export type SetActiveOptions = {
   where: Partial<Pick<User, 'id' | 'email'>>

@@ -1,6 +1,6 @@
 import { Comment } from '@/comments/entities'
 import { IsInt, IsObject, ValidateNested } from 'class-validator'
-import type { User } from '@/users/types'
+import { User } from '@/users/entities'
 import { Type } from 'class-transformer'
 import { UserDto } from '@/users/dtos'
 import type { Article } from '@/articles/types'

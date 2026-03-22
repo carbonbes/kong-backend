@@ -8,7 +8,7 @@ import {
   IsString,
   Length,
 } from 'class-validator'
-import { User } from '@/users/types'
+import { User } from '@/users/entities'
 import { UserGender, UserRole } from '@/users/enums'
 
 export class UserDto implements User {
