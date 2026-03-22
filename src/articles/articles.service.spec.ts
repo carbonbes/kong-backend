@@ -13,7 +13,6 @@ import { Repository } from 'typeorm'
 import { Article } from '@/articles/entities'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { NotFoundException } from '@nestjs/common'
-import { createMockTypeOrmQueryBuilder } from '@/test/mocks'
 
 describe('ArticlesService', () => {
   let articlesService: ArticlesService
@@ -83,17 +82,11 @@ describe('ArticlesService', () => {
         getFakeArticle({ author: user }),
       )
 
-      const articlesQb = createMockTypeOrmQueryBuilder<Article>({
-        getMany: articles,
-      })
-
-      articlesRepository.createQueryBuilder.mockReturnValue(articlesQb)
+      articlesRepository.find.mockResolvedValue(articles)
 
       const result = await articlesService.findMany(options)
 
-      expect(articlesRepository.createQueryBuilder).toHaveBeenCalled()
-      expect(articlesQb.setFindOptions).toHaveBeenCalledWith(options)
-      expect(articlesQb.getMany).toHaveBeenCalled()
+      expect(articlesRepository.find).toHaveBeenCalledWith(options)
       expect(result).toEqual(articles)
     })
   })

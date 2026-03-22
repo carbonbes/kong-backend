@@ -31,10 +31,7 @@ export class ArticlesService {
   }
 
   findMany(options: FindManyOptions): FindManyReturn {
-    return this.articlesRepository
-      .createQueryBuilder()
-      .setFindOptions(options)
-      .getMany()
+    return this.articlesRepository.find(options)
   }
 
   async update(options: UpdateOptions): UpdateReturn {
