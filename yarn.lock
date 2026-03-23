@@ -6209,6 +6209,7 @@ __metadata:
     tsconfig-paths: "npm:^4.2.0"
     tsx: "npm:^4.21.0"
     typeorm: "npm:^0.3.28"
+    typeorm-cursor-pagination: "npm:^0.10.1"
     typeorm-transactional: "npm:^0.5.0"
     typescript: "npm:^5.1.3"
     unplugin-swc: "npm:^1.5.4"
@@ -9709,6 +9710,15 @@ __metadata:
   version: 0.0.6
   resolution: "typedarray@npm:0.0.6"
   checksum: 10c0/6005cb31df50eef8b1f3c780eb71a17925f3038a100d82f9406ac2ad1de5eb59f8e6decbdc145b3a1f8e5836e17b0c0002fb698b9fe2516b8f9f9ff602d36412
+  languageName: node
+  linkType: hard
+
+"typeorm-cursor-pagination@npm:^0.10.1":
+  version: 0.10.1
+  resolution: "typeorm-cursor-pagination@npm:0.10.1"
+  peerDependencies:
+    typeorm: ^0.3.6
+  checksum: 10c0/24ab598bb3fb228cf98d4e83359b13d2b3083dd5b58e0eff72769094616e9bf286facdfec119290116e9d5fc86c9021a2b76eade3655175b650a14d902de71f6
   languageName: node
   linkType: hard
 

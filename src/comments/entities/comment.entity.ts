@@ -3,7 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  OneToOne,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
@@ -16,19 +16,28 @@ export class Comment {
   @PrimaryGeneratedColumn()
   id: number
 
-  @OneToOne(() => User, (user) => user.id, {
+  @Column()
+  authorId: number
+
+  @ManyToOne(() => User, {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn()
+  @JoinColumn({ name: 'authorId' })
   author: User
 
-  @OneToOne(() => Article, (article) => article.id, {
+  @Column()
+  articleId: number
+
+  @ManyToOne(() => Article, {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn()
+  @JoinColumn({ name: 'articleId' })
   article: Article
+
+  @Column({ nullable: true })
+  parentCommentId: number | null
 
   @Column({ type: 'jsonb' })
   content: JSONContent

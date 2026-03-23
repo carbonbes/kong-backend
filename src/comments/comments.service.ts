@@ -14,6 +14,7 @@ import {
   UpdateReturn,
 } from '@/comments/types'
 import { Comment } from '@/comments/entities'
+import { buildPaginator } from 'typeorm-cursor-pagination'
 
 @Injectable()
 export class CommentsService {
@@ -31,7 +32,25 @@ export class CommentsService {
   }
 
   findMany(options: FindManyOptions): FindManyReturn {
-    return this.commentsRepository.find(options)
+    const { where, afterCursor } = options
+
+    const queryBuilder = this.commentsRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.author', 'author')
+      .leftJoinAndSelect('comment.article', 'article')
+      .setFindOptions({ where })
+
+    const paginator = buildPaginator({
+      entity: Comment,
+      paginationKeys: ['id'],
+      query: {
+        limit: 10,
+        order: 'ASC',
+        afterCursor: afterCursor ?? undefined,
+      },
+    })
+
+    return paginator.paginate(queryBuilder)
   }
 
   async update(options: UpdateOptions): UpdateReturn {
@@ -43,14 +62,8 @@ export class CommentsService {
   }
 
   async delete(options: DeleteOptions): DeleteReturn {
-    const comment = await this.findOne(options)
-
-    if (!comment) {
-      throw new NotFoundException()
-    }
-
     await this.commentsRepository.delete(options)
 
-    return comment
+    return (await this.findOne(options))!
   }
 }
