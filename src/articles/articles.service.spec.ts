@@ -3,28 +3,38 @@ import { ArticlesService } from './articles.service'
 import {
   CreateOptions,
   DeleteOptions,
+  FindCommentsOptions,
   FindManyOptions,
   FindOneOptions,
   UpdateOptions,
 } from './types'
-import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
+import {
+  getFakeArticle,
+  getFakeComment,
+  getFakeInt,
+  getFakeUser,
+} from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { Repository } from 'typeorm'
 import { Article } from '@/articles/entities'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { NotFoundException } from '@nestjs/common'
+import { CommentsService } from '@/comments/comments.service'
 
 describe('ArticlesService', () => {
   let articlesService: ArticlesService
   let articlesRepository: MockProxy<Repository<Article>>
+  let commentsService: MockProxy<CommentsService>
 
   beforeEach(async () => {
     articlesRepository = mock<Repository<Article>>()
+    commentsService = mock<CommentsService>()
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ArticlesService,
         { provide: getRepositoryToken(Article), useValue: articlesRepository },
+        { provide: CommentsService, useValue: commentsService },
       ],
     }).compile()
 
@@ -136,6 +146,19 @@ describe('ArticlesService', () => {
         NotFoundException,
       )
       expect(articlesRepository.findOneBy).toHaveBeenCalledWith(options)
+    })
+  })
+
+  describe('findComments', () => {
+    test('should find an article comments', async () => {
+      const comments = Array.from({ length: 10 }).map(() => getFakeComment())
+      const { id: articleId }: FindCommentsOptions = { id: 1 }
+
+      commentsService.findAll.mockResolvedValue(comments)
+
+      const result = await commentsService.findAll({ articleId })
+
+      expect(result).toEqual(comments)
     })
   })
 })

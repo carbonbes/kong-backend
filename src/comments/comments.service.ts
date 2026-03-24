@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import {
@@ -6,6 +6,8 @@ import {
   CreateReturn,
   DeleteOptions,
   DeleteReturn,
+  FindAllOptions,
+  FindAllReturn,
   FindManyOptions,
   FindManyReturn,
   FindOneOptions,
@@ -23,8 +25,10 @@ export class CommentsService {
     private readonly commentsRepository: Repository<Comment>,
   ) {}
 
-  create(options: CreateOptions): CreateReturn {
-    return this.commentsRepository.save(options)
+  async create(options: CreateOptions): CreateReturn {
+    const { id } = await this.commentsRepository.save(options)
+
+    return (await this.findOne({ id }))!
   }
 
   findOne(options: FindOneOptions): FindOneReturn {
@@ -51,6 +55,10 @@ export class CommentsService {
     })
 
     return paginator.paginate(queryBuilder)
+  }
+
+  findAll(options: FindAllOptions): FindAllReturn {
+    return this.commentsRepository.findBy(options)
   }
 
   async update(options: UpdateOptions): UpdateReturn {

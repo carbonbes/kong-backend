@@ -8,7 +8,7 @@ import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { EncodedJwt } from '@/shared/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { MailService } from '@/mail/mail.service'
-import { DataSource, Repository } from 'typeorm'
+import { Repository } from 'typeorm'
 import { Article } from '@/articles/entities'
 import { User } from '@/users/entities'
 import { UserGender } from '@/users/enums'
@@ -22,6 +22,9 @@ import {
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
+import { Comment } from '@/comments/entities'
+import { getFakeInt } from '@/test/utils'
+import { TestTypeOrmModule } from './modules'
 
 describe('ArticlesController (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -31,10 +34,10 @@ describe('ArticlesController (e2e)', () => {
   let mailService: MockProxy<MailService>
   let usersRepository: Repository<User>
   let articlesRepository: Repository<Article>
+  let commentsRepository: Repository<Comment>
   let authJwtsService: AuthJwtsService
   let user: User
   let accessToken: EncodedJwt
-  let dataSource: DataSource
 
   beforeAll(async () => {
     postgresContainer = await new PostgreSqlContainer(
@@ -47,14 +50,14 @@ describe('ArticlesController (e2e)', () => {
     process.env.DATABASE_URL = postgresContainer.getConnectionUri()
     process.env.REDIS_URL = redisContainer.getConnectionUrl()
 
+    mailService = mock<MailService>()
+
     initializeTransactionalContext({
       storageDriver: StorageDriver.ASYNC_LOCAL_STORAGE,
     })
 
-    mailService = mock<MailService>()
-
     const module: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [AppModule, TestTypeOrmModule],
     })
       .overrideProvider(MailService)
       .useValue(mailService)
@@ -64,10 +67,10 @@ describe('ArticlesController (e2e)', () => {
     articlesRepository = module.get<Repository<Article>>(
       getRepositoryToken(Article),
     )
+    commentsRepository = module.get<Repository<Comment>>(
+      getRepositoryToken(Comment),
+    )
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
-    dataSource = module.get<DataSource>(DataSource)
-
-    await dataSource.synchronize()
 
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -159,9 +162,15 @@ describe('ArticlesController (e2e)', () => {
   })
 
   describe('GET /articles/1', () => {
+    afterEach(async () => {
+      await articlesRepository.query(
+        'TRUNCATE TABLE "article" RESTART IDENTITY CASCADE',
+      )
+    })
+
     test('should return 200 and article', async () => {
-      const article = await articlesRepository.save({
-        author: user,
+      await articlesRepository.save({
+        authorId: 1,
         content: {
           type: 'doc',
           content: [
@@ -173,24 +182,72 @@ describe('ArticlesController (e2e)', () => {
         },
       })
 
+      const article = JSON.parse(
+        JSON.stringify(await articlesRepository.findOneBy({ id: 1 })),
+      )
+
       return request(server)
         .get('/articles/1')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
-        .expect({
-          ...article,
-          author: {
-            ...article.author,
-            createdAt: article.author.createdAt.toISOString(),
-            updatedAt: article.author.updatedAt.toISOString(),
-          },
-          createdAt: article.createdAt.toISOString(),
-          updatedAt: article.createdAt.toISOString(),
-        })
+        .expect(article)
     })
 
     test('should return 401 if user is not authenticated', async () => {
       return request(server).get('/articles/1').expect(401)
+    })
+  })
+
+  describe('GET /articles/1/comments', () => {
+    afterEach(async () => {
+      await articlesRepository.query(
+        'TRUNCATE TABLE "article" RESTART IDENTITY CASCADE',
+      )
+    })
+
+    test('should return 200 and article comments', async () => {
+      await articlesRepository.save({
+        authorId: 1,
+        content: {
+          type: 'doc',
+          content: [
+            { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
+          ],
+        },
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 10 }).map(() => ({
+          articleId: 1,
+          authorId: 1,
+          parentCommentId: getFakeInt(),
+          content: [
+            {
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Comment' }],
+                },
+              ],
+            },
+          ],
+        })),
+      )
+
+      const comments = JSON.parse(
+        JSON.stringify(await commentsRepository.findBy({ articleId: 1 })),
+      )
+
+      return request(server)
+        .get('/articles/1/comments')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200)
+        .expect(comments)
+    })
+
+    test('should return 401 if user is not authenticated', async () => {
+      return request(server).get('/articles/1/comments').expect(401)
     })
   })
 })

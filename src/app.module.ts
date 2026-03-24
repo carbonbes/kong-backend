@@ -23,6 +23,7 @@ import { DataSource } from 'typeorm'
 import { User } from '@/users/entities'
 import { Article } from '@/articles/entities'
 import { CommentsModule } from './comments/comments.module'
+import { Comment } from '@/comments/entities'
 
 @Module({
   imports: [
@@ -39,7 +40,7 @@ import { CommentsModule } from './comments/comments.module'
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get('database.url')!,
-        entities: [User, Article],
+        entities: [User, Article, Comment],
         migrations: [__dirname + '/migrations/**/*{.js,.ts}'],
       }),
       async dataSourceFactory(options) {

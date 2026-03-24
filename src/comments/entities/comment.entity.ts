@@ -16,28 +16,30 @@ export class Comment {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column()
+  @Column({ select: false })
   authorId: number
 
   @ManyToOne(() => User, {
+    eager: true,
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'authorId' })
+  @JoinColumn()
   author: User
 
-  @Column()
+  @Column({ select: false })
   articleId: number
 
   @ManyToOne(() => Article, {
+    eager: true,
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'articleId' })
+  @JoinColumn()
   article: Article
 
-  @Column({ nullable: true })
-  parentCommentId: number | null
+  @Column({ type: 'int', nullable: true, default: null })
+  parentCommentId?: number | null
 
   @Column({ type: 'jsonb' })
   content: JSONContent

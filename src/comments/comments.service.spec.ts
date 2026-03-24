@@ -8,6 +8,7 @@ import { getFakeComment, getFakeInt } from '@/test/utils'
 import {
   CreateOptions,
   DeleteOptions,
+  FindAllOptions,
   FindManyOptions,
   FindOneOptions,
   UpdateOptions,
@@ -127,6 +128,20 @@ describe('CommentsService', () => {
         data: comments,
         cursor: { beforeCursor: 'before', afterCursor: 'after' },
       })
+    })
+  })
+
+  describe('findAll', () => {
+    test('should find a comments', async () => {
+      const comments = Array.from({ length: 100 }).map(() => getFakeComment())
+      const options: FindAllOptions = { articleId: 1 }
+
+      commentsRepository.findBy.mockResolvedValue(comments)
+
+      const result = await commentsService.findAll(options)
+
+      expect(commentsRepository.findBy).toHaveBeenCalledWith(options)
+      expect(result).toEqual(comments)
     })
   })
 

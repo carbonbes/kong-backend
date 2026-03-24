@@ -24,17 +24,22 @@ export class ArticlesController {
     return this.articlesService.create(options)
   }
 
-  @Get(':id')
+  @Get('/:id')
   findOne(@Param('id') id: number) {
     return this.articlesService.findOne({ id })
   }
 
-  @Patch(':id')
+  @Get('/:id/comments')
+  findComments(@Param('id') id: number) {
+    return this.articlesService.findComments({ id })
+  }
+
+  @Patch('/:id')
   update(@Param('id') id: number, @Body() body: UpdateArticleDto) {
     return this.articlesService.update({ where: { id }, data: body })
   }
 
-  @Delete(':id')
+  @Delete('/:id')
   delete(@Param('id') id: number) {
     return this.articlesService.delete({ id })
   }

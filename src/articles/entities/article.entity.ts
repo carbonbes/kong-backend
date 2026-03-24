@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -15,11 +16,15 @@ export class Article {
   @PrimaryGeneratedColumn()
   id: number
 
+  @Column({ select: false })
+  authorId: number
+
   @ManyToOne(() => User, (user) => user.id, {
     eager: true,
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
+  @JoinColumn()
   author: User
 
   @Column({ type: 'jsonb' })

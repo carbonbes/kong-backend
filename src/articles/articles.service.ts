@@ -10,16 +10,20 @@ import {
   UpdateReturn,
   DeleteOptions,
   DeleteReturn,
+  FindCommentsOptions,
+  FindCommentsReturn,
 } from '@/articles/types'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Article } from '@/articles/entities'
+import { CommentsService } from '@/comments/comments.service'
 
 @Injectable()
 export class ArticlesService {
   constructor(
     @InjectRepository(Article)
     private readonly articlesRepository: Repository<Article>,
+    private readonly commentsService: CommentsService,
   ) {}
 
   create(options: CreateOptions): CreateReturn {
@@ -52,5 +56,9 @@ export class ArticlesService {
     await this.articlesRepository.delete(options)
 
     return article
+  }
+
+  findComments({ id: articleId }: FindCommentsOptions): FindCommentsReturn {
+    return this.commentsService.findAll({ articleId })
   }
 }
