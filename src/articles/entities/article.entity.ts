@@ -16,7 +16,7 @@ export class Article {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column({ select: false })
+  @Column()
   authorId: number
 
   @ManyToOne(() => User, (user) => user.id, {

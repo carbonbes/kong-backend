@@ -16,7 +16,7 @@ export class Comment {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column({ select: false })
+  @Column()
   authorId: number
 
   @ManyToOne(() => User, {
@@ -27,7 +27,7 @@ export class Comment {
   @JoinColumn()
   author: User
 
-  @Column({ select: false })
+  @Column()
   articleId: number
 
   @ManyToOne(() => Article, {
