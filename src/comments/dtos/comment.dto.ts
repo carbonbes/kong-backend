@@ -1,5 +1,11 @@
 import { Comment } from '@/comments/entities'
-import { IsDate, IsInt, IsObject, ValidateNested } from 'class-validator'
+import {
+  IsDate,
+  IsInt,
+  IsObject,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator'
 import { User } from '@/users/entities'
 import { Type } from 'class-transformer'
 import { UserDto } from '@/users/dtos'
@@ -12,20 +18,33 @@ export class CommentDto implements Comment {
   @IsInt()
   id: number
 
+  @IsInt()
+  authorId: number
+
   @IsObject()
   @ValidateNested()
   @Type(() => UserDto)
   author: User
+
+  @IsInt()
+  articleId: number
 
   @IsObject()
   @ValidateNested()
   @Type(() => ArticleDto)
   article: Article
 
+  @IsOptional()
+  @IsInt()
+  parentCommentId?: number | null
+
   @IsObject()
   @ValidateNested()
   @Type(() => CommentContentDto)
   content: JSONContent
+
+  @IsInt()
+  rate: number
 
   @IsDate()
   createdAt: Date

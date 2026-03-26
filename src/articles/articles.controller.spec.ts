@@ -2,15 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ArticlesController } from './articles.controller'
 import { ArticlesService } from './articles.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import {
-  getFakeArticle,
-  getFakeComment,
-  getFakeInt,
-  getFakeUser,
-} from '@/test/utils'
+import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
 import { CreateArticleDto, UpdateArticleDto } from './dtos'
 import { ArticleStatus } from '@/articles/enums'
-import { CreateOptions, FindCommentsOptions } from '@/articles/types'
+import { CreateArticleOptions } from '@/articles/types'
 
 describe('ArticlesController', () => {
   let articlesController: ArticlesController
@@ -37,14 +32,14 @@ describe('ArticlesController', () => {
       const body: CreateArticleDto = {
         content: article.content,
       }
-      const options: CreateOptions = {
-        ...body,
-        author: user,
+      const options: CreateArticleOptions = {
+        authorId: user.id,
+        content: body.content,
       }
 
       articlesService.create.mockResolvedValue(article)
 
-      const result = await articlesController.create(body, user)
+      const result = await articlesController.create(user.id, body)
 
       expect(articlesService.create).toHaveBeenCalledWith(options)
       expect(result).toEqual(article)
@@ -73,20 +68,6 @@ describe('ArticlesController', () => {
 
       expect(articlesService.findOne).toHaveBeenCalledWith({ id })
       expect(result).toBeNull()
-    })
-  })
-
-  describe('findComments', () => {
-    test('should find and return an article comments', async () => {
-      const comments = Array.from({ length: 50 }).map(() => getFakeComment())
-      const options: FindCommentsOptions = { id: 1 }
-
-      articlesService.findComments.mockResolvedValue(comments)
-
-      const result = await articlesController.findComments(options.id)
-
-      expect(articlesService.findComments).toHaveBeenCalledWith(options)
-      expect(result).toEqual(comments)
     })
   })
 

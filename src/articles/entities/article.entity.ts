@@ -19,7 +19,7 @@ export class Article {
   @Column()
   authorId: number
 
-  @ManyToOne(() => User, (user) => user.id, {
+  @ManyToOne(() => User, {
     eager: true,
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',

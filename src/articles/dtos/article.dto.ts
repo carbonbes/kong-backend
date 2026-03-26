@@ -17,6 +17,9 @@ export class ArticleDto implements Article {
   @IsInt()
   id: number
 
+  @IsInt()
+  authorId: number
+
   @IsObject()
   @ValidateNested()
   @Type(() => UserDto)

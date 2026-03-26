@@ -1,44 +1,40 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import {
-  CreateOptions,
-  CreateReturn,
-  FindOneOptions,
-  FindOneReturn,
-  FindManyOptions,
-  FindManyReturn,
-  UpdateOptions,
-  UpdateReturn,
-  DeleteOptions,
-  DeleteReturn,
-  FindCommentsOptions,
-  FindCommentsReturn,
+  CreateArticleOptions,
+  CreateArticleReturn,
+  FindOneArticleOptions,
+  FindOneArticleReturn,
+  FindManyArticlesOptions,
+  FindManyArticlesReturn,
+  UpdateArticleOptions,
+  UpdateArticleReturn,
+  DeleteArticleOptions,
+  DeleteArticleReturn,
 } from '@/articles/types'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Article } from '@/articles/entities'
-import { CommentsService } from '@/comments/comments.service'
 
 @Injectable()
 export class ArticlesService {
   constructor(
     @InjectRepository(Article)
     private readonly articlesRepository: Repository<Article>,
-    private readonly commentsService: CommentsService,
   ) {}
 
-  create(options: CreateOptions): CreateReturn {
+  create(options: CreateArticleOptions): CreateArticleReturn {
     return this.articlesRepository.save(options)
   }
 
-  findOne(options: FindOneOptions): FindOneReturn {
+  findOne(options: FindOneArticleOptions): FindOneArticleReturn {
     return this.articlesRepository.findOneBy(options)
   }
 
-  findMany(options: FindManyOptions): FindManyReturn {
+  findMany(options: FindManyArticlesOptions): FindManyArticlesReturn {
     return this.articlesRepository.find(options)
   }
 
-  async update(options: UpdateOptions): UpdateReturn {
+  async update(options: UpdateArticleOptions): UpdateArticleReturn {
     const { where, data } = options
 
     await this.articlesRepository.update(where, data)
@@ -46,19 +42,9 @@ export class ArticlesService {
     return (await this.findOne(where))!
   }
 
-  async delete(options: DeleteOptions): DeleteReturn {
-    const article = await this.findOne(options)
-
-    if (!article) {
-      throw new NotFoundException()
-    }
-
+  async delete(options: DeleteArticleOptions): DeleteArticleReturn {
     await this.articlesRepository.delete(options)
 
-    return article
-  }
-
-  findComments({ id: articleId }: FindCommentsOptions): FindCommentsReturn {
-    return this.commentsService.findAll({ articleId })
+    return (await this.findOne(options))!
   }
 }

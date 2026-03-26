@@ -44,6 +44,9 @@ export class Comment {
   @Column({ type: 'jsonb' })
   content: JSONContent
 
+  @Column({ type: 'int', default: 0 })
+  rate: number
+
   @CreateDateColumn()
   createdAt: Date
 

@@ -1,7 +1,7 @@
 import { Comment } from '@/comments/entities'
 
-export type CreateOptions = Pick<
+export type CreateCommentOptions = Pick<
   Comment,
   'authorId' | 'articleId' | 'parentCommentId' | 'content'
 >
-export type CreateReturn = Promise<Comment>
+export type CreateCommentReturn = Promise<Comment>

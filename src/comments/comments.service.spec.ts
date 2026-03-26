@@ -6,12 +6,11 @@ import { mock, MockProxy } from 'vitest-mock-extended'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { getFakeComment, getFakeInt } from '@/test/utils'
 import {
-  CreateOptions,
-  DeleteOptions,
-  FindAllOptions,
-  FindManyOptions,
-  FindOneOptions,
-  UpdateOptions,
+  CreateCommentOptions,
+  DeleteCommentOptions,
+  FindManyCommentsOptions,
+  FindOneCommentOptions,
+  UpdateCommentOptions,
 } from '@/comments/types'
 import { createMockTypeOrmQueryBuilder } from '@/test/mocks'
 import Paginator from 'typeorm-cursor-pagination/lib/Paginator'
@@ -43,7 +42,7 @@ describe('CommentsService', () => {
   describe('create', () => {
     test('should create a comment', async () => {
       const comment = getFakeComment()
-      const options: CreateOptions = {
+      const options: CreateCommentOptions = {
         authorId: comment.authorId,
         articleId: comment.articleId,
         content: comment.content,
@@ -61,7 +60,7 @@ describe('CommentsService', () => {
   describe('findOne', () => {
     test('should find a comment', async () => {
       const comment = getFakeComment()
-      const options: FindOneOptions = { id: comment.id }
+      const options: FindOneCommentOptions = { id: comment.id }
 
       commentsRepository.findOneBy.mockResolvedValue(comment)
 
@@ -72,7 +71,7 @@ describe('CommentsService', () => {
     })
 
     test('should not found', async () => {
-      const options: FindOneOptions = { id: getFakeInt() }
+      const options: FindOneCommentOptions = { id: getFakeInt() }
 
       commentsRepository.findOneBy.mockResolvedValue(null)
 
@@ -86,7 +85,7 @@ describe('CommentsService', () => {
   describe('findMany', () => {
     test('should find a comments', async () => {
       const comments = Array.from({ length: 10 }).map(() => getFakeComment())
-      const options: FindManyOptions = { where: { articleId: 1 } }
+      const options: FindManyCommentsOptions = { where: { articleId: 1 } }
 
       const queryBuilder = createMockTypeOrmQueryBuilder({ getMany: comments })
 
@@ -131,24 +130,10 @@ describe('CommentsService', () => {
     })
   })
 
-  describe('findAll', () => {
-    test('should find a comments', async () => {
-      const comments = Array.from({ length: 100 }).map(() => getFakeComment())
-      const options: FindAllOptions = { articleId: 1 }
-
-      commentsRepository.findBy.mockResolvedValue(comments)
-
-      const result = await commentsService.findAll(options)
-
-      expect(commentsRepository.findBy).toHaveBeenCalledWith(options)
-      expect(result).toEqual(comments)
-    })
-  })
-
   describe('update', () => {
     test('should update a comment', async () => {
       const comment = getFakeComment({ id: 1 })
-      const options: UpdateOptions = {
+      const options: UpdateCommentOptions = {
         where: { id: 1 },
         data: {
           content: {
@@ -182,7 +167,7 @@ describe('CommentsService', () => {
   describe('delete', () => {
     test('should delete a comment', async () => {
       const comment = getFakeComment({ id: 1 })
-      const options: DeleteOptions = { id: 1 }
+      const options: DeleteCommentOptions = { id: 1 }
 
       commentsRepository.findOneBy.mockResolvedValue(comment)
 

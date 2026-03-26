@@ -10,37 +10,36 @@ import {
 import { ArticlesService } from './articles.service'
 import { CreateArticleDto, UpdateArticleDto } from './dtos'
 import { Session } from '@/shared/decorators'
-import { User } from '@/users/entities'
-import { CreateOptions } from '@/articles/types'
+import { CreateArticleOptions, UpdateArticleOptions } from '@/articles/types'
 
 @Controller('articles')
 export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
   @Post()
-  create(@Body() body: CreateArticleDto, @Session() user: User) {
-    const options: CreateOptions = { ...body, author: user }
+  create(
+    @Session('id') authorId: number,
+    @Body() { content }: CreateArticleDto,
+  ) {
+    const options: CreateArticleOptions = { authorId, content }
 
     return this.articlesService.create(options)
   }
 
-  @Get('/:id')
-  findOne(@Param('id') id: number) {
+  @Get('/:articleId')
+  findOne(@Param('articleId') id: number) {
     return this.articlesService.findOne({ id })
   }
 
-  @Get('/:id/comments')
-  findComments(@Param('id') id: number) {
-    return this.articlesService.findComments({ id })
+  @Patch('/:articleId')
+  update(@Param('articleId') id: number, @Body() body: UpdateArticleDto) {
+    const options: UpdateArticleOptions = { where: { id }, data: body }
+
+    return this.articlesService.update(options)
   }
 
-  @Patch('/:id')
-  update(@Param('id') id: number, @Body() body: UpdateArticleDto) {
-    return this.articlesService.update({ where: { id }, data: body })
-  }
-
-  @Delete('/:id')
-  delete(@Param('id') id: number) {
+  @Delete('/:articleId')
+  delete(@Param('articleId') id: number) {
     return this.articlesService.delete({ id })
   }
 }

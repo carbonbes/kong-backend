@@ -31,6 +31,7 @@ export class CommentContentDto {
         { name: 'blockquote', value: BlockquoteNodeDto },
       ],
     },
+    keepDiscriminatorProperty: true,
   })
   content: CommentContentChildNodes[]
 }

@@ -22,8 +22,6 @@ import {
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
-import { Comment } from '@/comments/entities'
-import { getFakeInt } from '@/test/utils'
 import { TestTypeOrmModule } from './modules'
 
 describe('ArticlesController (e2e)', () => {
@@ -34,7 +32,6 @@ describe('ArticlesController (e2e)', () => {
   let mailService: MockProxy<MailService>
   let usersRepository: Repository<User>
   let articlesRepository: Repository<Article>
-  let commentsRepository: Repository<Comment>
   let authJwtsService: AuthJwtsService
   let user: User
   let accessToken: EncodedJwt
@@ -66,9 +63,6 @@ describe('ArticlesController (e2e)', () => {
     usersRepository = module.get<Repository<User>>(getRepositoryToken(User))
     articlesRepository = module.get<Repository<Article>>(
       getRepositoryToken(Article),
-    )
-    commentsRepository = module.get<Repository<Comment>>(
-      getRepositoryToken(Comment),
     )
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
@@ -195,59 +189,6 @@ describe('ArticlesController (e2e)', () => {
 
     test('should return 401 if user is not authenticated', async () => {
       return request(server).get('/articles/1').expect(401)
-    })
-  })
-
-  describe('GET /articles/1/comments', () => {
-    afterEach(async () => {
-      await articlesRepository.query(
-        'TRUNCATE TABLE "article" RESTART IDENTITY CASCADE',
-      )
-    })
-
-    test('should return 200 and article comments', async () => {
-      await articlesRepository.save({
-        authorId: 1,
-        content: {
-          type: 'doc',
-          content: [
-            { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
-          ],
-        },
-      })
-
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map(() => ({
-          articleId: 1,
-          authorId: 1,
-          parentCommentId: getFakeInt(),
-          content: [
-            {
-              type: 'doc',
-              content: [
-                {
-                  type: 'paragraph',
-                  content: [{ type: 'text', text: 'Comment' }],
-                },
-              ],
-            },
-          ],
-        })),
-      )
-
-      const comments = JSON.parse(
-        JSON.stringify(await commentsRepository.findBy({ articleId: 1 })),
-      )
-
-      return request(server)
-        .get('/articles/1/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(200)
-        .expect(comments)
-    })
-
-    test('should return 401 if user is not authenticated', async () => {
-      return request(server).get('/articles/1/comments').expect(401)
     })
   })
 })
