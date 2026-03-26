@@ -22,7 +22,6 @@ import { addTransactionalDataSource } from 'typeorm-transactional'
 import { DataSource } from 'typeorm'
 import { User } from '@/users/entities'
 import { Article } from '@/articles/entities'
-import { CommentsModule } from './comments/comments.module'
 import { Comment } from '@/comments/entities'
 
 @Module({
@@ -64,7 +63,6 @@ import { Comment } from '@/comments/entities'
     OtpsModule,
     AuthModule,
     ArticlesModule,
-    CommentsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessJwtAuthGuard },

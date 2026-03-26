@@ -6,40 +6,72 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common'
 import { ArticlesService } from './articles.service'
 import { CreateArticleDto, UpdateArticleDto } from './dtos'
 import { Session } from '@/shared/decorators'
-import { CreateArticleOptions, UpdateArticleOptions } from '@/articles/types'
+import { CommentsService } from '@/comments/comments.service'
+import { CreateCommentDto } from '@/comments/dtos'
+import { FindManyCommentsByArticleQueryDto } from '@/articles/dtos/find-many-comments-by-article-query.dto'
 
 @Controller('articles')
 export class ArticlesController {
-  constructor(private readonly articlesService: ArticlesService) {}
+  constructor(
+    private readonly articlesService: ArticlesService,
+    private readonly commentsService: CommentsService,
+  ) {}
 
   @Post()
-  create(
+  createArticle(
     @Session('id') authorId: number,
     @Body() { content }: CreateArticleDto,
   ) {
-    const options: CreateArticleOptions = { authorId, content }
-
-    return this.articlesService.create(options)
+    return this.articlesService.create({ authorId, content })
   }
 
   @Get('/:articleId')
-  findOne(@Param('articleId') id: number) {
-    return this.articlesService.findOne({ id })
+  findOneArticle(@Param('articleId') articleId: number) {
+    return this.articlesService.findOne({ id: articleId })
   }
 
   @Patch('/:articleId')
-  update(@Param('articleId') id: number, @Body() body: UpdateArticleDto) {
-    const options: UpdateArticleOptions = { where: { id }, data: body }
-
-    return this.articlesService.update(options)
+  updateArticle(
+    @Param('articleId') articleId: number,
+    @Body() body: UpdateArticleDto,
+  ) {
+    return this.articlesService.update({ where: { id: articleId }, data: body })
   }
 
   @Delete('/:articleId')
-  delete(@Param('articleId') id: number) {
-    return this.articlesService.delete({ id })
+  deleteArticle(@Param('articleId') articleId: number) {
+    return this.articlesService.delete({ id: articleId })
+  }
+
+  @Post('/:articleId/comments')
+  createComment(
+    @Session('id') authorId: number,
+    @Param('articleId') articleId: number,
+    @Body() { parentCommentId, content }: CreateCommentDto,
+  ) {
+    return this.commentsService.create({
+      authorId,
+      articleId,
+      parentCommentId,
+      content,
+    })
+  }
+
+  @Get('/:articleId/comments')
+  findManyComments(
+    @Param('articleId') articleId: number,
+    @Query() { sortBy, cursor }: FindManyCommentsByArticleQueryDto,
+  ) {
+    return this.commentsService.findManyByArticle({
+      articleId,
+      limit: 50,
+      sortBy,
+      cursor,
+    })
   }
 }

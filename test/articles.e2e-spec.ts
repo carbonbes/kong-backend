@@ -8,11 +8,8 @@ import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { EncodedJwt } from '@/shared/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { MailService } from '@/mail/mail.service'
-import { Repository } from 'typeorm'
-import { Article } from '@/articles/entities'
 import { User } from '@/users/entities'
 import { UserGender } from '@/users/enums'
-import { getRepositoryToken } from '@nestjs/typeorm'
 import {
   initializeTransactionalContext,
   StorageDriver,
@@ -23,6 +20,12 @@ import {
 } from '@testcontainers/postgresql'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { TestTypeOrmModule } from './modules'
+import { UsersService } from '@/users/users.service'
+import { ArticlesService } from '@/articles/articles.service'
+import { CommentsService } from '@/comments/comments.service'
+import { DataSource } from 'typeorm'
+import { getDataSourceToken } from '@nestjs/typeorm'
+import { CreateCommentDto } from '@/comments/dtos'
 
 describe('ArticlesController (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -30,8 +33,10 @@ describe('ArticlesController (e2e)', () => {
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
-  let usersRepository: Repository<User>
-  let articlesRepository: Repository<Article>
+  let dataSource: DataSource
+  let usersService: UsersService
+  let articlesService: ArticlesService
+  let commentsService: CommentsService
   let authJwtsService: AuthJwtsService
   let user: User
   let accessToken: EncodedJwt
@@ -60,10 +65,10 @@ describe('ArticlesController (e2e)', () => {
       .useValue(mailService)
       .compile()
 
-    usersRepository = module.get<Repository<User>>(getRepositoryToken(User))
-    articlesRepository = module.get<Repository<Article>>(
-      getRepositoryToken(Article),
-    )
+    dataSource = module.get<DataSource>(getDataSourceToken())
+    usersService = module.get<UsersService>(UsersService)
+    articlesService = module.get<ArticlesService>(ArticlesService)
+    commentsService = module.get<CommentsService>(CommentsService)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
     app = module.createNestApplication()
@@ -71,11 +76,12 @@ describe('ArticlesController (e2e)', () => {
     server = app.getHttpServer()
     await app.init()
 
-    user = await usersRepository.save({
+    user = await usersService.create({
       email: 'test@test.com',
       name: 'Test',
       gender: UserGender.Male,
     })
+
     accessToken = authJwtsService.sign({ sub: user.email }).accessToken
   }, 60000)
 
@@ -87,12 +93,10 @@ describe('ArticlesController (e2e)', () => {
 
   describe('POST /articles', () => {
     afterEach(async () => {
-      await articlesRepository.query(
-        'TRUNCATE TABLE "article" RESTART IDENTITY CASCADE',
-      )
+      await dataSource.query('TRUNCATE TABLE article RESTART IDENTITY CASCADE')
     })
 
-    test('should return 200 and article', async () => {
+    test('should return 201 and article', async () => {
       const body: CreateArticleDto = {
         content: {
           type: 'doc',
@@ -135,7 +139,7 @@ describe('ArticlesController (e2e)', () => {
         .expect(400)
     })
 
-    test('should return 400 if body content field contains not allowed node', async () => {
+    test('should return 400 if doc node content field contains not allowed node', async () => {
       const body: CreateArticleDto = {
         content: {
           type: 'doc',
@@ -157,13 +161,11 @@ describe('ArticlesController (e2e)', () => {
 
   describe('GET /articles/1', () => {
     afterEach(async () => {
-      await articlesRepository.query(
-        'TRUNCATE TABLE "article" RESTART IDENTITY CASCADE',
-      )
+      await dataSource.query('TRUNCATE TABLE article RESTART IDENTITY CASCADE')
     })
 
     test('should return 200 and article', async () => {
-      await articlesRepository.save({
+      await articlesService.create({
         authorId: 1,
         content: {
           type: 'doc',
@@ -177,7 +179,7 @@ describe('ArticlesController (e2e)', () => {
       })
 
       const article = JSON.parse(
-        JSON.stringify(await articlesRepository.findOneBy({ id: 1 })),
+        JSON.stringify(await articlesService.findOne({ id: 1 })),
       )
 
       return request(server)
@@ -189,6 +191,122 @@ describe('ArticlesController (e2e)', () => {
 
     test('should return 401 if user is not authenticated', async () => {
       return request(server).get('/articles/1').expect(401)
+    })
+  })
+
+  describe('POST /articles/1/comments', () => {
+    beforeEach(async () => {
+      await articlesService.create({
+        authorId: 1,
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              content: [{ type: 'text', text: 'Test' }],
+            },
+          ],
+        },
+      })
+    })
+
+    afterEach(async () => {
+      await dataSource.query(
+        'TRUNCATE TABLE article, comment RESTART IDENTITY CASCADE',
+      )
+    })
+
+    test('should return 201 and create a root comment', async () => {
+      const body: CreateCommentDto = {
+        content: {
+          type: 'doc',
+          content: [
+            { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles/1/comments')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(201)
+    })
+
+    test('should return 201 and create a children comment', async () => {
+      await commentsService.create({
+        authorId: 1,
+        articleId: 1,
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
+        ],
+      })
+
+      const body: CreateCommentDto = {
+        parentCommentId: 1,
+        content: {
+          type: 'doc',
+          content: [
+            { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles/1/comments')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(201)
+    })
+
+    test('should return 400 if body is empty', async () => {
+      return request(server)
+        .post('/articles/1/comments')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({})
+        .expect(400)
+    })
+
+    test('should return 400 if body content field is empty', async () => {
+      const body: CreateCommentDto = {
+        content: {},
+      }
+
+      return request(server)
+        .post('/articles/1/comments')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 400 if doc node content field contains not allowed node', async () => {
+      const body: CreateCommentDto = {
+        content: {
+          type: 'doc',
+          content: [
+            { type: 'heading', content: [{ type: 'text', text: 'Test' }] },
+          ],
+        },
+      }
+
+      return request(server)
+        .post('/articles/1/comments')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 401 if user is not authenticated', async () => {
+      const body: CreateCommentDto = {
+        content: {
+          type: 'doc',
+          content: [
+            { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
+          ],
+        },
+      }
+
+      return request(server).post('/articles/1/comments').send(body).expect(401)
     })
   })
 })
