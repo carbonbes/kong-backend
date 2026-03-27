@@ -38,20 +38,35 @@ export class CommentsService {
   async findManyByArticle(
     options: FindManyCommentsByArticleOptions,
   ): FindManyCommentsByArticleReturn {
-    const { articleId, limit, sortBy = 'rate', cursor } = options
+    const {
+      articleId,
+      cursor,
+      limit = 10,
+      orderBy = 'DESC',
+      parentCommentId,
+      sortBy = 'rating',
+    } = options
 
     const queryBuilder = this.commentsRepository
       .createQueryBuilder('comment')
+      .addSelect('comment.childrenCount')
       .leftJoinAndSelect('comment.author', 'author')
       .leftJoinAndSelect('comment.article', 'article')
       .where('comment.articleId = :articleId', { articleId })
-      .andWhere('comment.parentCommentId IS NULL')
+
+    if (parentCommentId) {
+      queryBuilder.andWhere('comment.parentCommentId = :parentCommentId', {
+        parentCommentId,
+      })
+    } else {
+      queryBuilder.andWhere('comment.parentCommentId IS NULL')
+    }
 
     const paginator = buildPaginator({
       entity: Comment,
       alias: 'comment',
+      query: { afterCursor: cursor, limit, order: orderBy },
       paginationKeys: [sortBy, 'id'],
-      query: { afterCursor: cursor, limit, order: 'DESC' },
     })
 
     const {

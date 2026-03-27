@@ -5,13 +5,15 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  VirtualColumn,
 } from 'typeorm'
 import { User } from '@/users/entities'
 import { Article } from '@/articles/entities'
 import type { JSONContent } from '@tiptap/core'
 import { CreateDateColumn, UpdateDateColumn } from '@/shared/typeorm/decorators'
 
-@Entity()
+@Entity('comments')
+@Index(['authorId', 'articleId', 'parentCommentId'])
 export class Comment {
   @PrimaryGeneratedColumn()
   id: number
@@ -45,11 +47,15 @@ export class Comment {
   content: JSONContent
 
   @Column({ type: 'int', default: 0 })
-  @Index()
-  rate: number
+  rating: number
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT(*) FROM "comments" WHERE "parentCommentId" = ${alias}.id`,
+  })
+  childrenCount: number
 
   @CreateDateColumn()
-  @Index()
   createdAt: number
 
   @UpdateDateColumn()

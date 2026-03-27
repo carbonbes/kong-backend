@@ -4,6 +4,7 @@ import {
   IsInt,
   IsObject,
   IsOptional,
+  Min,
   ValidateNested,
 } from 'class-validator'
 import { User } from '@/users/entities'
@@ -19,6 +20,7 @@ export class CommentDto implements Comment {
   id: number
 
   @IsInt()
+  @Min(1)
   authorId: number
 
   @IsObject()
@@ -27,6 +29,7 @@ export class CommentDto implements Comment {
   author: User
 
   @IsInt()
+  @Min(1)
   articleId: number
 
   @IsObject()
@@ -36,6 +39,7 @@ export class CommentDto implements Comment {
 
   @IsOptional()
   @IsInt()
+  @Min(1)
   parentCommentId?: number | null
 
   @IsObject()
@@ -44,7 +48,12 @@ export class CommentDto implements Comment {
   content: JSONContent
 
   @IsInt()
-  rate: number
+  @Min(1)
+  rating: number
+
+  @IsInt()
+  @Min(1)
+  childrenCount: number
 
   @IsDate()
   createdAt: number

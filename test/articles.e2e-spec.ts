@@ -215,7 +215,7 @@ describe('Articles (e2e)', () => {
 
     afterEach(async () => {
       await dataSource.query(
-        'TRUNCATE TABLE article, comment RESTART IDENTITY CASCADE',
+        'TRUNCATE TABLE article, comments RESTART IDENTITY CASCADE',
       )
     })
 
@@ -331,11 +331,11 @@ describe('Articles (e2e)', () => {
 
     afterEach(async () => {
       await dataSource.query(
-        'TRUNCATE TABLE article, comment RESTART IDENTITY CASCADE',
+        'TRUNCATE TABLE article, comments RESTART IDENTITY CASCADE',
       )
     })
 
-    test('should return 201 and load 3 pages', async () => {
+    test('should return 200 and load 2 pages', async () => {
       await Promise.all(
         Array.from({ length: 100 }).map(
           async () =>
@@ -351,28 +351,28 @@ describe('Articles (e2e)', () => {
                   },
                 ],
               },
-              rate: getFakeInt(),
+              rating: getFakeInt(),
             }),
         ),
       )
 
       const result1 = await request(server)
-        .get('/articles/1/comments')
+        .get('/articles/1/comments?limit=50')
         .set('Authorization', `Bearer ${accessToken}`)
 
       expect(result1.status).toBe(200)
       expect(result1.body.items.length).toEqual(50)
       expect(result1.body.meta.cursor).not.toBeNull()
 
+      console.log('page 1: ', result1.body)
+
       const result2 = await request(server)
-        .get(`/articles/1/comments?cursor=${result1.body.meta.cursor}`)
+        .get(`/articles/1/comments?limit=50&cursor=${result1.body.meta.cursor}`)
         .set('Authorization', `Bearer ${accessToken}`)
 
       expect(result2.status).toBe(200)
       expect(result2.body.items.length).toEqual(50)
       expect(result2.body.meta.cursor).toBeNull()
-
-      console.log(result1.body)
     })
   })
 })

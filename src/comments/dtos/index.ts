@@ -1,5 +1,5 @@
 export * from './comment.dto'
 export * from './comment-content.dto'
 export * from './create-comment.dto'
-export * from './find-many-comments-by-article-query.dto'
+export * from './find-many-comments-query.dto'
 export * from './update-comment.dto'

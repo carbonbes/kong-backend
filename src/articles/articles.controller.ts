@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -13,7 +14,7 @@ import { CreateArticleDto, UpdateArticleDto } from './dtos'
 import { Session } from '@/shared/decorators'
 import { CommentsService } from '@/comments/comments.service'
 import { CreateCommentDto } from '@/comments/dtos'
-import { FindManyCommentsByArticleQueryDto } from '@/comments/dtos'
+import { FindManyCommentsQueryDto } from '@/comments/dtos'
 
 @Controller('articles')
 export class ArticlesController {
@@ -31,27 +32,27 @@ export class ArticlesController {
   }
 
   @Get('/:articleId')
-  findOneArticle(@Param('articleId') articleId: number) {
+  findOneArticle(@Param('articleId', ParseIntPipe) articleId: number) {
     return this.articlesService.findOne({ id: articleId })
   }
 
   @Patch('/:articleId')
   updateArticle(
-    @Param('articleId') articleId: number,
+    @Param('articleId', ParseIntPipe) articleId: number,
     @Body() body: UpdateArticleDto,
   ) {
     return this.articlesService.update({ where: { id: articleId }, data: body })
   }
 
   @Delete('/:articleId')
-  deleteArticle(@Param('articleId') articleId: number) {
+  deleteArticle(@Param('articleId', ParseIntPipe) articleId: number) {
     return this.articlesService.delete({ id: articleId })
   }
 
   @Post('/:articleId/comments')
   createComment(
     @Session('id') authorId: number,
-    @Param('articleId') articleId: number,
+    @Param('articleId', ParseIntPipe) articleId: number,
     @Body() { parentCommentId, content }: CreateCommentDto,
   ) {
     return this.commentsService.create({
@@ -64,14 +65,15 @@ export class ArticlesController {
 
   @Get('/:articleId/comments')
   findManyComments(
-    @Param('articleId') articleId: number,
-    @Query() { sortBy, cursor }: { sortBy: string; cursor: string },
+    @Param('articleId', ParseIntPipe) articleId: number,
+    @Query() { cursor, limit, orderBy, sortBy }: FindManyCommentsQueryDto,
   ) {
     return this.commentsService.findManyByArticle({
       articleId,
-      limit: 50,
-      sortBy,
       cursor,
+      limit,
+      orderBy,
+      sortBy,
     })
   }
 }
