@@ -13,7 +13,7 @@ import { CreateArticleDto, UpdateArticleDto } from './dtos'
 import { Session } from '@/shared/decorators'
 import { CommentsService } from '@/comments/comments.service'
 import { CreateCommentDto } from '@/comments/dtos'
-import { FindManyCommentsByArticleQueryDto } from '@/articles/dtos/find-many-comments-by-article-query.dto'
+import { FindManyCommentsByArticleQueryDto } from '@/comments/dtos'
 
 @Controller('articles')
 export class ArticlesController {
@@ -65,7 +65,7 @@ export class ArticlesController {
   @Get('/:articleId/comments')
   findManyComments(
     @Param('articleId') articleId: number,
-    @Query() { sortBy, cursor }: FindManyCommentsByArticleQueryDto,
+    @Query() { sortBy, cursor }: { sortBy: string; cursor: string },
   ) {
     return this.commentsService.findManyByArticle({
       articleId,

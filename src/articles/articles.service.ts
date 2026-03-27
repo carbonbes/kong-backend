@@ -22,8 +22,10 @@ export class ArticlesService {
     private readonly articlesRepository: Repository<Article>,
   ) {}
 
-  create(options: CreateArticleOptions): CreateArticleReturn {
-    return this.articlesRepository.save(options)
+  async create(options: CreateArticleOptions): CreateArticleReturn {
+    const { id } = await this.articlesRepository.save(options)
+
+    return (await this.findOne({ id }))!
   }
 
   findOne(options: FindOneArticleOptions): FindOneArticleReturn {

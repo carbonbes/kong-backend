@@ -1,15 +1,14 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm'
 import { User } from '@/users/entities'
 import { ArticleStatus } from '@/articles/enums'
 import type { JSONContent } from '@tiptap/core'
+import { CreateDateColumn, UpdateDateColumn } from '@/shared/typeorm/decorators'
 
 @Entity()
 export class Article {
@@ -34,8 +33,8 @@ export class Article {
   status: ArticleStatus
 
   @CreateDateColumn()
-  createdAt: Date
+  createdAt: number
 
   @UpdateDateColumn()
-  updatedAt: Date
+  updatedAt: number
 }

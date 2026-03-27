@@ -6,6 +6,8 @@ export type FindManyCommentsByArticleOptions = Pick<Comment, 'articleId'> & {
   cursor?: string
 }
 export type FindManyCommentsByArticleReturn = Promise<{
-  data: Comment[]
-  cursor: string | null
+  items: Comment[]
+  meta: {
+    cursor: string | null
+  }
 }>

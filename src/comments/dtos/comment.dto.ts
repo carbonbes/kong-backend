@@ -47,8 +47,8 @@ export class CommentDto implements Comment {
   rate: number
 
   @IsDate()
-  createdAt: Date
+  createdAt: number
 
   @IsDate()
-  updatedAt: Date
+  updatedAt: number
 }

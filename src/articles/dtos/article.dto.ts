@@ -34,8 +34,8 @@ export class ArticleDto implements Article {
   status: ArticleStatus
 
   @IsDate()
-  createdAt: Date
+  createdAt: number
 
   @IsDate()
-  updatedAt: Date
+  updatedAt: number
 }

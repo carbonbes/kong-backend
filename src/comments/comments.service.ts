@@ -59,7 +59,7 @@ export class CommentsService {
       cursor: { afterCursor },
     } = await paginator.paginate(queryBuilder)
 
-    return { data, cursor: afterCursor }
+    return { items: data, meta: { cursor: afterCursor } }
   }
 
   findManyByAuthor(

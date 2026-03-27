@@ -1,11 +1,6 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm'
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 import { UserGender, UserRole } from '@/users/enums'
+import { CreateDateColumn, UpdateDateColumn } from '@/shared/typeorm/decorators'
 
 @Entity()
 export class User {
@@ -28,8 +23,8 @@ export class User {
   isActive: boolean
 
   @CreateDateColumn()
-  createdAt: Date
+  createdAt: number
 
   @UpdateDateColumn()
-  updatedAt: Date
+  updatedAt: number
 }

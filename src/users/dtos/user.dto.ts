@@ -34,8 +34,8 @@ export class UserDto implements User {
   isActive: boolean
 
   @IsDate()
-  createdAt: Date
+  createdAt: number
 
   @IsDate()
-  updatedAt: Date
+  updatedAt: number
 }

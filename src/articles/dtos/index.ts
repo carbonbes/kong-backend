@@ -1,5 +1,4 @@
 export * from './article.dto'
 export * from './article-content.dto'
 export * from './create-article.dto'
-export * from './find-many-comments-by-article-query.dto'
 export * from './update-article.dto'

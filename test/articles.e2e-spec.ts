@@ -22,12 +22,13 @@ import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { TestTypeOrmModule } from './modules'
 import { UsersService } from '@/users/users.service'
 import { ArticlesService } from '@/articles/articles.service'
-import { CommentsService } from '@/comments/comments.service'
-import { DataSource } from 'typeorm'
-import { getDataSourceToken } from '@nestjs/typeorm'
+import { DataSource, Repository } from 'typeorm'
+import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm'
 import { CreateCommentDto } from '@/comments/dtos'
+import { Comment } from '@/comments/entities'
+import { getFakeInt } from '@/test/utils'
 
-describe('ArticlesController (e2e)', () => {
+describe('Articles (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
   let redisContainer: StartedRedisContainer
   let app: INestApplication<App>
@@ -36,7 +37,7 @@ describe('ArticlesController (e2e)', () => {
   let dataSource: DataSource
   let usersService: UsersService
   let articlesService: ArticlesService
-  let commentsService: CommentsService
+  let commentsRepository: Repository<Comment>
   let authJwtsService: AuthJwtsService
   let user: User
   let accessToken: EncodedJwt
@@ -68,7 +69,9 @@ describe('ArticlesController (e2e)', () => {
     dataSource = module.get<DataSource>(getDataSourceToken())
     usersService = module.get<UsersService>(UsersService)
     articlesService = module.get<ArticlesService>(ArticlesService)
-    commentsService = module.get<CommentsService>(CommentsService)
+    commentsRepository = module.get<Repository<Comment>>(
+      getRepositoryToken(Comment),
+    )
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
     app = module.createNestApplication()
@@ -165,21 +168,21 @@ describe('ArticlesController (e2e)', () => {
     })
 
     test('should return 200 and article', async () => {
-      await articlesService.create({
-        authorId: 1,
-        content: {
-          type: 'doc',
-          content: [
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: 'Test' }],
-            },
-          ],
-        },
-      })
-
       const article = JSON.parse(
-        JSON.stringify(await articlesService.findOne({ id: 1 })),
+        JSON.stringify(
+          await articlesService.create({
+            authorId: 1,
+            content: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Test' }],
+                },
+              ],
+            },
+          }),
+        ),
       )
 
       return request(server)
@@ -234,7 +237,7 @@ describe('ArticlesController (e2e)', () => {
     })
 
     test('should return 201 and create a children comment', async () => {
-      await commentsService.create({
+      await commentsRepository.save({
         authorId: 1,
         articleId: 1,
         content: [
@@ -307,6 +310,69 @@ describe('ArticlesController (e2e)', () => {
       }
 
       return request(server).post('/articles/1/comments').send(body).expect(401)
+    })
+  })
+
+  describe('GET /articles/1/comments', () => {
+    beforeEach(async () => {
+      await articlesService.create({
+        authorId: 1,
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'heading',
+              content: [{ type: 'text', text: 'Test' }],
+            },
+          ],
+        },
+      })
+    })
+
+    afterEach(async () => {
+      await dataSource.query(
+        'TRUNCATE TABLE article, comment RESTART IDENTITY CASCADE',
+      )
+    })
+
+    test('should return 201 and load 3 pages', async () => {
+      await Promise.all(
+        Array.from({ length: 100 }).map(
+          async () =>
+            await commentsRepository.save({
+              authorId: 1,
+              articleId: 1,
+              content: {
+                type: 'doc',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: 'Test' }],
+                  },
+                ],
+              },
+              rate: getFakeInt(),
+            }),
+        ),
+      )
+
+      const result1 = await request(server)
+        .get('/articles/1/comments')
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      expect(result1.status).toBe(200)
+      expect(result1.body.items.length).toEqual(50)
+      expect(result1.body.meta.cursor).not.toBeNull()
+
+      const result2 = await request(server)
+        .get(`/articles/1/comments?cursor=${result1.body.meta.cursor}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      expect(result2.status).toBe(200)
+      expect(result2.body.items.length).toEqual(50)
+      expect(result2.body.meta.cursor).toBeNull()
+
+      console.log(result1.body)
     })
   })
 })

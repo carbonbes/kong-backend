@@ -1,15 +1,15 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm'
 import { User } from '@/users/entities'
 import { Article } from '@/articles/entities'
 import type { JSONContent } from '@tiptap/core'
+import { CreateDateColumn, UpdateDateColumn } from '@/shared/typeorm/decorators'
 
 @Entity()
 export class Comment {
@@ -45,11 +45,13 @@ export class Comment {
   content: JSONContent
 
   @Column({ type: 'int', default: 0 })
+  @Index()
   rate: number
 
   @CreateDateColumn()
-  createdAt: Date
+  @Index()
+  createdAt: number
 
   @UpdateDateColumn()
-  updatedAt: Date
+  updatedAt: number
 }
