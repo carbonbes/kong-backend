@@ -8,7 +8,7 @@ import { getFakeComment, getFakeInt } from '@/test/utils'
 import {
   CreateCommentOptions,
   DeleteCommentOptions,
-  FindManyCommentsOptions,
+  FindManyCommentsByArticleOptions,
   FindOneCommentOptions,
   UpdateCommentOptions,
 } from '@/comments/types'
@@ -82,10 +82,10 @@ describe('CommentsService', () => {
     })
   })
 
-  describe('findMany', () => {
-    test('should find a comments', async () => {
-      const comments = Array.from({ length: 10 }).map(() => getFakeComment())
-      const options: FindManyCommentsOptions = { where: { articleId: 1 } }
+  describe('findManyByArticle', () => {
+    test('should find a root comments', async () => {
+      const comments = Array.from({ length: 100 }).map(() => getFakeComment())
+      const options: FindManyCommentsByArticleOptions = { articleId: 1 }
 
       const queryBuilder = createMockTypeOrmQueryBuilder({ getMany: comments })
 
@@ -97,7 +97,7 @@ describe('CommentsService', () => {
         cursor: { beforeCursor: 'before', afterCursor: 'after' },
       })
 
-      const result = await commentsService.findMany(options)
+      const result = await commentsService.findManyByArticle(options)
 
       expect(commentsRepository.createQueryBuilder).toHaveBeenCalledWith(
         'comment',
@@ -110,9 +110,10 @@ describe('CommentsService', () => {
         'comment.article',
         'article',
       )
-      expect(queryBuilder.setFindOptions).toHaveBeenCalledWith({
-        where: options.where,
-      })
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'comment.articleId = :articleId',
+        { articleId: options.articleId },
+      )
       expect(buildPaginator).toHaveBeenCalledWith({
         entity: Comment,
         paginationKeys: ['id'],

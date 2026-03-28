@@ -1,5 +1,4 @@
 import { Comment } from '@/comments/entities'
-import { getFakeInt } from '@/test/utils/getFakeInt'
 import { getFakeUser } from '@/test/utils/getFakeUser'
 import { getFakeArticle } from '@/test/utils/getFakeArticle'
 import { faker } from '@faker-js/faker/locale/ru'
@@ -14,19 +13,23 @@ export const getFakeComment = ({
   article,
   parentCommentId,
   content,
+  rating,
+  childrenCount,
   createdAt,
   updatedAt,
 }: GetFakeCommentOptions = {}): Comment => ({
-  id: id ?? getFakeInt(),
-  authorId: authorId ?? getFakeInt(),
+  id: id ?? faker.number.int(),
+  authorId: authorId ?? faker.number.int(),
   author: author ?? getFakeUser(),
-  articleId: articleId ?? getFakeInt(),
+  articleId: articleId ?? faker.number.int(),
   article: article ?? getFakeArticle(),
-  parentCommentId: parentCommentId ?? getFakeInt(),
+  parentCommentId: parentCommentId ?? faker.number.int(),
   content: content ?? {
     type: 'doc',
     content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Test' }] }],
   },
-  createdAt: createdAt ?? faker.date.past(),
-  updatedAt: updatedAt ?? faker.date.future(),
+  rating: rating ?? faker.number.int(),
+  childrenCount: childrenCount ?? faker.number.int(),
+  createdAt: createdAt ?? faker.date.past().getTime(),
+  updatedAt: updatedAt ?? faker.date.future().getTime(),
 })

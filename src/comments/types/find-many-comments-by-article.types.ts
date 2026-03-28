@@ -1,17 +1,10 @@
 import { Comment } from '@/comments/entities'
+import {
+  FindManyCommentsByEntityOptions,
+  FindManyCommentsByEntityReturn,
+} from '@/comments/types/find-many-comments-by-entity.types'
 
-export type FindManyCommentsByArticleOptions = {
-  articleId: number
-  cursor?: string
-  limit?: number
-  orderBy?: 'ASC' | 'DESC'
-  parentCommentId?: number
-  sortBy?: 'rating' | 'createdAt'
-}
+export type FindManyCommentsByArticleOptions = FindManyCommentsByEntityOptions &
+  Pick<Comment, 'articleId' | 'parentCommentId'>
 
-export type FindManyCommentsByArticleReturn = Promise<{
-  items: Comment[]
-  meta: {
-    cursor: string | null
-  }
-}>
+export type FindManyCommentsByArticleReturn = FindManyCommentsByEntityReturn

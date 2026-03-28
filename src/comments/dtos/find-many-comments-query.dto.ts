@@ -27,12 +27,6 @@ export class FindManyCommentsQueryDto {
   orderBy?: 'ASC' | 'DESC'
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  parentCommentId?: number
-
-  @IsOptional()
   @IsIn(['rating', 'createdAt'])
   sortBy?: 'rating' | 'createdAt'
 }

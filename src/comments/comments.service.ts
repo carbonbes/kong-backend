@@ -76,10 +76,16 @@ export class CommentsService {
     return { items: data, meta: { cursor: afterCursor } }
   }
 
-  findManyByAuthor(
+  async findManyByAuthor(
     options: FindManyCommentsByAuthorOptions,
   ): FindManyCommentsByAuthorReturn {
-    const { authorId, limit, sortBy } = options
+    const {
+      authorId,
+      cursor,
+      limit = 10,
+      orderBy = 'DESC',
+      sortBy = 'rating',
+    } = options
 
     const queryBuilder = this.commentsRepository
       .createQueryBuilder('comment')
@@ -90,11 +96,16 @@ export class CommentsService {
     const paginator = buildPaginator({
       entity: Comment,
       alias: 'comment',
+      query: { afterCursor: cursor, limit, order: orderBy },
       paginationKeys: [sortBy, 'id'],
-      query: { limit, order: 'DESC' },
     })
 
-    return paginator.paginate(queryBuilder)
+    const {
+      data,
+      cursor: { afterCursor },
+    } = await paginator.paginate(queryBuilder)
+
+    return { items: data, meta: { cursor: afterCursor } }
   }
 
   async update(options: UpdateCommentOptions): UpdateCommentReturn {

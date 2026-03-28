@@ -22,11 +22,8 @@ import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { TestTypeOrmModule } from './modules'
 import { UsersService } from '@/users/users.service'
 import { ArticlesService } from '@/articles/articles.service'
-import { DataSource, Repository } from 'typeorm'
-import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm'
-import { CreateCommentDto } from '@/comments/dtos'
-import { Comment } from '@/comments/entities'
-import { getFakeInt } from '@/test/utils'
+import { DataSource } from 'typeorm'
+import { getDataSourceToken } from '@nestjs/typeorm'
 
 describe('Articles (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -37,7 +34,6 @@ describe('Articles (e2e)', () => {
   let dataSource: DataSource
   let usersService: UsersService
   let articlesService: ArticlesService
-  let commentsRepository: Repository<Comment>
   let authJwtsService: AuthJwtsService
   let user: User
   let accessToken: EncodedJwt
@@ -69,9 +65,6 @@ describe('Articles (e2e)', () => {
     dataSource = module.get<DataSource>(getDataSourceToken())
     usersService = module.get<UsersService>(UsersService)
     articlesService = module.get<ArticlesService>(ArticlesService)
-    commentsRepository = module.get<Repository<Comment>>(
-      getRepositoryToken(Comment),
-    )
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
     app = module.createNestApplication()
@@ -194,247 +187,6 @@ describe('Articles (e2e)', () => {
 
     test('should return 401 if user is not authenticated', async () => {
       return request(server).get('/articles/1').expect(401)
-    })
-  })
-
-  describe('POST /articles/1/comments', () => {
-    beforeEach(async () => {
-      await articlesService.create({
-        authorId: 1,
-        content: {
-          type: 'doc',
-          content: [
-            {
-              type: 'heading',
-              content: [{ type: 'text', text: 'Test' }],
-            },
-          ],
-        },
-      })
-    })
-
-    afterEach(async () => {
-      await dataSource.query(
-        'TRUNCATE TABLE article, comments RESTART IDENTITY CASCADE',
-      )
-    })
-
-    test('should return 201 and create a root comment', async () => {
-      const body: CreateCommentDto = {
-        content: {
-          type: 'doc',
-          content: [
-            { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
-          ],
-        },
-      }
-
-      return request(server)
-        .post('/articles/1/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send(body)
-        .expect(201)
-    })
-
-    test('should return 201 and create a children comment', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: [
-          { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
-        ],
-      })
-
-      const body: CreateCommentDto = {
-        parentCommentId: 1,
-        content: {
-          type: 'doc',
-          content: [
-            { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
-          ],
-        },
-      }
-
-      return request(server)
-        .post('/articles/1/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send(body)
-        .expect(201)
-    })
-
-    test('should return 400 if body is empty', async () => {
-      return request(server)
-        .post('/articles/1/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send({})
-        .expect(400)
-    })
-
-    test('should return 400 if doc node is empty', async () => {
-      const body: CreateCommentDto = {
-        content: {},
-      }
-
-      return request(server)
-        .post('/articles/1/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send(body)
-        .expect(400)
-    })
-
-    test('should return 400 if doc node content field contains not allowed node', async () => {
-      const body: CreateCommentDto = {
-        content: {
-          type: 'doc',
-          content: [
-            { type: 'heading', content: [{ type: 'text', text: 'Test' }] },
-          ],
-        },
-      }
-
-      return request(server)
-        .post('/articles/1/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send(body)
-        .expect(400)
-    })
-
-    test('should return 401 if user is not authenticated', async () => {
-      const body: CreateCommentDto = {
-        content: {
-          type: 'doc',
-          content: [
-            { type: 'paragraph', content: [{ type: 'text', text: 'Test' }] },
-          ],
-        },
-      }
-
-      return request(server).post('/articles/1/comments').send(body).expect(401)
-    })
-  })
-
-  describe('GET /articles/1/comments', () => {
-    beforeEach(async () => {
-      await articlesService.create({
-        authorId: 1,
-        content: {
-          type: 'doc',
-          content: [
-            {
-              type: 'heading',
-              content: [{ type: 'text', text: 'Test' }],
-            },
-          ],
-        },
-      })
-    })
-
-    afterEach(async () => {
-      await dataSource.query(
-        'TRUNCATE TABLE article, comments RESTART IDENTITY CASCADE',
-      )
-    })
-
-    test('should return 200 and load 2 pages', async () => {
-      await Promise.all(
-        Array.from({ length: 100 }).map(
-          async () =>
-            await commentsRepository.save({
-              authorId: 1,
-              articleId: 1,
-              content: {
-                type: 'doc',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [{ type: 'text', text: 'Test' }],
-                  },
-                ],
-              },
-              rating: getFakeInt(),
-            }),
-        ),
-      )
-
-      const result1 = await request(server)
-        .get('/articles/1/comments?limit=50')
-        .set('Authorization', `Bearer ${accessToken}`)
-
-      expect(result1.status).toBe(200)
-      expect(result1.body.items.length).toEqual(50)
-      expect(result1.body.meta.cursor).not.toBeNull()
-
-      const result2 = await request(server)
-        .get(`/articles/1/comments?cursor=${result1.body.meta.cursor}&limit=50`)
-        .set('Authorization', `Bearer ${accessToken}`)
-
-      expect(result2.status).toBe(200)
-      expect(result2.body.items.length).toEqual(50)
-      expect(result2.body.meta.cursor).toBeNull()
-    })
-
-    test('should return 200 and load children comments', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: {
-          type: 'doc',
-          content: [
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: 'Parent' }],
-            },
-          ],
-        },
-        rating: getFakeInt(),
-      })
-
-      await Promise.all(
-        Array.from({ length: 51 }).map(
-          async () =>
-            await commentsRepository.save({
-              authorId: 1,
-              articleId: 1,
-              parentCommentId: 1,
-              content: {
-                type: 'doc',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [{ type: 'text', text: 'Child' }],
-                  },
-                ],
-              },
-              rating: getFakeInt(),
-            }),
-        ),
-      )
-
-      const result1 = await request(server)
-        .get('/articles/1/comments?limit=50')
-        .set('Authorization', `Bearer ${accessToken}`)
-
-      expect(result1.status).toBe(200)
-      expect(result1.body.items.length).toEqual(1)
-      expect(result1.body.meta.cursor).toBeNull()
-
-      const result2 = await request(server)
-        .get(`/articles/1/comments?limit=50&parentCommentId=1`)
-        .set('Authorization', `Bearer ${accessToken}`)
-
-      expect(result2.status).toBe(200)
-      expect(result2.body.items.length).toEqual(50)
-      expect(result2.body.meta.cursor).not.toBeNull()
-
-      const result3 = await request(server)
-        .get(
-          `/articles/1/comments?cursor=${result2.body.meta.cursor}&limit=50&parentCommentId=1`,
-        )
-        .set('Authorization', `Bearer ${accessToken}`)
-
-      expect(result3.status).toBe(200)
-      expect(result3.body.items.length).toEqual(1)
-      expect(result3.body.meta.cursor).toBeNull()
     })
   })
 })

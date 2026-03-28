@@ -23,6 +23,7 @@ import { DataSource } from 'typeorm'
 import { User } from '@/users/entities'
 import { Article } from '@/articles/entities'
 import { Comment } from '@/comments/entities'
+import { CommentsModule } from '@/comments/comments.module'
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { Comment } from '@/comments/entities'
     OtpsModule,
     AuthModule,
     ArticlesModule,
+    CommentsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessJwtAuthGuard },

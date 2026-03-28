@@ -1,9 +1,10 @@
 import { Comment } from '@/comments/entities'
-import { PagingResult } from 'typeorm-cursor-pagination'
+import {
+  FindManyCommentsByEntityOptions,
+  FindManyCommentsByEntityReturn,
+} from '@/comments/types/find-many-comments-by-entity.types'
 
-export type FindManyCommentsByAuthorOptions = Pick<Comment, 'authorId'> & {
-  limit: number
-  sortBy: keyof Pick<Comment, 'rate' | 'createdAt'>
-}
+export type FindManyCommentsByAuthorOptions = FindManyCommentsByEntityOptions &
+  Pick<Comment, 'authorId'>
 
-export type FindManyCommentsByAuthorReturn = Promise<PagingResult<Comment>>
+export type FindManyCommentsByAuthorReturn = FindManyCommentsByEntityReturn
