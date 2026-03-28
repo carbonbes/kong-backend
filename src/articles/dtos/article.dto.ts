@@ -1,11 +1,5 @@
 import { Type } from 'class-transformer'
-import {
-  IsDate,
-  IsEnum,
-  IsInt,
-  IsObject,
-  ValidateNested,
-} from 'class-validator'
+import { IsEnum, IsInt, IsObject, Min, ValidateNested } from 'class-validator'
 import { Article } from '@/articles/entities'
 import { ArticleStatus } from '@/articles/enums'
 import { ArticleContentDto } from '@/articles/dtos/article-content.dto'
@@ -15,9 +9,11 @@ import { UserDto } from '@/users/dtos'
 
 export class ArticleDto implements Article {
   @IsInt()
+  @Min(1)
   id: number
 
   @IsInt()
+  @Min(1)
   authorId: number
 
   @IsObject()
@@ -33,9 +29,9 @@ export class ArticleDto implements Article {
   @IsEnum(ArticleStatus)
   status: ArticleStatus
 
-  @IsDate()
+  @IsInt()
   createdAt: number
 
-  @IsDate()
+  @IsInt()
   updatedAt: number
 }

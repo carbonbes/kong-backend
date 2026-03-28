@@ -270,7 +270,7 @@ describe('Articles (e2e)', () => {
         .expect(400)
     })
 
-    test('should return 400 if body content field is empty', async () => {
+    test('should return 400 if doc node is empty', async () => {
       const body: CreateCommentDto = {
         content: {},
       }
@@ -364,15 +364,77 @@ describe('Articles (e2e)', () => {
       expect(result1.body.items.length).toEqual(50)
       expect(result1.body.meta.cursor).not.toBeNull()
 
-      console.log('page 1: ', result1.body)
-
       const result2 = await request(server)
-        .get(`/articles/1/comments?limit=50&cursor=${result1.body.meta.cursor}`)
+        .get(`/articles/1/comments?cursor=${result1.body.meta.cursor}&limit=50`)
         .set('Authorization', `Bearer ${accessToken}`)
 
       expect(result2.status).toBe(200)
       expect(result2.body.items.length).toEqual(50)
       expect(result2.body.meta.cursor).toBeNull()
+    })
+
+    test('should return 200 and load children comments', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Parent' }],
+            },
+          ],
+        },
+        rating: getFakeInt(),
+      })
+
+      await Promise.all(
+        Array.from({ length: 51 }).map(
+          async () =>
+            await commentsRepository.save({
+              authorId: 1,
+              articleId: 1,
+              parentCommentId: 1,
+              content: {
+                type: 'doc',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: 'Child' }],
+                  },
+                ],
+              },
+              rating: getFakeInt(),
+            }),
+        ),
+      )
+
+      const result1 = await request(server)
+        .get('/articles/1/comments?limit=50')
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      expect(result1.status).toBe(200)
+      expect(result1.body.items.length).toEqual(1)
+      expect(result1.body.meta.cursor).toBeNull()
+
+      const result2 = await request(server)
+        .get(`/articles/1/comments?limit=50&parentCommentId=1`)
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      expect(result2.status).toBe(200)
+      expect(result2.body.items.length).toEqual(50)
+      expect(result2.body.meta.cursor).not.toBeNull()
+
+      const result3 = await request(server)
+        .get(
+          `/articles/1/comments?cursor=${result2.body.meta.cursor}&limit=50&parentCommentId=1`,
+        )
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      expect(result3.status).toBe(200)
+      expect(result3.body.items.length).toEqual(1)
+      expect(result3.body.meta.cursor).toBeNull()
     })
   })
 })

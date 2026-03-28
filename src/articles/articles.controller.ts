@@ -13,7 +13,7 @@ import { ArticlesService } from './articles.service'
 import { CreateArticleDto, UpdateArticleDto } from './dtos'
 import { Session } from '@/shared/decorators'
 import { CommentsService } from '@/comments/comments.service'
-import { CreateCommentDto } from '@/comments/dtos'
+import { CreateCommentDto, UpdateCommentDto } from '@/comments/dtos'
 import { FindManyCommentsQueryDto } from '@/comments/dtos'
 
 @Controller('articles')
@@ -53,27 +53,36 @@ export class ArticlesController {
   createComment(
     @Session('id') authorId: number,
     @Param('articleId', ParseIntPipe) articleId: number,
-    @Body() { parentCommentId, content }: CreateCommentDto,
+    @Body() body: CreateCommentDto,
   ) {
     return this.commentsService.create({
       authorId,
       articleId,
-      parentCommentId,
-      content,
+      ...body,
     })
   }
 
   @Get('/:articleId/comments')
   findManyComments(
     @Param('articleId', ParseIntPipe) articleId: number,
-    @Query() { cursor, limit, orderBy, sortBy }: FindManyCommentsQueryDto,
+    @Query() query: FindManyCommentsQueryDto,
   ) {
-    return this.commentsService.findManyByArticle({
-      articleId,
-      cursor,
-      limit,
-      orderBy,
-      sortBy,
+    return this.commentsService.findManyByArticle({ articleId, ...query })
+  }
+
+  @Patch('/comments/:commentId')
+  updateComment(
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @Body() body: UpdateCommentDto,
+  ) {
+    return this.commentsService.update({
+      where: { id: commentId },
+      data: body,
     })
+  }
+
+  @Delete('/comments/:commentId')
+  deleteComment(@Param('commentId', ParseIntPipe) commentId: number) {
+    return this.commentsService.delete({ id: commentId })
   }
 }

@@ -1,6 +1,5 @@
 import { Comment } from '@/comments/entities'
 import {
-  IsDate,
   IsInt,
   IsObject,
   IsOptional,
@@ -17,6 +16,7 @@ import { CommentContentDto } from '@/comments/dtos/comment-content.dto'
 
 export class CommentDto implements Comment {
   @IsInt()
+  @Min(1)
   id: number
 
   @IsInt()
@@ -55,9 +55,9 @@ export class CommentDto implements Comment {
   @Min(1)
   childrenCount: number
 
-  @IsDate()
+  @IsInt()
   createdAt: number
 
-  @IsDate()
+  @IsInt()
   updatedAt: number
 }

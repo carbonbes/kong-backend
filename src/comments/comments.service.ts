@@ -49,7 +49,6 @@ export class CommentsService {
 
     const queryBuilder = this.commentsRepository
       .createQueryBuilder('comment')
-      .addSelect('comment.childrenCount')
       .leftJoinAndSelect('comment.author', 'author')
       .leftJoinAndSelect('comment.article', 'article')
       .where('comment.articleId = :articleId', { articleId })

@@ -1,18 +1,19 @@
 import {
   IsBoolean,
-  IsDate,
   IsEmail,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsString,
   Length,
+  Min,
 } from 'class-validator'
 import { User } from '@/users/entities'
 import { UserGender, UserRole } from '@/users/enums'
 
 export class UserDto implements User {
   @IsInt()
+  @Min(1)
   id: number
 
   @IsEmail()
@@ -33,9 +34,9 @@ export class UserDto implements User {
   @IsBoolean()
   isActive: boolean
 
-  @IsDate()
+  @IsInt()
   createdAt: number
 
-  @IsDate()
+  @IsInt()
   updatedAt: number
 }
