@@ -2,7 +2,7 @@ import { Comment } from '@/comments/entities'
 import {
   FindManyCommentsByEntityOptions,
   FindManyCommentsByEntityReturn,
-} from '@/comments/types/find-many-comments-by-entity.types'
+} from '@/comments/types/shared/find-many-comments-by-entity.types'
 
 export type FindManyCommentsByAuthorOptions = FindManyCommentsByEntityOptions &
   Pick<Comment, 'authorId'>

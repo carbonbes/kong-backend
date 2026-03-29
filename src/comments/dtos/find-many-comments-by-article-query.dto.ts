@@ -1,4 +1,4 @@
-import { FindManyCommentsQueryDto } from '@/comments/dtos/find-many-comments-query.dto'
+import { FindManyCommentsQueryDto } from '@/comments/dtos/shared'
 import { IsInt, IsOptional, Min } from 'class-validator'
 import { Type } from 'class-transformer'
 

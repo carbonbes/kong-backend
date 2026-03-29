@@ -13,7 +13,7 @@ import { CommentsService } from '@/comments/comments.service'
 import {
   CreateCommentDto,
   FindManyCommentsByArticleQueryDto,
-  FindManyCommentsQueryDto,
+  FindManyCommentsByAuthorQueryDto,
   UpdateCommentDto,
 } from '@/comments/dtos'
 import { Session } from '@/shared/decorators'
@@ -42,7 +42,7 @@ export class CommentsController {
   @Get('/users/:userId')
   findManyByAuthor(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: FindManyCommentsQueryDto,
+    @Query() query: FindManyCommentsByAuthorQueryDto,
   ) {
     return this.commentsService.findManyByAuthor({ authorId: userId, ...query })
   }

@@ -48,16 +48,17 @@ export class CommentDto implements Comment {
   content: JSONContent
 
   @IsInt()
-  @Min(1)
   rating: number
 
   @IsInt()
-  @Min(1)
+  @Min(0)
   childrenCount: number
 
   @IsInt()
+  @Min(0)
   createdAt: number
 
   @IsInt()
+  @Min(0)
   updatedAt: number
 }

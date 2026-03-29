@@ -14,7 +14,7 @@ import {
   OrderedListNodeDto,
   BlockquoteNodeDto,
   HorizontalRuleNodeDto,
-} from '@/shared/dtos/tiptap'
+} from '@/shared/tiptap/dtos'
 
 type ArticleContentChildNodes =
   | ParagraphNodeDto

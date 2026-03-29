@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { CommentsService } from './comments.service'
-import { Repository } from 'typeorm'
+import { Repository, SelectQueryBuilder } from 'typeorm'
 import { Comment } from '@/comments/entities'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { getRepositoryToken } from '@nestjs/typeorm'
@@ -40,8 +40,8 @@ describe('CommentsService', () => {
   })
 
   describe('create', () => {
-    test('should create a comment', async () => {
-      const comment = getFakeComment()
+    test('should create a root comment', async () => {
+      const comment = getFakeComment({ parentCommentId: null })
       const options: CreateCommentOptions = {
         authorId: comment.authorId,
         articleId: comment.articleId,
@@ -49,10 +49,35 @@ describe('CommentsService', () => {
       }
 
       commentsRepository.save.mockResolvedValue(comment)
+      commentsRepository.findOneBy.mockResolvedValue(comment)
 
       const result = await commentsService.create(options)
 
       expect(commentsRepository.save).toHaveBeenCalledWith(options)
+      expect(commentsRepository.findOneBy).toHaveBeenCalledWith({
+        id: comment.id,
+      })
+      expect(result).toEqual(comment)
+    })
+
+    test('should create a child comment', async () => {
+      const comment = getFakeComment()
+      const options: CreateCommentOptions = {
+        authorId: comment.authorId,
+        articleId: comment.articleId,
+        parentCommentId: comment.parentCommentId,
+        content: comment.content,
+      }
+
+      commentsRepository.save.mockResolvedValue(comment)
+      commentsRepository.findOneBy.mockResolvedValue(comment)
+
+      const result = await commentsService.create(options)
+
+      expect(commentsRepository.save).toHaveBeenCalledWith(options)
+      expect(commentsRepository.findOneBy).toHaveBeenCalledWith({
+        id: comment.id,
+      })
       expect(result).toEqual(comment)
     })
   })
@@ -83,18 +108,30 @@ describe('CommentsService', () => {
   })
 
   describe('findManyByArticle', () => {
-    test('should find a root comments', async () => {
-      const comments = Array.from({ length: 100 }).map(() => getFakeComment())
-      const options: FindManyCommentsByArticleOptions = { articleId: 1 }
+    let comments: Comment[]
+    let queryBuilder: SelectQueryBuilder<Comment>
 
-      const queryBuilder = createMockTypeOrmQueryBuilder({ getMany: comments })
-
+    beforeEach(async () => {
+      comments = Array.from({ length: 100 }).map(() => getFakeComment())
+      queryBuilder = createMockTypeOrmQueryBuilder({ getMany: comments })
       commentsRepository.createQueryBuilder.mockReturnValue(queryBuilder)
-      const mockedBuildPaginator = vi.mocked(buildPaginator<Comment>)
-      mockedBuildPaginator.mockReturnValue(paginator)
+      vi.mocked(buildPaginator<Comment>).mockReturnValue(paginator)
+    })
+
+    test('should find a root comments', async () => {
+      const options: FindManyCommentsByArticleOptions = {
+        articleId: getFakeInt(),
+      }
+      const {
+        articleId,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
+
       paginator.paginate.mockResolvedValue({
         data: comments,
-        cursor: { beforeCursor: 'before', afterCursor: 'after' },
+        cursor: { beforeCursor: null, afterCursor: 'next-cursor' },
       })
 
       const result = await commentsService.findManyByArticle(options)
@@ -112,21 +149,185 @@ describe('CommentsService', () => {
       )
       expect(queryBuilder.where).toHaveBeenCalledWith(
         'comment.articleId = :articleId',
-        { articleId: options.articleId },
+        { articleId },
+      )
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'comment.parentCommentId IS NULL',
       )
       expect(buildPaginator).toHaveBeenCalledWith({
         entity: Comment,
-        paginationKeys: ['id'],
-        query: {
-          limit: 10,
-          order: 'ASC',
-          afterCursor: options.afterCursor ?? undefined,
-        },
+        alias: 'comment',
+        query: { limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
       })
       expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
       expect(result).toEqual({
+        items: comments,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
+
+    test('should find next page of root comments using cursor', async () => {
+      const options: FindManyCommentsByArticleOptions = {
+        articleId: getFakeInt(),
+        cursor: 'next-cursor',
+      }
+      const {
+        articleId,
+        cursor,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
+
+      paginator.paginate.mockResolvedValue({
         data: comments,
-        cursor: { beforeCursor: 'before', afterCursor: 'after' },
+        cursor: {
+          beforeCursor: 'previous-cursor',
+          afterCursor: 'next-cursor',
+        },
+      })
+
+      const result = await commentsService.findManyByArticle(options)
+
+      expect(commentsRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'comment',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'comment.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'comment.article',
+        'article',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'comment.articleId = :articleId',
+        { articleId },
+      )
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'comment.parentCommentId IS NULL',
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Comment,
+        alias: 'comment',
+        query: { afterCursor: cursor, limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: comments,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
+
+    test('should find a child comments', async () => {
+      const options: FindManyCommentsByArticleOptions = {
+        articleId: getFakeInt(),
+        parentCommentId: getFakeInt(),
+      }
+      const {
+        articleId,
+        limit = 10,
+        orderBy = 'DESC',
+        parentCommentId,
+        sortBy = 'rating',
+      } = options
+
+      paginator.paginate.mockResolvedValue({
+        data: comments,
+        cursor: { beforeCursor: null, afterCursor: 'next-cursor' },
+      })
+
+      const result = await commentsService.findManyByArticle(options)
+
+      expect(commentsRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'comment',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'comment.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'comment.article',
+        'article',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'comment.articleId = :articleId',
+        { articleId },
+      )
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'comment.parentCommentId = :parentCommentId',
+        {
+          parentCommentId,
+        },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Comment,
+        alias: 'comment',
+        query: { limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: comments,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
+
+    test('should find next page of child comments using cursor', async () => {
+      const options: FindManyCommentsByArticleOptions = {
+        articleId: getFakeInt(),
+        cursor: 'next-cursor',
+        parentCommentId: getFakeInt(),
+      }
+      const {
+        articleId,
+        cursor,
+        limit = 10,
+        orderBy = 'DESC',
+        parentCommentId,
+        sortBy = 'rating',
+      } = options
+
+      paginator.paginate.mockResolvedValue({
+        data: comments,
+        cursor: { beforeCursor: 'previous-cursor', afterCursor: 'next-cursor' },
+      })
+
+      const result = await commentsService.findManyByArticle(options)
+
+      expect(commentsRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'comment',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'comment.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'comment.article',
+        'article',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'comment.articleId = :articleId',
+        { articleId },
+      )
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'comment.parentCommentId = :parentCommentId',
+        {
+          parentCommentId,
+        },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Comment,
+        alias: 'comment',
+        query: { afterCursor: cursor, limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: comments,
+        meta: { cursor: 'next-cursor' },
       })
     })
   })
@@ -175,6 +376,9 @@ describe('CommentsService', () => {
       const result = await commentsService.delete(options)
 
       expect(commentsRepository.delete).toHaveBeenCalledWith(options)
+      expect(commentsRepository.findOneBy).toHaveBeenCalledWith({
+        id: comment.id,
+      })
       expect(result).toEqual(comment)
     })
   })

@@ -5,7 +5,7 @@ import {
   IsIn,
   ValidateNested,
 } from 'class-validator'
-import { BlockquoteNodeDto, ParagraphNodeDto } from '@/shared/dtos/tiptap'
+import { BlockquoteNodeDto, ParagraphNodeDto } from '@/shared/tiptap/dtos'
 import { COMMENT_CONTENT_CHILD_NODES } from '@/comments/consts'
 import { Type } from 'class-transformer'
 

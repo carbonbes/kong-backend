@@ -8,6 +8,7 @@ import {
   Min,
 } from 'class-validator'
 import { Type } from 'class-transformer'
+import { ORDER_BY, SORT_BY_FIELD } from '@/comments/consts'
 
 export class FindManyCommentsQueryDto {
   @IsOptional()
@@ -23,10 +24,10 @@ export class FindManyCommentsQueryDto {
   limit?: number
 
   @IsOptional()
-  @IsIn(['ASC', 'DESC'])
-  orderBy?: 'ASC' | 'DESC'
+  @IsIn(ORDER_BY)
+  orderBy?: (typeof ORDER_BY)[number]
 
   @IsOptional()
-  @IsIn(['rating', 'createdAt'])
-  sortBy?: 'rating' | 'createdAt'
+  @IsIn(SORT_BY_FIELD)
+  sortBy?: (typeof SORT_BY_FIELD)[number]
 }
