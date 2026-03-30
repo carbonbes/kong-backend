@@ -9,6 +9,7 @@ import {
   CreateCommentOptions,
   DeleteCommentOptions,
   FindManyCommentsByArticleOptions,
+  FindManyCommentsByAuthorOptions,
   FindOneCommentOptions,
   UpdateCommentOptions,
 } from '@/comments/types'
@@ -322,6 +323,59 @@ describe('CommentsService', () => {
         entity: Comment,
         alias: 'comment',
         query: { afterCursor: cursor, limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: comments,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
+  })
+
+  describe('findManyByAuthor', () => {
+    test('should find a comments', async () => {
+      const comments = Array.from({ length: 50 }).map(() => getFakeComment())
+      const options: FindManyCommentsByAuthorOptions = {
+        authorId: getFakeInt(),
+      }
+      const {
+        authorId,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
+
+      const queryBuilder = createMockTypeOrmQueryBuilder({ getMany: comments })
+      commentsRepository.createQueryBuilder.mockReturnValue(queryBuilder)
+      vi.mocked(buildPaginator<Comment>).mockReturnValue(paginator)
+
+      paginator.paginate.mockResolvedValue({
+        data: comments,
+        cursor: { beforeCursor: null, afterCursor: 'next-cursor' },
+      })
+
+      const result = await commentsService.findManyByAuthor(options)
+
+      expect(commentsRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'comment',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'comment.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'comment.article',
+        'article',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'comment.authorId = :authorId',
+        { authorId },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Comment,
+        alias: 'comment',
+        query: { limit, order: orderBy },
         paginationKeys: [sortBy, 'id'],
       })
       expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
