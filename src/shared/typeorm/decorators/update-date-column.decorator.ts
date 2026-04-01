@@ -5,14 +5,16 @@ export const UpdateDateColumn =
   (object: object, propertyName: string) => {
     getMetadataArgsStorage().columns.push({
       target: object.constructor,
-      propertyName: propertyName,
+      propertyName,
       mode: 'updateDate',
       options: {
-        type: 'bigint',
-        default: () => 'extract(epoch from now())::bigint',
+        type: 'timestamptz',
+        default: () => 'CURRENT_TIMESTAMP',
         transformer: {
-          from: (value: string) => Number(value),
-          to: (value: number) => value,
+          from: (value: Date | null) =>
+            value instanceof Date ? Math.floor(value.getTime() / 1000) : value,
+          to: (value: number | any) =>
+            typeof value === 'number' ? new Date(value * 1000) : value,
         },
         ...options,
       },

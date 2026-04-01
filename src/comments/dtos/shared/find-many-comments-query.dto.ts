@@ -19,8 +19,8 @@ export class FindManyCommentsQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
-  @Max(100)
+  @Min(10)
+  @Max(50)
   limit?: number
 
   @IsOptional()

@@ -23,7 +23,7 @@ import { TestTypeOrmModule } from './modules'
 import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm'
 import { UserGender } from '@/users/enums'
 import { getFakeHeadingNode, getFakeParagraphNode } from '@/test/utils'
-import { CreateCommentDto } from '@/comments/dtos'
+import { CreateCommentDto, UpdateCommentDto } from '@/comments/dtos'
 import request from 'supertest'
 import { Comment } from '@/comments/entities'
 
@@ -192,22 +192,25 @@ describe('Comments (e2e)', () => {
         })),
       )
 
-      const {
-        status,
-        body: {
-          items,
-          meta: { cursor },
-        },
-      } = await request(server)
+      const result = await request(server)
         .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'DESC',
+          sortBy: 'rating',
+        })
         .set('Authorization', `Bearer ${accessToken}`)
 
+      const status = result.status
+      const items: Comment[] = result.body.items
       const commentsCount = items.length
       const firstComment = items[0]
       const lastComment = items[9]
+      const cursor: null = result.body.meta.cursor
 
       expect(status).toBe(200)
       expect(commentsCount).toBe(10)
+      items.forEach((item) => expect(item.parentCommentId === null))
       expect(firstComment.rating).toBe(9)
       expect(lastComment.rating).toBe(0)
       expect(cursor).toBeNull()
@@ -223,23 +226,25 @@ describe('Comments (e2e)', () => {
         })),
       )
 
-      const {
-        status,
-        body: {
-          items,
-          meta: { cursor },
-        },
-      } = await request(server)
+      const result = await request(server)
         .get('/comments/articles/1')
-        .query({ orderBy: 'ASC' })
+        .query({
+          limit: 10,
+          orderBy: 'ASC',
+          sortBy: 'rating',
+        })
         .set('Authorization', `Bearer ${accessToken}`)
 
+      const status = result.status
+      const items: Comment[] = result.body.items
       const commentsCount = items.length
       const firstComment = items[0]
       const lastComment = items[9]
+      const cursor: null = result.body.meta.cursor
 
       expect(status).toBe(200)
       expect(commentsCount).toBe(10)
+      items.forEach((item) => expect(item.parentCommentId === null))
       expect(firstComment.rating).toBe(0)
       expect(lastComment.rating).toBe(9)
       expect(cursor).toBeNull()
@@ -251,29 +256,31 @@ describe('Comments (e2e)', () => {
           authorId: 1,
           articleId: 1,
           content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-          createdAt: 1577836800 + i,
+          createdAt: i,
         })),
       )
 
-      const {
-        status,
-        body: {
-          items,
-          meta: { cursor },
-        },
-      } = await request(server)
+      const result = await request(server)
         .get('/comments/articles/1')
-        .query({ sortBy: 'createdAt' })
+        .query({
+          limit: 10,
+          orderBy: 'DESC',
+          sortBy: 'createdAt',
+        })
         .set('Authorization', `Bearer ${accessToken}`)
 
-      const commentsCount: number = items.length
-      const firstComment: Comment = items[0]
-      const lastComment: Comment = items[9]
+      const status = result.status
+      const items: Comment[] = result.body.items
+      const commentsCount = items.length
+      const firstComment = items[0]
+      const lastComment = items[9]
+      const cursor: null = result.body.meta.cursor
 
       expect(status).toBe(200)
       expect(commentsCount).toBe(10)
-      expect(firstComment.createdAt).toBe(1577836809)
-      expect(lastComment.createdAt).toBe(1577836800)
+      items.forEach((item) => expect(item.parentCommentId === null))
+      expect(firstComment.createdAt).toBe(9)
+      expect(lastComment.createdAt).toBe(0)
       expect(cursor).toBeNull()
     })
 
@@ -283,29 +290,31 @@ describe('Comments (e2e)', () => {
           authorId: 1,
           articleId: 1,
           content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-          createdAt: 1577836800 + i,
+          createdAt: i,
         })),
       )
 
-      const {
-        status,
-        body: {
-          items,
-          meta: { cursor },
-        },
-      } = await request(server)
+      const result = await request(server)
         .get('/comments/articles/1')
-        .query({ sortBy: 'createdAt', orderBy: 'ASC' })
+        .query({
+          limit: 10,
+          orderBy: 'ASC',
+          sortBy: 'createdAt',
+        })
         .set('Authorization', `Bearer ${accessToken}`)
 
-      const commentsCount: number = items.length
-      const firstComment: Comment = items[0]
-      const lastComment: Comment = items[9]
+      const status = result.status
+      const items: Comment[] = result.body.items
+      const commentsCount = items.length
+      const firstComment = items[0]
+      const lastComment = items[9]
+      const cursor: null = result.body.meta.cursor
 
       expect(status).toBe(200)
       expect(commentsCount).toBe(10)
-      expect(firstComment.createdAt).toBe(1577836800)
-      expect(lastComment.createdAt).toBe(1577836809)
+      items.forEach((item) => expect(item.parentCommentId === null))
+      expect(firstComment.createdAt).toBe(0)
+      expect(lastComment.createdAt).toBe(9)
       expect(cursor).toBeNull()
     })
 
@@ -321,16 +330,21 @@ describe('Comments (e2e)', () => {
 
       const result1 = await request(server)
         .get('/comments/articles/1')
+        .query({ limit: 10, orderBy: 'DESC', sortBy: 'rating' })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const firstResponseStatus = result1.status
-      const firstResponseCommentsCount: number = result1.body.items.length
-      const firstResponseFirstComment: Comment = result1.body.items[0]
-      const firstResponseLastComment: Comment = result1.body.items[9]
+      const firstResponseItems: Comment[] = result1.body.items
+      const firstResponseCommentsCount = firstResponseItems.length
+      const firstResponseFirstComment = firstResponseItems[0]
+      const firstResponseLastComment = firstResponseItems[9]
       const firstResponseCursor: string = result1.body.meta.cursor
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
+      firstResponseItems.forEach((item) =>
+        expect(item.parentCommentId === null),
+      )
       expect(firstResponseFirstComment.rating).toBe(19)
       expect(firstResponseLastComment.rating).toBe(10)
       expect(firstResponseCursor).not.toBeNull()
@@ -341,13 +355,17 @@ describe('Comments (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
 
       const secondResponseStatus = result2.status
-      const secondResponseCommentsCount: number = result2.body.items.length
-      const secondResponseFirstComment: Comment = result2.body.items[0]
-      const secondResponseLastComment: Comment = result2.body.items[9]
-      const secondResponseCursor: string = result2.body.meta.cursor
+      const secondResponseItems: Comment[] = result2.body.items
+      const secondResponseCommentsCount = secondResponseItems.length
+      const secondResponseFirstComment = secondResponseItems[0]
+      const secondResponseLastComment = secondResponseItems[9]
+      const secondResponseCursor: null = result2.body.meta.cursor
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
+      secondResponseItems.forEach((item) =>
+        expect(item.parentCommentId === null),
+      )
       expect(secondResponseFirstComment.rating).toBe(9)
       expect(secondResponseLastComment.rating).toBe(0)
       expect(secondResponseCursor).toBeNull()
@@ -365,17 +383,21 @@ describe('Comments (e2e)', () => {
 
       const result1 = await request(server)
         .get('/comments/articles/1')
-        .query({ orderBy: 'ASC' })
+        .query({ limit: 10, orderBy: 'ASC', sortBy: 'rating' })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const firstResponseStatus = result1.status
-      const firstResponseCommentsCount: number = result1.body.items.length
-      const firstResponseFirstComment: Comment = result1.body.items[0]
-      const firstResponseLastComment: Comment = result1.body.items[9]
+      const firstResponseItems: Comment[] = result1.body.items
+      const firstResponseCommentsCount = firstResponseItems.length
+      const firstResponseFirstComment = firstResponseItems[0]
+      const firstResponseLastComment = firstResponseItems[9]
       const firstResponseCursor: string = result1.body.meta.cursor
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
+      firstResponseItems.forEach((item) =>
+        expect(item.parentCommentId === null),
+      )
       expect(firstResponseFirstComment.rating).toBe(0)
       expect(firstResponseLastComment.rating).toBe(9)
       expect(firstResponseCursor).not.toBeNull()
@@ -386,19 +408,626 @@ describe('Comments (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
 
       const secondResponseStatus = result2.status
-      const secondResponseCommentsCount: number = result2.body.items.length
-      const secondResponseFirstComment: Comment = result2.body.items[0]
-      const secondResponseLastComment: Comment = result2.body.items[9]
-      const secondResponseCursor: string = result2.body.meta.cursor
+      const secondResponseItems: Comment[] = result2.body.items
+      const secondResponseCommentsCount = secondResponseItems.length
+      const secondResponseFirstComment = secondResponseItems[0]
+      const secondResponseLastComment = secondResponseItems[9]
+      const secondResponseCursor: null = result2.body.meta.cursor
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
+      secondResponseItems.forEach((item) =>
+        expect(item.parentCommentId === null),
+      )
       expect(secondResponseFirstComment.rating).toBe(10)
       expect(secondResponseLastComment.rating).toBe(19)
       expect(secondResponseCursor).toBeNull()
     })
 
+    test('should return 200 and the only 2 pages of root comments sort by createdAt and order by DESC', async () => {
+      await commentsRepository.save(
+        Array.from({ length: 20 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          createdAt: i,
+        })),
+      )
+
+      const result1 = await request(server)
+        .get('/comments/articles/1')
+        .query({ limit: 10, orderBy: 'DESC', sortBy: 'createdAt' })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const firstResponseStatus = result1.status
+      const firstResponseItems: Comment[] = result1.body.items
+      const firstResponseCommentsCount = firstResponseItems.length
+      const firstResponseFirstComment = firstResponseItems[0]
+      const firstResponseLastComment = firstResponseItems[9]
+      const firstResponseCursor: string = result1.body.meta.cursor
+
+      expect(firstResponseStatus).toBe(200)
+      expect(firstResponseCommentsCount).toBe(10)
+      firstResponseItems.forEach((item) =>
+        expect(item.parentCommentId === null),
+      )
+      expect(firstResponseFirstComment.createdAt).toBe(19)
+      expect(firstResponseLastComment.createdAt).toBe(10)
+      expect(firstResponseCursor).not.toBeNull()
+
+      const result2 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          cursor: firstResponseCursor,
+          orderBy: 'DESC',
+          sortBy: 'createdAt',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const secondResponseStatus = result2.status
+      const secondResponseItems: Comment[] = result2.body.items
+      const secondResponseCommentsCount = secondResponseItems.length
+      const secondResponseFirstComment = secondResponseItems[0]
+      const secondResponseLastComment = secondResponseItems[9]
+      const secondResponseCursor: null = result2.body.meta.cursor
+
+      expect(secondResponseStatus).toBe(200)
+      expect(secondResponseCommentsCount).toBe(10)
+      secondResponseItems.forEach((item) =>
+        expect(item.parentCommentId === null),
+      )
+      expect(secondResponseFirstComment.createdAt).toBe(9)
+      expect(secondResponseLastComment.createdAt).toBe(0)
+      expect(secondResponseCursor).toBeNull()
+    })
+
+    test('should return 200 and the only 2 pages of root comments sort by createdAt and order by ASC', async () => {
+      await commentsRepository.save(
+        Array.from({ length: 20 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          createdAt: i,
+        })),
+      )
+
+      const result1 = await request(server)
+        .get('/comments/articles/1')
+        .query({ limit: 10, orderBy: 'ASC', sortBy: 'createdAt' })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const firstResponseStatus = result1.status
+      const firstResponseItems: Comment[] = result1.body.items
+      const firstResponseCommentsCount = firstResponseItems.length
+      const firstResponseFirstComment = firstResponseItems[0]
+      const firstResponseLastComment = firstResponseItems[9]
+      const firstResponseCursor: string = result1.body.meta.cursor
+
+      expect(firstResponseStatus).toBe(200)
+      expect(firstResponseCommentsCount).toBe(10)
+      firstResponseItems.forEach((item) =>
+        expect(item.parentCommentId === null),
+      )
+      expect(firstResponseFirstComment.createdAt).toBe(0)
+      expect(firstResponseLastComment.createdAt).toBe(9)
+      expect(firstResponseCursor).not.toBeNull()
+
+      const result2 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          cursor: firstResponseCursor,
+          orderBy: 'ASC',
+          sortBy: 'createdAt',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const secondResponseStatus = result2.status
+      const secondResponseItems: Comment[] = result2.body.items
+      const secondResponseCommentsCount = secondResponseItems.length
+      const secondResponseFirstComment = secondResponseItems[0]
+      const secondResponseLastComment = secondResponseItems[9]
+      const secondResponseCursor: null = result2.body.meta.cursor
+
+      expect(secondResponseStatus).toBe(200)
+      expect(secondResponseCommentsCount).toBe(10)
+      secondResponseItems.forEach((item) =>
+        expect(item.parentCommentId === null),
+      )
+      expect(secondResponseFirstComment.createdAt).toBe(10)
+      expect(secondResponseLastComment.createdAt).toBe(19)
+      expect(secondResponseCursor).toBeNull()
+    })
+
+    test('should return 200 and a single page of child comments sort by rating and order by DESC', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 10 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          parentCommentId: 1,
+          rating: i,
+        })),
+      )
+
+      const result = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'DESC',
+          parentCommentId: 1,
+          sortBy: 'rating',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const status = result.status
+      const items: Comment[] = result.body.items
+      const commentsCount = items.length
+      const firstComment = items[0]
+      const lastComment = items[9]
+      const cursor: null = result.body.meta.cursor
+
+      expect(status).toBe(200)
+      expect(commentsCount).toBe(10)
+      items.forEach((item) => expect(item.parentCommentId === 1))
+      expect(firstComment.rating).toBe(9)
+      expect(lastComment.rating).toBe(0)
+      expect(cursor).toBeNull()
+    })
+
+    test('should return 200 and a single page of child comments sort by rating and order by ASC', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 10 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          parentCommentId: 1,
+          rating: i,
+        })),
+      )
+
+      const result = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'ASC',
+          parentCommentId: 1,
+          sortBy: 'rating',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const status = result.status
+      const items: Comment[] = result.body.items
+      const commentsCount = items.length
+      const firstComment = items[0]
+      const lastComment = items[9]
+      const cursor: null = result.body.meta.cursor
+
+      expect(status).toBe(200)
+      expect(commentsCount).toBe(10)
+      items.forEach((item) => expect(item.parentCommentId === 1))
+      expect(firstComment.rating).toBe(0)
+      expect(lastComment.rating).toBe(9)
+      expect(cursor).toBeNull()
+    })
+
+    test('should return 200 and a single page of child comments sort by createdAt and order by DESC', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 10 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          parentCommentId: 1,
+          createdAt: 0 + i,
+        })),
+      )
+
+      const result = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'DESC',
+          parentCommentId: 1,
+          sortBy: 'createdAt',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const status = result.status
+      const items: Comment[] = result.body.items
+      const commentsCount = items.length
+      const firstComment = items[0]
+      const lastComment = items[9]
+      const cursor: null = result.body.meta.cursor
+
+      expect(status).toBe(200)
+      expect(commentsCount).toBe(10)
+      items.forEach((item) => expect(item.parentCommentId === 1))
+      expect(firstComment.createdAt).toBe(9)
+      expect(lastComment.createdAt).toBe(0)
+      expect(cursor).toBeNull()
+    })
+
+    test('should return 200 and a single page of child comments sort by createdAt and order by ASC', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 10 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          parentCommentId: 1,
+          createdAt: 0 + i,
+        })),
+      )
+
+      const result = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'ASC',
+          parentCommentId: 1,
+          sortBy: 'createdAt',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const status = result.status
+      const items: Comment[] = result.body.items
+      const commentsCount = items.length
+      const firstComment = items[0]
+      const lastComment = items[9]
+      const cursor: null = result.body.meta.cursor
+
+      expect(status).toBe(200)
+      expect(commentsCount).toBe(10)
+      items.forEach((item) => expect(item.parentCommentId === 1))
+      expect(firstComment.createdAt).toBe(0)
+      expect(lastComment.createdAt).toBe(9)
+      expect(cursor).toBeNull()
+    })
+
+    test('should return 200 and the only 2 pages of child comments sort by rating and order by DESC', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 20 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          parentCommentId: 1,
+          rating: i,
+        })),
+      )
+
+      const result1 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'DESC',
+          parentCommentId: 1,
+          sortBy: 'rating',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const firstResponseStatus = result1.status
+      const firstResponseItems: Comment[] = result1.body.items
+      const firstResponseCommentsCount = firstResponseItems.length
+      const firstResponseFirstComment = firstResponseItems[0]
+      const firstResponseLastComment = firstResponseItems[9]
+      const firstResponseCursor: string = result1.body.meta.cursor
+
+      expect(firstResponseStatus).toBe(200)
+      expect(firstResponseCommentsCount).toBe(10)
+      firstResponseItems.forEach((item) => expect(item.parentCommentId === 1))
+      expect(firstResponseFirstComment.rating).toBe(19)
+      expect(firstResponseLastComment.rating).toBe(10)
+      expect(firstResponseCursor).not.toBeNull()
+
+      const result2 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          cursor: firstResponseCursor,
+          limit: 10,
+          orderBy: 'DESC',
+          parentCommentId: 1,
+          sortBy: 'rating',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const secondResponseStatus = result2.status
+      const secondResponseItems: Comment[] = result2.body.items
+      const secondResponseCommentsCount = secondResponseItems.length
+      const secondResponseFirstComment = secondResponseItems[0]
+      const secondResponseLastComment = secondResponseItems[9]
+      const secondResponseCursor: null = result2.body.meta.cursor
+
+      expect(secondResponseStatus).toBe(200)
+      expect(secondResponseCommentsCount).toBe(10)
+      secondResponseItems.forEach((item) => expect(item.parentCommentId === 1))
+      expect(secondResponseFirstComment.rating).toBe(9)
+      expect(secondResponseLastComment.rating).toBe(0)
+      expect(secondResponseCursor).toBeNull()
+    })
+
+    test('should return 200 and the only 2 pages of child comments sort by rating and order by ASC', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 20 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          parentCommentId: 1,
+          rating: i,
+        })),
+      )
+
+      const result1 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'ASC',
+          parentCommentId: 1,
+          sortBy: 'rating',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const firstResponseStatus = result1.status
+      const firstResponseItems: Comment[] = result1.body.items
+      const firstResponseCommentsCount = firstResponseItems.length
+      const firstResponseFirstComment = firstResponseItems[0]
+      const firstResponseLastComment = firstResponseItems[9]
+      const firstResponseCursor: string = result1.body.meta.cursor
+
+      expect(firstResponseStatus).toBe(200)
+      expect(firstResponseCommentsCount).toBe(10)
+      firstResponseItems.forEach((item) => expect(item.parentCommentId === 1))
+      expect(firstResponseFirstComment.rating).toBe(0)
+      expect(firstResponseLastComment.rating).toBe(9)
+      expect(firstResponseCursor).not.toBeNull()
+
+      const result2 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          cursor: firstResponseCursor,
+          limit: 10,
+          orderBy: 'ASC',
+          parentCommentId: 1,
+          sortBy: 'rating',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const secondResponseStatus = result2.status
+      const secondResponseItems: Comment[] = result2.body.items
+      const secondResponseCommentsCount = secondResponseItems.length
+      const secondResponseFirstComment = secondResponseItems[0]
+      const secondResponseLastComment = secondResponseItems[9]
+      const secondResponseCursor: null = result2.body.meta.cursor
+
+      expect(secondResponseStatus).toBe(200)
+      expect(secondResponseCommentsCount).toBe(10)
+      secondResponseItems.forEach((item) => expect(item.parentCommentId === 1))
+      expect(secondResponseFirstComment.rating).toBe(10)
+      expect(secondResponseLastComment.rating).toBe(19)
+      expect(secondResponseCursor).toBeNull()
+    })
+
+    test('should return 200 and the only 2 pages of child comments sort by createdAt and order by DESC', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 20 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          parentCommentId: 1,
+          createdAt: i,
+        })),
+      )
+
+      const result1 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'DESC',
+          parentCommentId: 1,
+          sortBy: 'createdAt',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const firstResponseStatus = result1.status
+      const firstResponseItems: Comment[] = result1.body.items
+      const firstResponseCommentsCount = firstResponseItems.length
+      const firstResponseFirstComment = firstResponseItems[0]
+      const firstResponseLastComment = firstResponseItems[9]
+      const firstResponseCursor: string = result1.body.meta.cursor
+
+      expect(firstResponseStatus).toBe(200)
+      expect(firstResponseCommentsCount).toBe(10)
+      firstResponseItems.forEach((item) => expect(item.parentCommentId === 1))
+      expect(firstResponseFirstComment.createdAt).toBe(19)
+      expect(firstResponseLastComment.createdAt).toBe(10)
+      expect(firstResponseCursor).not.toBeNull()
+
+      const result2 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          cursor: firstResponseCursor,
+          limit: 10,
+          orderBy: 'DESC',
+          parentCommentId: 1,
+          sortBy: 'createdAt',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const secondResponseStatus = result2.status
+      const secondResponseItems: Comment[] = result2.body.items
+      const secondResponseCommentsCount = secondResponseItems.length
+      const secondResponseFirstComment = secondResponseItems[0]
+      const secondResponseLastComment = secondResponseItems[9]
+      const secondResponseCursor: null = result2.body.meta.cursor
+
+      expect(secondResponseStatus).toBe(200)
+      expect(secondResponseCommentsCount).toBe(10)
+      secondResponseItems.forEach((item) => expect(item.parentCommentId === 1))
+      expect(secondResponseFirstComment.createdAt).toBe(9)
+      expect(secondResponseLastComment.createdAt).toBe(0)
+      expect(secondResponseCursor).toBeNull()
+    })
+
+    test('should return 200 and the only 2 pages of child comments sort by createdAt and order by ASC', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      await commentsRepository.save(
+        Array.from({ length: 20 }).map((_, i) => ({
+          authorId: 1,
+          articleId: 1,
+          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          parentCommentId: 1,
+          createdAt: i,
+        })),
+      )
+
+      const result1 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          limit: 10,
+          orderBy: 'ASC',
+          parentCommentId: 1,
+          sortBy: 'createdAt',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const firstResponseStatus = result1.status
+      const firstResponseItems: Comment[] = result1.body.items
+      const firstResponseCommentsCount = firstResponseItems.length
+      const firstResponseFirstComment = firstResponseItems[0]
+      const firstResponseLastComment = firstResponseItems[9]
+      const firstResponseCursor: string = result1.body.meta.cursor
+
+      expect(firstResponseStatus).toBe(200)
+      expect(firstResponseCommentsCount).toBe(10)
+      firstResponseItems.forEach((item) => expect(item.parentCommentId === 1))
+      expect(firstResponseFirstComment.createdAt).toBe(0)
+      expect(firstResponseLastComment.createdAt).toBe(9)
+      expect(firstResponseCursor).not.toBeNull()
+
+      const result2 = await request(server)
+        .get('/comments/articles/1')
+        .query({
+          cursor: firstResponseCursor,
+          limit: 10,
+          orderBy: 'ASC',
+          parentCommentId: 1,
+          sortBy: 'createdAt',
+        })
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      const secondResponseStatus = result2.status
+      const secondResponseItems: Comment[] = result2.body.items
+      const secondResponseCommentsCount = secondResponseItems.length
+      const secondResponseFirstComment = secondResponseItems[0]
+      const secondResponseLastComment = secondResponseItems[9]
+      const secondResponseCursor: null = result2.body.meta.cursor
+
+      expect(secondResponseStatus).toBe(200)
+      expect(secondResponseCommentsCount).toBe(10)
+      secondResponseItems.forEach((item) => expect(item.parentCommentId === 1))
+      expect(secondResponseFirstComment.createdAt).toBe(10)
+      expect(secondResponseLastComment.createdAt).toBe(19)
+      expect(secondResponseCursor).toBeNull()
+    })
+
     test('should return 401 if user is not authenticated', async () =>
       request(server).get('/comments/articles/1').expect(401))
+  })
+
+  describe('PATCH /comments/1', () => {
+    afterEach(
+      async () =>
+        await dataSource.query(
+          'TRUNCATE TABLE comments RESTART IDENTITY CASCADE',
+        ),
+    )
+
+    test('should return 200 and comment', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      const comment = (await commentsRepository.findOneBy({ id: 1 }))!
+
+      const body: UpdateCommentDto = {
+        content: {
+          type: 'doc',
+          content: [getFakeParagraphNode()],
+        },
+      }
+
+      const result = await request(server)
+        .patch('/comments/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+
+      console.log(result.body)
+
+      expect(result.status).toBe(200)
+      expect(result.body).toEqual({ ...comment, ...body })
+    })
+
+    test('should return 401 if user is not authenticated', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      const body: UpdateCommentDto = {
+        content: {
+          type: 'doc',
+          content: [getFakeParagraphNode()],
+        },
+      }
+
+      return request(server).patch('/comments/1').send(body).expect(401)
+    })
   })
 })
