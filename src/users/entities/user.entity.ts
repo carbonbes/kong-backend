@@ -1,12 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity } from 'typeorm'
 import { UserGender, UserRole } from '@/users/enums'
-import { CreateDateColumn, UpdateDateColumn } from '@/shared/typeorm/decorators'
+import { BaseEntity } from '@/shared/typeorm/entities'
 
 @Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number
-
+export class User extends BaseEntity {
   @Column({ unique: true, type: 'varchar', length: 100 })
   email: string
 
@@ -21,10 +18,4 @@ export class User {
 
   @Column({ type: 'boolean', default: false })
   isActive: boolean
-
-  @CreateDateColumn()
-  createdAt: number
-
-  @UpdateDateColumn()
-  updatedAt: number
 }

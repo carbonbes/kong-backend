@@ -26,6 +26,7 @@ import { getFakeHeadingNode, getFakeParagraphNode } from '@/test/utils'
 import { CreateCommentDto, UpdateCommentDto } from '@/comments/dtos'
 import request from 'supertest'
 import { Comment } from '@/comments/entities'
+import { response } from 'express'
 
 describe('Comments (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -1007,10 +1008,29 @@ describe('Comments (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send(body)
 
-      console.log(result.body)
-
       expect(result.status).toBe(200)
       expect(result.body).toEqual({ ...comment, ...body })
+    })
+
+    test('should return 400 if a doc content field contains not allowed node', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      const body: UpdateCommentDto = {
+        content: {
+          type: 'doc',
+          content: [getFakeHeadingNode()],
+        },
+      }
+
+      return request(server)
+        .patch('/comments/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
     })
 
     test('should return 401 if user is not authenticated', async () => {
@@ -1028,6 +1048,42 @@ describe('Comments (e2e)', () => {
       }
 
       return request(server).patch('/comments/1').send(body).expect(401)
+    })
+  })
+
+  describe('DELETE /comments/1', () => {
+    afterEach(
+      async () =>
+        await dataSource.query(
+          'TRUNCATE TABLE comments RESTART IDENTITY CASCADE',
+        ),
+    )
+
+    test('should return 200 and comment', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      const comment = (await commentsRepository.findOneBy({ id: 1 }))!
+
+      const result = await request(server)
+        .delete('/comments/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      expect(result.status).toBe(200)
+      expect(result.body).toEqual(comment)
+    })
+
+    test('should return 401 if user is not authenticated', async () => {
+      await commentsRepository.save({
+        authorId: 1,
+        articleId: 1,
+        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+      })
+
+      return request(server).delete('/comments/1').expect(401)
     })
   })
 })

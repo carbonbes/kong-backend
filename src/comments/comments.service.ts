@@ -117,8 +117,10 @@ export class CommentsService {
   }
 
   async delete(options: DeleteCommentOptions): DeleteCommentReturn {
+    const comment = (await this.findOne(options))!
+
     await this.commentsRepository.delete(options)
 
-    return (await this.findOne(options))!
+    return comment
   }
 }
