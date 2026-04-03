@@ -1,11 +1,20 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm'
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 import { User } from '@/users/entities'
 import { ArticleStatus } from '@/articles/enums'
 import type { JSONContent } from '@tiptap/core'
-import { BaseEntity } from '@/shared/typeorm/entities'
+import { CreateDateColumn, UpdateDateColumn } from '@/shared/typeorm/decorators'
 
-@Entity()
-export class Article extends BaseEntity {
+@Entity('articles')
+export class Article {
+  @PrimaryGeneratedColumn()
+  id: number
+
   @Column()
   authorId: number
 
@@ -22,4 +31,13 @@ export class Article extends BaseEntity {
 
   @Column({ type: 'enum', enum: ArticleStatus, default: ArticleStatus.Draft })
   status: ArticleStatus
+
+  @Column({ type: 'int', default: 0 })
+  rating: number
+
+  @CreateDateColumn()
+  createdAt: number
+
+  @UpdateDateColumn()
+  updatedAt: number
 }

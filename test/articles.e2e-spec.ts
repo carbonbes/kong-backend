@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
 import { AppModule } from '@/app.module'
 import { App } from 'supertest/types'
-import { CreateArticleDto } from '@/articles/dtos'
+import { CreateArticleDto, UpdateArticleDto } from '@/articles/dtos'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { EncodedJwt } from '@/shared/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
@@ -22,8 +22,10 @@ import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { TestTypeOrmModule } from './modules'
 import { UsersService } from '@/users/users.service'
 import { ArticlesService } from '@/articles/articles.service'
-import { DataSource } from 'typeorm'
-import { getDataSourceToken } from '@nestjs/typeorm'
+import { DataSource, Repository } from 'typeorm'
+import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm'
+import { Article } from '@/articles/entities'
+import { getFakeHeadingNode, getFakeParagraphNode } from '@/test/utils'
 
 describe('Articles (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -33,7 +35,7 @@ describe('Articles (e2e)', () => {
   let mailService: MockProxy<MailService>
   let dataSource: DataSource
   let usersService: UsersService
-  let articlesService: ArticlesService
+  let articlesRepository: Repository<Article>
   let authJwtsService: AuthJwtsService
   let user: User
   let accessToken: EncodedJwt
@@ -64,7 +66,9 @@ describe('Articles (e2e)', () => {
 
     dataSource = module.get<DataSource>(getDataSourceToken())
     usersService = module.get<UsersService>(UsersService)
-    articlesService = module.get<ArticlesService>(ArticlesService)
+    articlesRepository = module.get<Repository<Article>>(
+      getRepositoryToken(Article),
+    )
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
     app = module.createNestApplication()
@@ -89,7 +93,7 @@ describe('Articles (e2e)', () => {
 
   describe('POST /articles', () => {
     afterEach(async () => {
-      await dataSource.query('TRUNCATE TABLE article RESTART IDENTITY CASCADE')
+      await dataSource.query('TRUNCATE TABLE articles RESTART IDENTITY CASCADE')
     })
 
     test('should return 201 and article', async () => {
@@ -157,36 +161,71 @@ describe('Articles (e2e)', () => {
 
   describe('GET /articles/1', () => {
     afterEach(async () => {
-      await dataSource.query('TRUNCATE TABLE article RESTART IDENTITY CASCADE')
+      await dataSource.query('TRUNCATE TABLE articles RESTART IDENTITY CASCADE')
     })
 
     test('should return 200 and article', async () => {
-      const article = JSON.parse(
-        JSON.stringify(
-          await articlesService.create({
-            authorId: 1,
-            content: {
-              type: 'doc',
-              content: [
-                {
-                  type: 'paragraph',
-                  content: [{ type: 'text', text: 'Test' }],
-                },
-              ],
-            },
-          }),
-        ),
-      )
+      await articlesRepository.save({
+        authorId: 1,
+        content: {
+          type: 'doc',
+          content: [getFakeHeadingNode()],
+        },
+      })
 
-      return request(server)
+      const article = (await articlesRepository.findOneBy({ id: 1 }))!
+
+      const result = await request(server)
         .get('/articles/1')
         .set('Authorization', `Bearer ${accessToken}`)
-        .expect(200)
-        .expect(article)
+
+      expect(result.status).toBe(200)
+      expect(result.body).toEqual(article)
     })
 
     test('should return 401 if user is not authenticated', async () => {
       return request(server).get('/articles/1').expect(401)
+    })
+  })
+
+  describe('PATCH /articles/1', () => {
+    afterEach(async () => {
+      await dataSource.query('TRUNCATE TABLE articles RESTART IDENTITY CASCADE')
+    })
+
+    test('should return 200 and article', async () => {
+      await articlesRepository.save({
+        authorId: 1,
+        content: { type: 'doc', content: [getFakeHeadingNode()] },
+      })
+
+      const article = (await articlesRepository.findOneBy({ id: 1 }))!
+
+      const body: UpdateArticleDto = {
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      const result = await request(server)
+        .patch('/articles/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+
+      expect(result.status).toBe(200)
+      expect(result.body).toEqual({
+        ...article,
+        ...body,
+        updatedAt: article.updatedAt + 1,
+      })
+    })
+
+    test('should return 401 if user is not authenticated', async () => {
+      const body: UpdateArticleDto = {
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
+      }
+
+      return request(server).patch('/articles/1').send(body).expect(401)
     })
   })
 })

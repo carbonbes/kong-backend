@@ -1,19 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ArticlesService } from './articles.service'
 import {
-  CreateOptions,
-  DeleteOptions,
-  FindCommentsOptions,
-  FindManyOptions,
-  FindOneOptions,
-  UpdateOptions,
+  CreateArticleOptions,
+  DeleteArticleOptions,
+  FindManyArticlesOptions,
+  FindOneArticleOptions,
+  UpdateArticleOptions,
 } from './types'
-import {
-  getFakeArticle,
-  getFakeComment,
-  getFakeInt,
-  getFakeUser,
-} from '@/test/utils'
+import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { Repository } from 'typeorm'
 import { Article } from '@/articles/entities'
@@ -43,9 +37,9 @@ describe('ArticlesService', () => {
 
   describe('create', () => {
     test('should create an article', async () => {
-      const { author, content } = getFakeArticle()
-      const options: CreateOptions = { author, content }
-      const article = getFakeArticle({ author, content })
+      const { authorId, content } = getFakeArticle()
+      const options: CreateArticleOptions = { authorId, content }
+      const article = getFakeArticle({ authorId, content })
 
       articlesRepository.save.mockResolvedValue(article)
 
@@ -59,7 +53,7 @@ describe('ArticlesService', () => {
   describe('findOne', () => {
     test('should find an article', async () => {
       const id = getFakeInt()
-      const options: FindOneOptions = { id }
+      const options: FindOneArticleOptions = { id }
       const article = getFakeArticle({ id })
 
       articlesRepository.findOneBy.mockResolvedValue(article)
@@ -72,7 +66,7 @@ describe('ArticlesService', () => {
 
     test('should return a null', async () => {
       const id = getFakeInt()
-      const options: FindOneOptions = { id }
+      const options: FindOneArticleOptions = { id }
 
       articlesRepository.findOneBy.mockResolvedValue(null)
 
@@ -86,7 +80,9 @@ describe('ArticlesService', () => {
   describe('findMany', () => {
     test('should find an articles by author id', async () => {
       const user = getFakeUser()
-      const options: FindManyOptions = { where: { author: { id: user.id } } }
+      const options: FindManyArticlesOptions = {
+        where: { author: { id: user.id } },
+      }
 
       const articles = Array.from({ length: 10 }).map(() =>
         getFakeArticle({ author: user }),
@@ -105,7 +101,7 @@ describe('ArticlesService', () => {
     test('should update an article', async () => {
       const id = getFakeInt()
       const { content } = getFakeArticle()
-      const options: UpdateOptions = { where: { id }, data: { content } }
+      const options: UpdateArticleOptions = { where: { id }, data: { content } }
       const article = getFakeArticle({ content })
 
       articlesRepository.findOneBy.mockResolvedValue(article)
@@ -124,7 +120,7 @@ describe('ArticlesService', () => {
   describe('delete', () => {
     test('should delete an article', async () => {
       const id = getFakeInt()
-      const options: DeleteOptions = { id }
+      const options: DeleteArticleOptions = { id }
       const article = getFakeArticle({ id })
 
       articlesRepository.findOneBy.mockResolvedValue(article)
@@ -138,7 +134,7 @@ describe('ArticlesService', () => {
 
     test('should return a null', async () => {
       const id = getFakeInt()
-      const options: DeleteOptions = { id }
+      const options: DeleteArticleOptions = { id }
 
       articlesRepository.findOneBy.mockResolvedValue(null)
 
@@ -146,19 +142,6 @@ describe('ArticlesService', () => {
         NotFoundException,
       )
       expect(articlesRepository.findOneBy).toHaveBeenCalledWith(options)
-    })
-  })
-
-  describe('findComments', () => {
-    test('should find an article comments', async () => {
-      const comments = Array.from({ length: 10 }).map(() => getFakeComment())
-      const { id: articleId }: FindCommentsOptions = { id: 1 }
-
-      commentsService.findAll.mockResolvedValue(comments)
-
-      const result = await commentsService.findAll({ articleId })
-
-      expect(result).toEqual(comments)
     })
   })
 })

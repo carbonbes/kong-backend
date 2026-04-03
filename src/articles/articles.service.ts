@@ -45,8 +45,10 @@ export class ArticlesService {
   }
 
   async delete(options: DeleteArticleOptions): DeleteArticleReturn {
+    const article = (await this.findOne(options))!
+
     await this.articlesRepository.delete(options)
 
-    return (await this.findOne(options))!
+    return article
   }
 }

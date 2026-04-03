@@ -26,6 +26,9 @@ export class ArticleDto implements Article {
   @Type(() => ArticleContentDto)
   content: JSONContent
 
+  @IsInt()
+  rating: number
+
   @IsEnum(ArticleStatus)
   status: ArticleStatus
 

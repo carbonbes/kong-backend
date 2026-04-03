@@ -6,7 +6,7 @@ import {
 import { ArticleContentDto } from './article-content.dto'
 
 describe('ArticleContentDto', () => {
-  const target = new ValidationPipe({ whitelist: true })
+  const validationPipe = new ValidationPipe({ whitelist: true })
   const metadata: ArgumentMetadata = {
     type: 'body',
     metatype: ArticleContentDto,
@@ -20,7 +20,7 @@ describe('ArticleContentDto', () => {
       ],
     }
 
-    await expect(target.transform(body, metadata)).resolves.toBeTruthy()
+    await expect(validationPipe.transform(body, metadata)).resolves.toBeTruthy()
   })
 
   test('should throw a BadRequestException if type field is not provided', async () => {
@@ -31,7 +31,7 @@ describe('ArticleContentDto', () => {
       ],
     }
 
-    await expect(target.transform(body, metadata)).rejects.toThrow(
+    await expect(validationPipe.transform(body, metadata)).rejects.toThrow(
       BadRequestException,
     )
   })
@@ -45,7 +45,7 @@ describe('ArticleContentDto', () => {
       ],
     }
 
-    await expect(target.transform(body, metadata)).rejects.toThrow(
+    await expect(validationPipe.transform(body, metadata)).rejects.toThrow(
       BadRequestException,
     )
   })
@@ -56,7 +56,7 @@ describe('ArticleContentDto', () => {
       type: 'doc',
     }
 
-    await expect(target.transform(body, metadata)).rejects.toThrow(
+    await expect(validationPipe.transform(body, metadata)).rejects.toThrow(
       BadRequestException,
     )
   })
@@ -67,7 +67,7 @@ describe('ArticleContentDto', () => {
       content: [],
     }
 
-    await expect(target.transform(body, metadata)).rejects.toThrow(
+    await expect(validationPipe.transform(body, metadata)).rejects.toThrow(
       BadRequestException,
     )
   })
@@ -79,7 +79,7 @@ describe('ArticleContentDto', () => {
       content: [{ type: 'text' }],
     }
 
-    await expect(target.transform(body, metadata)).rejects.toThrow(
+    await expect(validationPipe.transform(body, metadata)).rejects.toThrow(
       BadRequestException,
     )
   })
