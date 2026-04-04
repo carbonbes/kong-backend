@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { AuthModule } from '@/auth/auth.module'
 import { RedisOmModule } from '@/redis-om/redis-om.module'
-import { TypeOrmModule } from '@nestjs/typeorm'
+import { PrismaModule } from '@/prisma/prisma.module'
 import database from '@/config/database'
 import jwt from '@/config/jwt'
 import mail from '@/config/mail'
@@ -18,12 +18,11 @@ import { SignedJwtsModule } from '@/signed-jwts/signed-jwts.module'
 import { RevokedJwtsModule } from '@/revoked-jwts/revoked-jwts.module'
 import { JwtCreatedListener } from '@/shared/auth-jwt/listeners'
 import { ArticlesModule } from '@/articles/articles.module'
-import { addTransactionalDataSource } from 'typeorm-transactional'
-import { DataSource } from 'typeorm'
-import { User } from '@/users/entities'
-import { Article } from '@/articles/entities'
-import { Comment } from '@/comments/entities'
 import { CommentsModule } from '@/comments/comments.module'
+import { ClsModule } from 'nestjs-cls'
+import { ClsPluginTransactional } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import { PRISMA_CLIENT } from '@/prisma/consts'
 
 @Module({
   imports: [
@@ -36,21 +35,21 @@ import { CommentsModule } from '@/comments/comments.module'
     EventEmitterModule.forRoot({
       delimiter: '_',
     }),
-    TypeOrmModule.forRootAsync({
+    PrismaModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get('database.url')!,
-        entities: [User, Article, Comment],
-        migrations: [__dirname + '/migrations/**/*{.js,.ts}'],
+        connectionString: configService.get('database.url')!,
       }),
-      async dataSourceFactory(options) {
-        if (!options) {
-          throw new Error('Invalid options passed')
-        }
-
-        return addTransactionalDataSource(new DataSource(options))
-      },
       inject: [ConfigService],
+    }),
+    ClsModule.forRoot({
+      plugins: [
+        new ClsPluginTransactional({
+          adapter: new TransactionalAdapterPrisma({
+            prismaInjectionToken: PRISMA_CLIENT,
+            sqlFlavor: 'postgresql',
+          }),
+        }),
+      ],
     }),
     RedisOmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
