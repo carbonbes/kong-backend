@@ -7,8 +7,8 @@ model Article {
   id        Int           @id @default(autoincrement())
   authorId  Int
   author    User          @relation(fields: [authorId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  subsiteId Int
-  subsite   Subsite       @relation(fields: [subsiteId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  subsiteId Int?
+  subsite   Subsite?      @relation(fields: [subsiteId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   status    ArticleStatus @default(draft)
   rating    Int           @default(0)
   content   Json

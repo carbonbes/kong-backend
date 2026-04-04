@@ -1,5 +1,1 @@
-export enum UserGender {
-  Male = 'male',
-  Female = 'female',
-  Other = 'other',
-}
+export { UserGender } from '@/prisma/enums'

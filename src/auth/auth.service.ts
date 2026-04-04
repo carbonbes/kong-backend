@@ -16,7 +16,7 @@ import type {
   VerifyOtpOptions,
   VerifyOtpReturn,
 } from './types'
-import { Transactional } from 'typeorm-transactional'
+import { Transactional } from '@nestjs-cls/transactional'
 import { OtpsService } from '@/otps/otps.service'
 import { OtpType } from '@/otps/enums'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
@@ -33,13 +33,13 @@ export class AuthService {
   async signUp(options: SignUpOptions): SignUpReturn {
     const { email } = options
 
-    const isExist = await this.usersService.isExist({ email })
+    const isExist = (await this.usersService.count({ where: { email } })) > 0
 
     if (isExist) {
       throw new ForbiddenException()
     }
 
-    await this.usersService.create(options)
+    await this.usersService.create({ data: options })
     await this.otpsService.create({ type: OtpType.SIGN_UP, email })
   }
 
@@ -47,7 +47,7 @@ export class AuthService {
   async signIn(options: SignInOptions): SignInReturn {
     const { email } = options
 
-    const user = await this.usersService.findOne({ email })
+    const user = await this.usersService.findUnique({ where: { email } })
 
     if (!user || (user && !user.isActive)) {
       throw new ForbiddenException()
@@ -67,7 +67,7 @@ export class AuthService {
     const { type, email } = options
 
     if (type === 'SIGN_UP') {
-      await this.usersService.setActive({
+      await this.usersService.update({
         where: { email },
         data: { isActive: true },
       })

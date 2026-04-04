@@ -8,7 +8,7 @@ import {
   Length,
   Min,
 } from 'class-validator'
-import { User } from '@/users/entities'
+import { User } from '@/users/types'
 import { UserGender, UserRole } from '@/users/enums'
 
 export class UserDto implements User {
@@ -35,8 +35,8 @@ export class UserDto implements User {
   isActive: boolean
 
   @IsInt()
-  createdAt: number
+  createdAt: Date
 
   @IsInt()
-  updatedAt: number
+  updatedAt: Date
 }

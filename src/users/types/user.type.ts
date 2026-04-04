@@ -1,3 +1,1 @@
-import type { Prisma } from '@/prisma/types'
-
-export type User = Prisma.UserModel
+export type { UserModel as User } from '@/prisma/models'

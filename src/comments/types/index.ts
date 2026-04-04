@@ -1,6 +1,1 @@
-export * from './create-comment.types'
-export * from './delete-comment.types'
-export * from './find-many-comments-by-article.types'
-export * from './find-many-comments-by-author.types'
-export * from './find-one-comment.types'
-export * from './update-comment.types'
+export * from './comment.type'

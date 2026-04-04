@@ -13,13 +13,10 @@ import { OtpType } from '@/otps/enums'
 import { SignInOptions, SignUpOptions, VerifyOtpOptions } from '@/auth/types'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { User } from '@/users/entities'
+import { User } from '@/users/types'
 import { REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
-
-vi.mock('typeorm-transactional', () => ({
-  Transactional: () => () => ({}),
-}))
+import { TransactionHost } from '@nestjs-cls/transactional'
 
 describe('AuthService', () => {
   let authService: AuthService
@@ -28,11 +25,25 @@ describe('AuthService', () => {
   let authJwtsService: MockProxy<AuthJwtsService>
 
   beforeEach(async () => {
+    usersService = mock<UsersService>()
+    otpsService = mock<OtpsService>()
+    authJwtsService = mock<AuthJwtsService>()
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService],
-    })
-      .useMocker(mock)
-      .compile()
+      providers: [
+        AuthService,
+        {
+          provide: TransactionHost,
+          useValue: {
+            run: vi.fn().mockImplementation((fn) => fn()),
+            tx: {},
+          },
+        },
+        { provide: UsersService, useValue: usersService },
+        { provide: OtpsService, useValue: otpsService },
+        { provide: AuthJwtsService, useValue: authJwtsService },
+      ],
+    }).compile()
 
     authService = module.get<AuthService>(AuthService)
     usersService = module.get<MockProxy<UsersService>>(UsersService)
@@ -52,13 +63,15 @@ describe('AuthService', () => {
       const user = getFakeUser({ ...options })
       const otp = getFakeOtp({ type: OtpType.SIGN_UP, email: user.email })
 
-      usersService.isExist.mockResolvedValue(false)
+      usersService.count.mockResolvedValue(0)
       usersService.create.mockResolvedValue(user)
       otpsService.create.mockResolvedValue(otp)
 
       const result = await authService.signUp(options)
 
-      expect(usersService.isExist).toHaveBeenCalledWith({ email: user.email })
+      expect(usersService.count).toHaveBeenCalledWith({
+        where: { email: user.email },
+      })
       expect(usersService.create).toHaveBeenCalledWith(options)
       expect(otpsService.create).toHaveBeenCalledWith({
         type: otp.type,
@@ -70,12 +83,14 @@ describe('AuthService', () => {
     test('should return 403 if a user has exists', async () => {
       const user = getFakeUser({ ...options })
 
-      usersService.isExist.mockResolvedValue(true)
+      usersService.count.mockResolvedValue(1)
 
       await expect(authService.signUp(options)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(usersService.isExist).toHaveBeenCalledWith({ email: user.email })
+      expect(usersService.count).toHaveBeenCalledWith({
+        where: { email: user.email },
+      })
     })
   })
 
@@ -90,12 +105,14 @@ describe('AuthService', () => {
       const user = getFakeUser({ ...options, isActive: true })
       const otp = getFakeOtp({ type: OtpType.SIGN_IN, email: user.email })
 
-      usersService.findOne.mockResolvedValue(user)
+      usersService.findUnique.mockResolvedValue(user)
       otpsService.create.mockResolvedValue(otp)
 
       const result = await authService.signIn(options)
 
-      expect(usersService.findOne).toHaveBeenCalledWith({ email: user.email })
+      expect(usersService.findUnique).toHaveBeenCalledWith({
+        where: { email: user.email },
+      })
       expect(otpsService.create).toHaveBeenCalledWith({
         type: otp.type,
         email: user.email,
@@ -106,23 +123,27 @@ describe('AuthService', () => {
     test('should return a 403 if a user not exist', async () => {
       const user = getFakeUser({ ...options })
 
-      usersService.findOne.mockResolvedValue(null)
+      usersService.findUnique.mockResolvedValue(null)
 
       await expect(authService.signIn(options)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(usersService.findOne).toHaveBeenCalledWith({ email: user.email })
+      expect(usersService.findUnique).toHaveBeenCalledWith({
+        where: { email: user.email },
+      })
     })
 
     test('should return a 403 if a user does not active', async () => {
       const user = getFakeUser({ ...options, isActive: false })
 
-      usersService.findOne.mockResolvedValue(user)
+      usersService.findUnique.mockResolvedValue(user)
 
       await expect(authService.signIn(options)).rejects.toThrow(
         new ForbiddenException(),
       )
-      expect(usersService.findOne).toHaveBeenCalledWith({ email: user.email })
+      expect(usersService.findUnique).toHaveBeenCalledWith({
+        where: { email: user.email },
+      })
     })
   })
 
@@ -149,7 +170,7 @@ describe('AuthService', () => {
       const result = await authService.verifyOtp(options)
 
       expect(otpsService.verify).toHaveBeenCalledWith(options)
-      expect(usersService.setActive).toHaveBeenCalledWith({
+      expect(usersService.update).toHaveBeenCalledWith({
         where: { email },
         data: { isActive: true },
       })

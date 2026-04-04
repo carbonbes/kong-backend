@@ -1,5 +1,1 @@
-export * from './create-article.types'
-export * from './delete-article.types'
-export * from './find-many-articles.types'
-export * from './find-one-article.types'
-export * from './update-article.types'
+export * from './article.type'

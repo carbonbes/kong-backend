@@ -1,4 +1,1 @@
-export enum ArticleStatus {
-  Draft = 'draft',
-  Published = 'published',
-}
+export { ArticleStatus } from '@/prisma/enums'

@@ -1,15 +1,16 @@
-import { Comment } from '@/comments/entities'
+import { Comment } from '@/comments/types'
 import {
+  IsDate,
   IsInt,
   IsObject,
   IsOptional,
   Min,
   ValidateNested,
 } from 'class-validator'
-import { User } from '@/users/entities'
+import type { User } from '@/users/types'
 import { Type } from 'class-transformer'
 import { UserDto } from '@/users/dtos'
-import { Article } from '@/articles/entities'
+import type { Article } from '@/articles/types'
 import { ArticleDto } from '@/articles/dtos'
 import type { JSONContent } from '@tiptap/core'
 import { CommentContentDto } from '@/comments/dtos/comment-content.dto'
@@ -40,7 +41,7 @@ export class CommentDto implements Comment {
   @IsOptional()
   @IsInt()
   @Min(1)
-  parentCommentId?: number | null
+  parentCommentId: number | null
 
   @IsObject()
   @ValidateNested()
@@ -50,15 +51,9 @@ export class CommentDto implements Comment {
   @IsInt()
   rating: number
 
-  @IsInt()
-  @Min(0)
-  childrenCount: number
+  @IsDate()
+  createdAt: Date
 
-  @IsInt()
-  @Min(0)
-  createdAt: number
-
-  @IsInt()
-  @Min(0)
-  updatedAt: number
+  @IsDate()
+  updatedAt: Date
 }

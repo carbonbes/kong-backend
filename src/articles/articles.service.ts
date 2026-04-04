@@ -1,52 +1,33 @@
 import { Injectable } from '@nestjs/common'
-import {
-  CreateArticleOptions,
-  CreateArticleReturn,
-  FindOneArticleOptions,
-  FindOneArticleReturn,
-  FindManyArticlesOptions,
-  FindManyArticlesReturn,
-  UpdateArticleOptions,
-  UpdateArticleReturn,
-  DeleteArticleOptions,
-  DeleteArticleReturn,
-} from '@/articles/types'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { Article } from '@/articles/entities'
+import { TransactionHost } from '@nestjs-cls/transactional'
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import { Prisma, PrismaClient } from '@/prisma/types'
 
 @Injectable()
 export class ArticlesService {
   constructor(
-    @InjectRepository(Article)
-    private readonly articlesRepository: Repository<Article>,
+    private readonly txHost: TransactionHost<
+      TransactionalAdapterPrisma<PrismaClient>
+    >,
   ) {}
 
-  async create(options: CreateArticleOptions): CreateArticleReturn {
-    const { id } = await this.articlesRepository.save(options)
-
-    return (await this.findOne({ id }))!
+  create(options: Prisma.ArticleCreateArgs) {
+    return this.txHost.tx.article.create(options)
   }
 
-  findOne(options: FindOneArticleOptions): FindOneArticleReturn {
-    return this.articlesRepository.findOneBy(options)
+  findUnique(options: Prisma.ArticleFindUniqueArgs) {
+    return this.txHost.tx.article.findUnique(options)
   }
 
-  findMany(options: FindManyArticlesOptions): FindManyArticlesReturn {
-    return this.articlesRepository.find(options)
+  findMany(options: Prisma.ArticleFindManyArgs) {
+    return this.txHost.tx.article.findMany(options)
   }
 
-  async update(options: UpdateArticleOptions): UpdateArticleReturn {
-    const { where, data } = options
-
-    await this.articlesRepository.update(where, data)
-
-    return (await this.findOne(where))!
+  update(options: Prisma.ArticleUpdateArgs) {
+    return this.txHost.tx.article.update(options)
   }
 
-  async delete(options: DeleteArticleOptions): DeleteArticleReturn {
-    await this.articlesRepository.delete(options)
-
-    return (await this.findOne(options))!
+  delete(options: Prisma.ArticleDeleteArgs) {
+    return this.txHost.tx.article.delete(options)
   }
 }
