@@ -3,32 +3,40 @@ import { ArticlesService } from './articles.service'
 import {
   CreateArticleOptions,
   DeleteArticleOptions,
-  FindManyArticlesOptions,
+  FindManyArticlesByAuthorOptions,
+  FindManyArticlesBySubsiteOptions,
   FindOneArticleOptions,
   UpdateArticleOptions,
 } from './types'
-import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
+import { getFakeArticle, getFakeInt } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { Repository } from 'typeorm'
+import { Repository, SelectQueryBuilder } from 'typeorm'
 import { Article } from '@/articles/entities'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { NotFoundException } from '@nestjs/common'
-import { CommentsService } from '@/comments/comments.service'
+import { createMockTypeOrmQueryBuilder } from '@/test/mocks'
+import Paginator from 'typeorm-cursor-pagination/lib/Paginator'
+import { buildPaginator } from 'typeorm-cursor-pagination'
+
+vi.mock('typeorm-cursor-pagination', () => ({
+  buildPaginator: vi.fn(),
+}))
 
 describe('ArticlesService', () => {
   let articlesService: ArticlesService
   let articlesRepository: MockProxy<Repository<Article>>
-  let commentsService: MockProxy<CommentsService>
+  let paginator: MockProxy<Paginator<Article>>
 
   beforeEach(async () => {
     articlesRepository = mock<Repository<Article>>()
-    commentsService = mock<CommentsService>()
+    paginator = mock<Paginator<Article>>()
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ArticlesService,
-        { provide: getRepositoryToken(Article), useValue: articlesRepository },
-        { provide: CommentsService, useValue: commentsService },
+        {
+          provide: getRepositoryToken(Article),
+          useValue: articlesRepository,
+        },
       ],
     }).compile()
 
@@ -42,10 +50,14 @@ describe('ArticlesService', () => {
       const article = getFakeArticle({ authorId, content })
 
       articlesRepository.save.mockResolvedValue(article)
+      articlesRepository.findOneBy.mockResolvedValue(article)
 
       const result = await articlesService.create(options)
 
       expect(articlesRepository.save).toHaveBeenCalledWith(options)
+      expect(articlesRepository.findOneBy).toHaveBeenCalledWith({
+        id: article.id,
+      })
       expect(result).toEqual(article)
     })
   })
@@ -77,23 +89,302 @@ describe('ArticlesService', () => {
     })
   })
 
-  describe('findMany', () => {
-    test('should find an articles by author id', async () => {
-      const user = getFakeUser()
-      const options: FindManyArticlesOptions = {
-        where: { author: { id: user.id } },
+  describe('findManyByAuthor', () => {
+    let articles: Article[]
+    let queryBuilder: SelectQueryBuilder<Article>
+
+    beforeEach(async () => {
+      articles = Array.from({ length: 50 }).map(() => getFakeArticle())
+      queryBuilder = createMockTypeOrmQueryBuilder({ getMany: articles })
+      articlesRepository.createQueryBuilder.mockReturnValue(queryBuilder)
+      vi.mocked(buildPaginator<Article>).mockReturnValue(paginator)
+    })
+
+    test('should find a single page of articles by author without author and subsite fields', async () => {
+      const options: FindManyArticlesByAuthorOptions = {
+        authorId: getFakeInt(),
       }
+      const {
+        authorId,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
 
-      const articles = Array.from({ length: 10 }).map(() =>
-        getFakeArticle({ author: user }),
+      paginator.paginate.mockResolvedValue({
+        data: articles,
+        cursor: { beforeCursor: null, afterCursor: 'next-cursor' },
+      })
+
+      const result = await articlesService.findManyByAuthor(options)
+
+      expect(articlesRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'article',
       )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'article.authorId = :authorId',
+        { authorId },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Article,
+        alias: 'article',
+        query: { limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: articles,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
 
-      articlesRepository.find.mockResolvedValue(articles)
+    test('should find a single page of articles by author with author and subsite fields', async () => {
+      const options: FindManyArticlesByAuthorOptions = {
+        authorId: getFakeInt(),
+        select: { author: true, subsite: true },
+      }
+      const {
+        authorId,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
 
-      const result = await articlesService.findMany(options)
+      paginator.paginate.mockResolvedValue({
+        data: articles,
+        cursor: { beforeCursor: null, afterCursor: 'next-cursor' },
+      })
 
-      expect(articlesRepository.find).toHaveBeenCalledWith(options)
-      expect(result).toEqual(articles)
+      const result = await articlesService.findManyByAuthor(options)
+
+      expect(articlesRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'article',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.subsite',
+        'subsite',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'article.authorId = :authorId',
+        { authorId },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Article,
+        alias: 'article',
+        query: { limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: articles,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
+
+    test('should find next page of articles by author using cursor without author and subsite fields', async () => {
+      const options: FindManyArticlesByAuthorOptions = {
+        authorId: getFakeInt(),
+        cursor: 'next-cursor',
+      }
+      const {
+        authorId,
+        cursor,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
+
+      paginator.paginate.mockResolvedValue({
+        data: articles,
+        cursor: { beforeCursor: 'previous-cursor', afterCursor: 'next-cursor' },
+      })
+
+      const result = await articlesService.findManyByAuthor(options)
+
+      expect(articlesRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'article',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.subsite',
+        'subsite',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'article.authorId = :authorId',
+        { authorId },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Article,
+        alias: 'article',
+        query: { afterCursor: cursor, limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: articles,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
+
+    test('should find next page of articles by author using cursor without author and subsite fields', async () => {
+      const options: FindManyArticlesByAuthorOptions = {
+        authorId: getFakeInt(),
+        cursor: 'next-cursor',
+      }
+      const {
+        authorId,
+        cursor,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
+
+      paginator.paginate.mockResolvedValue({
+        data: articles,
+        cursor: { beforeCursor: 'previous-cursor', afterCursor: 'next-cursor' },
+      })
+
+      const result = await articlesService.findManyByAuthor(options)
+
+      expect(articlesRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'article',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.subsite',
+        'subsite',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'article.authorId = :authorId',
+        { authorId },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Article,
+        alias: 'article',
+        query: { afterCursor: cursor, limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: articles,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
+  })
+
+  describe('findManyBySubsite', () => {
+    let articles: Article[]
+    let queryBuilder: SelectQueryBuilder<Article>
+
+    beforeEach(async () => {
+      articles = Array.from({ length: 50 }).map(() => getFakeArticle())
+      queryBuilder = createMockTypeOrmQueryBuilder({ getMany: articles })
+      articlesRepository.createQueryBuilder.mockReturnValue(queryBuilder)
+      vi.mocked(buildPaginator<Article>).mockReturnValue(paginator)
+    })
+
+    test('should find a single page of articles by subsite', async () => {
+      const options: FindManyArticlesBySubsiteOptions = {
+        subsiteId: getFakeInt(),
+      }
+      const {
+        subsiteId,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
+
+      paginator.paginate.mockResolvedValue({
+        data: articles,
+        cursor: { beforeCursor: null, afterCursor: 'next-cursor' },
+      })
+
+      const result = await articlesService.findManyBySubsite(options)
+
+      expect(articlesRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'article',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.subsite',
+        'subsite',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'article.subsiteId = :subsiteId',
+        { subsiteId },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Article,
+        alias: 'article',
+        query: { limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: articles,
+        meta: { cursor: 'next-cursor' },
+      })
+    })
+
+    test('should find next page of articles by subsite using cursor', async () => {
+      const options: FindManyArticlesBySubsiteOptions = {
+        subsiteId: getFakeInt(),
+        cursor: 'next-cursor',
+      }
+      const {
+        subsiteId,
+        cursor,
+        limit = 10,
+        orderBy = 'DESC',
+        sortBy = 'rating',
+      } = options
+
+      paginator.paginate.mockResolvedValue({
+        data: articles,
+        cursor: { beforeCursor: 'previous-cursor', afterCursor: 'next-cursor' },
+      })
+
+      const result = await articlesService.findManyBySubsite(options)
+
+      expect(articlesRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'article',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.author',
+        'author',
+      )
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'article.subsite',
+        'subsite',
+      )
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'article.subsiteId = :subsiteId',
+        { subsiteId },
+      )
+      expect(buildPaginator).toHaveBeenCalledWith({
+        entity: Article,
+        alias: 'article',
+        query: { afterCursor: cursor, limit, order: orderBy },
+        paginationKeys: [sortBy, 'id'],
+      })
+      expect(paginator.paginate).toHaveBeenCalledWith(queryBuilder)
+      expect(result).toEqual({
+        items: articles,
+        meta: { cursor: 'next-cursor' },
+      })
     })
   })
 
@@ -132,16 +423,16 @@ describe('ArticlesService', () => {
       expect(result).toEqual(article)
     })
 
-    test('should return a null', async () => {
+    test('should return null', async () => {
       const id = getFakeInt()
       const options: DeleteArticleOptions = { id }
 
       articlesRepository.findOneBy.mockResolvedValue(null)
 
-      await expect(articlesService.delete(options)).rejects.toThrow(
-        NotFoundException,
-      )
+      const result = await articlesService.delete(options)
+
       expect(articlesRepository.findOneBy).toHaveBeenCalledWith(options)
+      expect(result).toBeNull()
     })
   })
 })

@@ -6,10 +6,10 @@ import {
   ManyToOne,
   VirtualColumn,
 } from 'typeorm'
-import { User } from '@/users/entities'
 import { Article } from '@/articles/entities'
 import type { JSONContent } from '@tiptap/core'
 import { BaseEntity } from '@/shared/typeorm/entities'
+import { User } from '@/users/entities'
 
 @Entity('comments')
 @Index(['authorId', 'articleId', 'parentCommentId'])
@@ -22,7 +22,7 @@ export class Comment extends BaseEntity {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn()
+  @JoinColumn({ name: 'authorId' })
   author: User
 
   @Column()
@@ -33,7 +33,7 @@ export class Comment extends BaseEntity {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn()
+  @JoinColumn({ name: 'articleId' })
   article: Article
 
   @Column({ type: 'int', nullable: true, default: null })

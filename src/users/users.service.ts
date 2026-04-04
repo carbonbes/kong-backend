@@ -12,13 +12,14 @@ import {
   UpdateReturn,
 } from '@/users/types'
 import { InjectRepository } from '@nestjs/typeorm'
-import { User } from '@/users/entities'
 import { Repository } from 'typeorm'
+import { User } from '@/users/entities'
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) private readonly usersRepository: Repository<User>,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
   ) {}
 
   create(options: CreateOptions): CreateReturn {

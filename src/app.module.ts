@@ -24,6 +24,8 @@ import { User } from '@/users/entities'
 import { Article } from '@/articles/entities'
 import { Comment } from '@/comments/entities'
 import { CommentsModule } from '@/comments/comments.module'
+import { SubsitesModule } from './subsites/subsites.module'
+import { Subsite } from '@/subsites/entities'
 
 @Module({
   imports: [
@@ -40,7 +42,7 @@ import { CommentsModule } from '@/comments/comments.module'
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get('database.url')!,
-        entities: [User, Article, Comment],
+        entities: [User, Article, Comment, Subsite],
         migrations: [__dirname + '/migrations/**/*{.js,.ts}'],
       }),
       async dataSourceFactory(options) {
@@ -65,6 +67,7 @@ import { CommentsModule } from '@/comments/comments.module'
     AuthModule,
     ArticlesModule,
     CommentsModule,
+    SubsitesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessJwtAuthGuard },

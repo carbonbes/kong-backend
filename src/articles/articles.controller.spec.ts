@@ -3,7 +3,12 @@ import { ArticlesController } from './articles.controller'
 import { ArticlesService } from './articles.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
-import { CreateArticleDto, UpdateArticleDto } from './dtos'
+import {
+  CreateArticleDto,
+  FindManyArticlesByAuthorQueryDto,
+  FindManyArticlesBySubsiteQueryDto,
+  UpdateArticleDto,
+} from './dtos'
 import { ArticleStatus } from '@/articles/enums'
 import { CreateArticleOptions } from '@/articles/types'
 
@@ -68,6 +73,57 @@ describe('ArticlesController', () => {
 
       expect(articlesService.findOne).toHaveBeenCalledWith({ id })
       expect(result).toBeNull()
+    })
+  })
+
+  describe('findManyByAuthor', () => {
+    test('should find an articles by author', async () => {
+      const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
+      const userId = 1
+      const query: FindManyArticlesByAuthorQueryDto = { limit: 10 }
+
+      articlesService.findManyByAuthor.mockResolvedValue({
+        items: articles,
+        meta: { cursor: null },
+      })
+
+      const result = await articlesController.findManyByAuthor(userId, query)
+
+      expect(articlesService.findManyByAuthor).toHaveBeenCalledWith({
+        authorId: userId,
+        ...query,
+      })
+      expect(result).toEqual({
+        items: articles,
+        meta: { cursor: null },
+      })
+    })
+  })
+
+  describe('findManyBySubsite', () => {
+    test('should find an articles by subsite', async () => {
+      const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
+      const subsiteId = 1
+      const query: FindManyArticlesBySubsiteQueryDto = { limit: 10 }
+
+      articlesService.findManyBySubsite.mockResolvedValue({
+        items: articles,
+        meta: { cursor: null },
+      })
+
+      const result = await articlesController.findManyBySubsite(
+        subsiteId,
+        query,
+      )
+
+      expect(articlesService.findManyBySubsite).toHaveBeenCalledWith({
+        subsiteId,
+        ...query,
+      })
+      expect(result).toEqual({
+        items: articles,
+        meta: { cursor: null },
+      })
     })
   })
 

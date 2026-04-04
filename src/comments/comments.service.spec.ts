@@ -33,7 +33,10 @@ describe('CommentsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CommentsService,
-        { provide: getRepositoryToken(Comment), useValue: commentsRepository },
+        {
+          provide: getRepositoryToken(Comment),
+          useValue: commentsRepository,
+        },
       ],
     }).compile()
 

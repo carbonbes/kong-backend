@@ -14,7 +14,7 @@ import { ArticleDto } from '@/articles/dtos'
 import type { JSONContent } from '@tiptap/core'
 import { CommentContentDto } from '@/comments/dtos/comment-content.dto'
 
-export class CommentDto implements Comment {
+export class CommentDto implements Omit<Comment, 'beforeUpdateHandle'> {
   @IsInt()
   @Min(1)
   id: number

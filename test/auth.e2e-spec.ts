@@ -59,7 +59,9 @@ describe('AuthController (e2e)', () => {
       .useValue(mailService)
       .compile()
 
-    usersRepository = module.get<Repository<User>>(getRepositoryToken(User))
+    usersRepository = module.get<Repository<User>>(
+      getRepositoryToken(User),
+    )
     otpsService = module.get<OtpsService>(OtpsService)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
     dataSource = module.get<DataSource>(DataSource)
@@ -339,11 +341,7 @@ describe('AuthController (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
 
-      expect(response.body).toEqual({
-        ...user,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-      })
+      expect(response.body).toEqual(user)
     })
 
     test('should return 401 when no authorization header', async () => {

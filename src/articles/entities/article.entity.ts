@@ -1,14 +1,16 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm'
 import { User } from '@/users/entities'
 import { ArticleStatus } from '@/articles/enums'
 import type { JSONContent } from '@tiptap/core'
-import { CreateDateColumn, UpdateDateColumn } from '@/shared/typeorm/decorators'
+import { Subsite } from '@/subsites/entities'
 
 @Entity('articles')
 export class Article {
@@ -19,12 +21,21 @@ export class Article {
   authorId: number
 
   @ManyToOne(() => User, {
-    eager: true,
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
   })
-  @JoinColumn()
+  @JoinColumn({ name: 'authorId' })
   author: User
+
+  @Column({ type: 'int', nullable: true, default: null })
+  subsiteId?: number | null
+
+  @ManyToOne(() => Subsite, {
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'subsiteId' })
+  subsite: Subsite
 
   @Column({ type: 'jsonb' })
   content: JSONContent
@@ -36,8 +47,8 @@ export class Article {
   rating: number
 
   @CreateDateColumn()
-  createdAt: number
+  createdAt: Date
 
   @UpdateDateColumn()
-  updatedAt: number
+  updatedAt: Date
 }

@@ -7,11 +7,11 @@ import {
   SetActiveOptions,
   UpdateOptions,
 } from '@/users/types'
-import { User } from '@/users/entities'
 import { getFakeEmail, getFakeUser } from '@/test/utils'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { Repository } from 'typeorm'
 import { getRepositoryToken } from '@nestjs/typeorm'
+import { User } from '@/users/entities'
 
 describe('UsersService', () => {
   let usersService: UsersService

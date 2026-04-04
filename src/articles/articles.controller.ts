@@ -7,9 +7,15 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common'
-import { ArticlesService } from './articles.service'
-import { CreateArticleDto, UpdateArticleDto } from './dtos'
+import { ArticlesService } from '@/articles/articles.service'
+import {
+  CreateArticleDto,
+  FindManyArticlesByAuthorQueryDto,
+  FindManyArticlesBySubsiteQueryDto,
+  UpdateArticleDto,
+} from '@/articles/dtos'
 import { Session } from '@/shared/decorators'
 
 @Controller('articles')
@@ -27,6 +33,22 @@ export class ArticlesController {
   @Get('/:articleId')
   findOne(@Param('articleId', ParseIntPipe) articleId: number) {
     return this.articlesService.findOne({ id: articleId })
+  }
+
+  @Get('/users/:userId')
+  findManyByAuthor(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() query: FindManyArticlesByAuthorQueryDto,
+  ) {
+    return this.articlesService.findManyByAuthor({ authorId: userId, ...query })
+  }
+
+  @Get('/subsites/:subsiteId')
+  findManyBySubsite(
+    @Param('subsiteId', ParseIntPipe) subsiteId: number,
+    @Query() query: FindManyArticlesBySubsiteQueryDto,
+  ) {
+    return this.articlesService.findManyBySubsite({ subsiteId, ...query })
   }
 
   @Patch('/:articleId')

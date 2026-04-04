@@ -1,5 +1,6 @@
 export * from './create-article.types'
 export * from './delete-article.types'
-export * from './find-many-articles.types'
+export * from './find-many-articles-by-author.types'
+export * from './find-many-articles-by-subsite.types'
 export * from './find-one-article.types'
 export * from './update-article.types'

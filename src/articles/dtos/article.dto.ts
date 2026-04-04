@@ -1,13 +1,23 @@
 import { Type } from 'class-transformer'
-import { IsEnum, IsInt, IsObject, Min, ValidateNested } from 'class-validator'
+import {
+  IsDate,
+  IsEnum,
+  IsInt,
+  IsObject,
+  IsOptional,
+  Min,
+  ValidateNested,
+} from 'class-validator'
 import { Article } from '@/articles/entities'
 import { ArticleStatus } from '@/articles/enums'
 import { ArticleContentDto } from '@/articles/dtos/article-content.dto'
 import { User } from '@/users/entities'
 import type { JSONContent } from '@tiptap/core'
 import { UserDto } from '@/users/dtos'
+import { Subsite } from '@/subsites/entities'
+import { SubsiteDto } from '@/subsites/dtos'
 
-export class ArticleDto implements Article {
+export class ArticleDto implements Omit<Article, 'beforeUpdateHandle'> {
   @IsInt()
   @Min(1)
   id: number
@@ -21,6 +31,16 @@ export class ArticleDto implements Article {
   @Type(() => UserDto)
   author: User
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  subsiteId?: number | null
+
+  @IsObject()
+  @ValidateNested()
+  @Type(() => SubsiteDto)
+  subsite: Subsite
+
   @IsObject()
   @ValidateNested()
   @Type(() => ArticleContentDto)
@@ -32,9 +52,9 @@ export class ArticleDto implements Article {
   @IsEnum(ArticleStatus)
   status: ArticleStatus
 
-  @IsInt()
-  createdAt: number
+  @IsDate()
+  createdAt: Date
 
-  @IsInt()
-  updatedAt: number
+  @IsDate()
+  updatedAt: Date
 }

@@ -30,6 +30,7 @@ export const getFakeComment = ({
   },
   rating: rating ?? faker.number.int(),
   childrenCount: childrenCount ?? faker.number.int(),
-  createdAt: createdAt ?? faker.date.past().getTime(),
-  updatedAt: updatedAt ?? faker.date.future().getTime(),
+  createdAt: createdAt ?? faker.date.past().getTime() / 1000,
+  updatedAt: updatedAt ?? faker.date.future().getTime() / 1000,
+  beforeUpdateHandle() {},
 })

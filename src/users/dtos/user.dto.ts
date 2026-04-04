@@ -11,7 +11,7 @@ import {
 import { User } from '@/users/entities'
 import { UserGender, UserRole } from '@/users/enums'
 
-export class UserDto implements User {
+export class UserDto implements Omit<User, 'beforeUpdateHandle'> {
   @IsInt()
   @Min(1)
   id: number
@@ -35,8 +35,10 @@ export class UserDto implements User {
   isActive: boolean
 
   @IsInt()
+  @Min(0)
   createdAt: number
 
   @IsInt()
+  @Min(0)
   updatedAt: number
 }

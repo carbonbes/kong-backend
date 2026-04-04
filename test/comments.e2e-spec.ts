@@ -11,7 +11,6 @@ import { DataSource, Repository } from 'typeorm'
 import { UsersService } from '@/users/users.service'
 import { ArticlesService } from '@/articles/articles.service'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
-import { User } from '@/users/entities'
 import { EncodedJwt } from '@/shared/types'
 import {
   initializeTransactionalContext,
@@ -38,7 +37,6 @@ describe('Comments (e2e)', () => {
   let articlesService: ArticlesService
   let commentsRepository: Repository<Comment>
   let authJwtsService: AuthJwtsService
-  let user: User
   let accessToken: EncodedJwt
 
   beforeAll(async () => {
@@ -78,12 +76,12 @@ describe('Comments (e2e)', () => {
     server = app.getHttpServer()
     await app.init()
 
-    user = await usersService.create({
+    await usersService.create({
       email: 'test@test.com',
       name: 'Test',
       gender: UserGender.Male,
     })
-    accessToken = authJwtsService.sign({ sub: user.email }).accessToken
+    accessToken = authJwtsService.sign({ sub: 'test@test.com' }).accessToken
     await articlesService.create({
       authorId: 1,
       content: [getFakeHeadingNode()],
