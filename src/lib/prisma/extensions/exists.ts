@@ -7,12 +7,11 @@ export const exists = Prisma.defineExtension({
     $allModels: {
       async exists<T>(
         this: T,
-        where: Prisma.Args<T, 'findFirst'>['where'],
+        where: Prisma.Args<T, 'count'>['where'],
       ): ExistsReturn {
         const context = Prisma.getExtensionContext(this)
-        const result = await (context as any).count({ where })
 
-        return result > 0
+        return (await (context as any).count({ where })) > 0
       },
     },
   },
