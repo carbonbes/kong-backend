@@ -21,12 +21,12 @@ export class ArticlesController {
     @Session('id') authorId: number,
     @Body() { content }: CreateArticleDto,
   ) {
-    return this.articlesService.create({ authorId, content })
+    return this.articlesService.create({ data: { authorId, content } })
   }
 
   @Get('/:articleId')
-  findOne(@Param('articleId', ParseIntPipe) articleId: number) {
-    return this.articlesService.findOne({ id: articleId })
+  findUnique(@Param('articleId', ParseIntPipe) articleId: number) {
+    return this.articlesService.findUnique({ where: { id: articleId } })
   }
 
   @Patch('/:articleId')
@@ -39,6 +39,6 @@ export class ArticlesController {
 
   @Delete('/:articleId')
   delete(@Param('articleId', ParseIntPipe) articleId: number) {
-    return this.articlesService.delete({ id: articleId })
+    return this.articlesService.delete({ where: { id: articleId } })
   }
 }

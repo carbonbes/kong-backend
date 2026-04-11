@@ -1,4 +1,4 @@
-import { Comment } from '@/comments/entities'
+import { Comment } from '@/comments/types'
 
 type SortFields = Extract<keyof Comment, 'createdAt' | 'rating'>
 

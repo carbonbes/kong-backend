@@ -1,7 +1,21 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { Prisma, PrismaClient } from '@/prisma/types'
+import { PrismaClient } from '@/prisma/types'
+import {
+  CreateArticleOptions,
+  CreateArticleReturn,
+  DeleteArticleOptions,
+  DeleteArticleReturn,
+  ExistsArticleOptions,
+  ExistsArticleReturn,
+  FindManyArticlesOptions,
+  FindManyArticlesReturn,
+  FindUniqueArticleOptions,
+  FindUniqueArticleReturn,
+  UpdateArticleOptions,
+  UpdateArticleReturn,
+} from '@/articles/types'
 
 @Injectable()
 export class ArticlesService {
@@ -11,23 +25,27 @@ export class ArticlesService {
     >,
   ) {}
 
-  create(options: Prisma.ArticleCreateArgs) {
+  create(options: CreateArticleOptions): CreateArticleReturn {
     return this.txHost.tx.article.create(options)
   }
 
-  findUnique(options: Prisma.ArticleFindUniqueArgs) {
+  findUnique(options: FindUniqueArticleOptions): FindUniqueArticleReturn {
     return this.txHost.tx.article.findUnique(options)
   }
 
-  findMany(options: Prisma.ArticleFindManyArgs) {
+  findMany(options: FindManyArticlesOptions): FindManyArticlesReturn {
     return this.txHost.tx.article.findMany(options)
   }
 
-  update(options: Prisma.ArticleUpdateArgs) {
+  update(options: UpdateArticleOptions): UpdateArticleReturn {
     return this.txHost.tx.article.update(options)
   }
 
-  delete(options: Prisma.ArticleDeleteArgs) {
+  delete(options: DeleteArticleOptions): DeleteArticleReturn {
     return this.txHost.tx.article.delete(options)
+  }
+
+  async exists(options: ExistsArticleOptions): ExistsArticleReturn {
+    return (await this.txHost.tx.article.count(options)) > 0
   }
 }

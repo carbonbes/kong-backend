@@ -23,18 +23,17 @@ describe('ArticlesController', () => {
   })
 
   describe('create', () => {
-    test('should create and return an article', async () => {
+    test('should create and return article', async () => {
       const user = getFakeUser()
       const article = getFakeArticle({
         author: user,
-        status: ArticleStatus.Draft,
+        status: ArticleStatus.draft,
       })
       const body: CreateArticleDto = {
         content: article.content,
       }
       const options: CreateArticleOptions = {
-        authorId: user.id,
-        content: body.content,
+        data: { authorId: user.id, content: body.content },
       }
 
       articlesService.create.mockResolvedValue(article)
@@ -46,33 +45,39 @@ describe('ArticlesController', () => {
     })
   })
 
-  describe('findOne', () => {
-    test('should find and return an article', async () => {
+  describe('findUnique', () => {
+    test('should find and return article', async () => {
       const article = getFakeArticle()
       const id = article.id
 
-      articlesService.findOne.mockResolvedValue(article)
+      articlesService.findUnique.mockResolvedValue(article)
 
-      const result = await articlesController.findOne(id)
+      const result = await articlesController.findUnique(id)
 
-      expect(articlesService.findOne).toHaveBeenCalledWith({ id })
+      expect(articlesService.findUnique).toHaveBeenCalledWith({ where: { id } })
       expect(result).toEqual(article)
     })
 
-    test('should find nothing and return a null', async () => {
+    test('should find nothing and return null', async () => {
       const id = getFakeInt()
 
-      articlesService.findOne.mockResolvedValue(null)
+      articlesService.findUnique.mockResolvedValue(null)
 
-      const result = await articlesController.findOne(id)
+      const result = await articlesController.findUnique(id)
 
-      expect(articlesService.findOne).toHaveBeenCalledWith({ id })
+      expect(articlesService.findUnique).toHaveBeenCalledWith({ where: { id } })
       expect(result).toBeNull()
     })
   })
 
+  describe('findMany', () => {
+    test('should find and return articles', async () => {})
+
+    test('should not found and return empty array', async () => {})
+  })
+
   describe('update', () => {
-    test('should update and return an article', async () => {
+    test('should update and return article', async () => {
       const article = getFakeArticle()
       const id = article.id
       const body: UpdateArticleDto = { content: article.content }
@@ -90,7 +95,7 @@ describe('ArticlesController', () => {
   })
 
   describe('delete', () => {
-    test('should delete and return an article', async () => {
+    test('should delete and return article', async () => {
       const article = getFakeArticle()
       const id = article.id
 
@@ -98,7 +103,7 @@ describe('ArticlesController', () => {
 
       const result = await articlesController.delete(id)
 
-      expect(articlesService.delete).toHaveBeenCalledWith({ id })
+      expect(articlesService.delete).toHaveBeenCalledWith({ where: { id } })
       expect(result).toEqual(article)
     })
   })

@@ -1,7 +1,21 @@
 import { Injectable } from '@nestjs/common'
-import { Prisma, PrismaClient } from '@/prisma/types'
+import { PrismaClient } from '@/prisma/types'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import {
+  CreateCommentOptions,
+  CreateCommentReturn,
+  DeleteCommentOptions,
+  DeleteCommentReturn,
+  ExistsCommentOptions,
+  ExistsCommentReturn,
+  FindManyCommentsOptions,
+  FindManyCommentsReturn,
+  FindUniqueCommentOptions,
+  FindUniqueCommentReturn,
+  UpdateCommentOptions,
+  UpdateCommentReturn,
+} from '@/comments/types'
 
 @Injectable()
 export class CommentsService {
@@ -11,23 +25,27 @@ export class CommentsService {
     >,
   ) {}
 
-  create(options: Prisma.CommentCreateArgs) {
+  create(options: CreateCommentOptions): CreateCommentReturn {
     return this.txHost.tx.comment.create(options)
   }
 
-  findUnique(options: Prisma.CommentFindUniqueArgs) {
+  findUnique(options: FindUniqueCommentOptions): FindUniqueCommentReturn {
     return this.txHost.tx.comment.findUnique(options)
   }
 
-  findMany(options: Prisma.CommentFindManyArgs) {
+  findMany(options: FindManyCommentsOptions): FindManyCommentsReturn {
     return this.txHost.tx.comment.findMany(options)
   }
 
-  update(options: Prisma.CommentUpdateArgs) {
+  update(options: UpdateCommentOptions): UpdateCommentReturn {
     return this.txHost.tx.comment.update(options)
   }
 
-  delete(options: Prisma.CommentDeleteArgs) {
+  delete(options: DeleteCommentOptions): DeleteCommentReturn {
     return this.txHost.tx.comment.delete(options)
+  }
+
+  async exists(options: ExistsCommentOptions): ExistsCommentReturn {
+    return (await this.txHost.tx.comment.count(options)) > 0
   }
 }

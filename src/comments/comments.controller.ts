@@ -28,23 +28,14 @@ export class CommentsController {
     @Param('articleId', ParseIntPipe) articleId: number,
     @Body() body: CreateCommentDto,
   ) {
-    return this.commentsService.create({ authorId, articleId, ...body })
+    return this.commentsService.create({
+      data: { authorId, articleId, ...body },
+    })
   }
 
-  @Get('/articles/:articleId')
-  findManyByArticle(
-    @Param('articleId', ParseIntPipe) articleId: number,
-    @Query() query: FindManyCommentsByArticleQueryDto,
-  ) {
-    return this.commentsService.findManyByArticle({ articleId, ...query })
-  }
-
-  @Get('/users/:userId')
-  findManyByAuthor(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: FindManyCommentsByAuthorQueryDto,
-  ) {
-    return this.commentsService.findManyByAuthor({ authorId: userId, ...query })
+  @Get()
+  findMany(@Query() query: FindManyCommentsByArticleQueryDto) {
+    return this.commentsService.findMany({ where: { articleId, ...query } })
   }
 
   @Patch('/:commentId')

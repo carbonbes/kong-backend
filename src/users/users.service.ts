@@ -1,7 +1,19 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { Prisma, PrismaClient } from '@/prisma/types'
+import { PrismaClient } from '@/prisma/types'
+import {
+  CreateUserOptions,
+  CreateUserReturn,
+  ExistsUserOptions,
+  ExistsUserReturn,
+  FindManyUsersOptions,
+  FindManyUsersReturn,
+  FindUniqueUserOptions,
+  FindUniqueUserReturn,
+  UpdateUserOptions,
+  UpdateUserReturn,
+} from '@/users/types'
 
 @Injectable()
 export class UsersService {
@@ -11,23 +23,23 @@ export class UsersService {
     >,
   ) {}
 
-  create(options: Prisma.UserCreateArgs) {
+  create(options: CreateUserOptions): CreateUserReturn {
     return this.txHost.tx.user.create(options)
   }
 
-  findUnique(options: Prisma.UserFindUniqueArgs) {
+  findUnique(options: FindUniqueUserOptions): FindUniqueUserReturn {
     return this.txHost.tx.user.findUnique(options)
   }
 
-  findMany(options: Prisma.UserFindManyArgs) {
+  findMany(options: FindManyUsersOptions): FindManyUsersReturn {
     return this.txHost.tx.user.findMany(options)
   }
 
-  update(options: Prisma.UserUpdateArgs) {
+  update(options: UpdateUserOptions): UpdateUserReturn {
     return this.txHost.tx.user.update(options)
   }
 
-  count(options: Prisma.UserCountArgs) {
-    return this.txHost.tx.user.count(options)
+  async exists(options: ExistsUserOptions): ExistsUserReturn {
+    return (await this.txHost.tx.user.count(options)) > 0
   }
 }

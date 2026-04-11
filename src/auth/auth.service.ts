@@ -33,7 +33,7 @@ export class AuthService {
   async signUp(options: SignUpOptions): SignUpReturn {
     const { email } = options
 
-    const isExist = (await this.usersService.count({ where: { email } })) > 0
+    const isExist = await this.usersService.exists({ where: { email } })
 
     if (isExist) {
       throw new ForbiddenException()
