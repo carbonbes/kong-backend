@@ -40,6 +40,6 @@ export class UsersService {
   }
 
   async exists(options: ExistsUserOptions): ExistsUserReturn {
-    return (await this.txHost.tx.user.count(options)) > 0
+    return (await this.txHost.tx.user.exists(options)) > 0
   }
 }

@@ -1,1 +1,1 @@
-export const ORDER_BY = ['ASC', 'DESC'] as const
+export const ORDER_BY = ['asc', 'desc'] as const
