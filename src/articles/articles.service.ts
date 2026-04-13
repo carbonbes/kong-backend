@@ -45,7 +45,7 @@ export class ArticlesService {
     return this.txHost.tx.article.delete(options)
   }
 
-  async exists(options: ExistsArticleOptions): ExistsArticleReturn {
-    return (await this.txHost.tx.article.count(options)) > 0
+  exists(options: ExistsArticleOptions): ExistsArticleReturn {
+    return this.txHost.tx.article.exists(options)
   }
 }

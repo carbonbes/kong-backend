@@ -122,22 +122,22 @@ describe('UsersService', () => {
     test('should return true', async () => {
       const options: ExistsUserOptions = { where: { email: getFakeEmail() } }
 
-      txHost.tx.user.count.mockResolvedValue(1)
+      txHost.tx.user.exists.mockResolvedValue(true)
 
       const result = await usersService.exists(options)
 
-      expect(txHost.tx.user.count).toHaveBeenCalledWith(options)
+      expect(txHost.tx.user.exists).toHaveBeenCalledWith(options)
       expect(result).toBeTruthy()
     })
 
     test('should return false', async () => {
       const options: ExistsUserOptions = { where: { email: getFakeEmail() } }
 
-      txHost.tx.user.count.mockResolvedValue(0)
+      txHost.tx.user.exists.mockResolvedValue(false)
 
       const result = await usersService.exists(options)
 
-      expect(txHost.tx.user.count).toHaveBeenCalledWith(options)
+      expect(txHost.tx.user.exists).toHaveBeenCalledWith(options)
       expect(result).toBeFalsy()
     })
   })

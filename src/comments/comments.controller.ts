@@ -38,29 +38,15 @@ export class CommentsController {
     @Param('articleId', ParseIntPipe) articleId: number,
     @Query() query: FindManyCommentsByArticleQueryDto,
   ) {
-    const {
-      cursor,
-      limit = 10,
-      orderBy = 'desc',
-      parentCommentId,
-      sortBy = 'rating',
-    } = query
+    const { cursor, limit, orderBy, parentCommentId, sortBy } = query
 
-    const items = await this.commentsService.findMany({
+    return this.commentsService.findManyWithPagination({
       where: { articleId, parentCommentId },
-      orderBy: { [sortBy]: orderBy },
-      cursor: cursor ? JSON.parse(atob(cursor)) : null,
-      take: limit,
+      cursor,
+      limit,
+      orderBy,
+      sortBy,
     })
-
-    return {
-      items,
-      meta: {
-        cursor: btoa(
-          JSON.stringify({ id: items[items.length - 1].id, [sortBy]: orderBy }),
-        ),
-      },
-    }
   }
 
   @Get('/users/:userId')
@@ -68,23 +54,15 @@ export class CommentsController {
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: FindManyCommentsByAuthorQueryDto,
   ) {
-    const { cursor, limit = 10, orderBy = 'desc', sortBy = 'rating' } = query
+    const { cursor, limit, orderBy, sortBy } = query
 
-    const items = await this.commentsService.findMany({
+    return this.commentsService.findManyWithPagination({
       where: { authorId: userId },
-      orderBy: { [sortBy]: orderBy },
-      cursor: cursor ? JSON.parse(atob(cursor)) : null,
-      take: limit,
+      cursor,
+      limit,
+      orderBy,
+      sortBy,
     })
-
-    return {
-      items,
-      meta: {
-        cursor: btoa(
-          JSON.stringify({ id: items[items.length - 1].id, [sortBy]: orderBy }),
-        ),
-      },
-    }
   }
 
   @Patch('/:commentId')

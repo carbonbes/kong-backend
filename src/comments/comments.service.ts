@@ -11,6 +11,8 @@ import {
   ExistsCommentReturn,
   FindManyCommentsOptions,
   FindManyCommentsReturn,
+  FindManyCommentsWithPaginationOptions,
+  FindManyCommentsWithPaginationReturn,
   FindUniqueCommentOptions,
   FindUniqueCommentReturn,
   UpdateCommentOptions,
@@ -37,6 +39,12 @@ export class CommentsService {
     return this.txHost.tx.comment.findMany(options)
   }
 
+  findManyWithPagination(
+    options: FindManyCommentsWithPaginationOptions,
+  ): FindManyCommentsWithPaginationReturn {
+    return this.txHost.tx.comment.findManyWithPagination(options)
+  }
+
   update(options: UpdateCommentOptions): UpdateCommentReturn {
     return this.txHost.tx.comment.update(options)
   }
@@ -45,7 +53,7 @@ export class CommentsService {
     return this.txHost.tx.comment.delete(options)
   }
 
-  async exists(options: ExistsCommentOptions): ExistsCommentReturn {
-    return (await this.txHost.tx.comment.count(options)) > 0
+  exists(options: ExistsCommentOptions): ExistsCommentReturn {
+    return this.txHost.tx.comment.exists(options)
   }
 }

@@ -145,11 +145,11 @@ describe('ArticlesService', () => {
       const id = getFakeInt()
       const options: ExistsArticleOptions = { where: { id } }
 
-      txHost.tx.article.count.mockResolvedValue(1)
+      txHost.tx.article.exists.mockResolvedValue(true)
 
       const result = await articlesService.exists(options)
 
-      expect(txHost.tx.article.count).toHaveBeenCalledWith(options)
+      expect(txHost.tx.article.exists).toHaveBeenCalledWith(options)
       expect(result).toBeTruthy()
     })
 
@@ -157,11 +157,11 @@ describe('ArticlesService', () => {
       const id = getFakeInt()
       const options: ExistsArticleOptions = { where: { id } }
 
-      txHost.tx.article.count.mockResolvedValue(0)
+      txHost.tx.article.exists.mockResolvedValue(false)
 
       const result = await articlesService.exists(options)
 
-      expect(txHost.tx.article.count).toHaveBeenCalledWith(options)
+      expect(txHost.tx.article.exists).toHaveBeenCalledWith(options)
       expect(result).toBeFalsy()
     })
   })

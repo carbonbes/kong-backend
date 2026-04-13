@@ -1,2 +1,2 @@
 export * from './exists'
-export * from './find-many-with-cursor-pagination'
+export * from './find-many-with-pagination/find-many-with-pagination'

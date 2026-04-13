@@ -8,12 +8,12 @@ import {
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from 'generated/prisma/client'
-import { exists, findManyWithCursorPagination } from '@/lib/prisma/extensions'
+import { exists, findManyWithPagination } from '@/lib/prisma/extensions'
 
-const createPrismaClient = (options: typeof OPTIONS_TYPE) =>
+export const createPrismaClient = (options: typeof OPTIONS_TYPE) =>
   new PrismaClient({ adapter: new PrismaPg(options) })
     .$extends(exists)
-    .$extends(findManyWithCursorPagination)
+    .$extends(findManyWithPagination)
 
 @Module({})
 export class PrismaModule extends ConfigurableModuleClass {

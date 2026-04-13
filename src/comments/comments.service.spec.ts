@@ -175,22 +175,22 @@ describe('CommentsService', () => {
     test('should return true', async () => {
       const options: ExistsCommentOptions = { where: { id: getFakeInt() } }
 
-      txHost.tx.comment.count.mockResolvedValue(1)
+      txHost.tx.comment.exists.mockResolvedValue(true)
 
       const result = await commentsService.exists(options)
 
-      expect(txHost.tx.comment.count).toHaveBeenCalledWith(options)
+      expect(txHost.tx.comment.exists).toHaveBeenCalledWith(options)
       expect(result).toBeTruthy()
     })
 
     test('should return false', async () => {
       const options: ExistsCommentOptions = { where: { id: getFakeInt() } }
 
-      txHost.tx.comment.count.mockResolvedValue(0)
+      txHost.tx.comment.exists.mockResolvedValue(false)
 
       const result = await commentsService.exists(options)
 
-      expect(txHost.tx.comment.count).toHaveBeenCalledWith(options)
+      expect(txHost.tx.comment.exists).toHaveBeenCalledWith(options)
       expect(result).toBeFalsy()
     })
   })
