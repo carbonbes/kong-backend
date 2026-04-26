@@ -2,58 +2,14 @@ import { Injectable } from '@nestjs/common'
 import { PrismaClient } from '@/prisma/types'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import {
-  CreateCommentOptions,
-  CreateCommentReturn,
-  DeleteCommentOptions,
-  DeleteCommentReturn,
-  ExistsCommentOptions,
-  ExistsCommentReturn,
-  FindManyCommentsOptions,
-  FindManyCommentsReturn,
-  FindManyCommentsWithPaginationOptions,
-  FindManyCommentsWithPaginationReturn,
-  FindUniqueCommentOptions,
-  FindUniqueCommentReturn,
-  UpdateCommentOptions,
-  UpdateCommentReturn,
-} from '@/comments/types'
+import { CommentDelegate } from '@/comments/types'
+import { EntityService } from '@/shared/prisma/entity/entity.service'
 
 @Injectable()
-export class CommentsService {
+export class CommentsService extends EntityService<CommentDelegate> {
   constructor(
-    private readonly txHost: TransactionHost<
-      TransactionalAdapterPrisma<PrismaClient>
-    >,
-  ) {}
-
-  create(options: CreateCommentOptions): CreateCommentReturn {
-    return this.txHost.tx.comment.create(options)
-  }
-
-  findUnique(options: FindUniqueCommentOptions): FindUniqueCommentReturn {
-    return this.txHost.tx.comment.findUnique(options)
-  }
-
-  findMany(options: FindManyCommentsOptions): FindManyCommentsReturn {
-    return this.txHost.tx.comment.findMany(options)
-  }
-
-  findManyWithPagination(
-    options: FindManyCommentsWithPaginationOptions,
-  ): FindManyCommentsWithPaginationReturn {
-    return this.txHost.tx.comment.findManyWithPagination(options)
-  }
-
-  update(options: UpdateCommentOptions): UpdateCommentReturn {
-    return this.txHost.tx.comment.update(options)
-  }
-
-  delete(options: DeleteCommentOptions): DeleteCommentReturn {
-    return this.txHost.tx.comment.delete(options)
-  }
-
-  exists(options: ExistsCommentOptions): ExistsCommentReturn {
-    return this.txHost.tx.comment.exists(options)
+    readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>,
+  ) {
+    super(txHost, 'comment')
   }
 }

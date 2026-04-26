@@ -1,1 +1,1 @@
-export type { UserModel as User } from '@/prisma/models'
+export type { UserModel as User, UserDelegate } from '@/prisma/models'

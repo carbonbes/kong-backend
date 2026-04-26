@@ -1,1 +1,1 @@
-export type { CommentModel as Comment } from '@/prisma/models'
+export type { CommentModel as Comment, CommentDelegate } from '@/prisma/models'

@@ -8,12 +8,9 @@ import {
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from 'generated/prisma/client'
-import { exists, findManyWithPagination } from '@/lib/prisma/extensions'
 
 export const createPrismaClient = (options: typeof OPTIONS_TYPE) =>
   new PrismaClient({ adapter: new PrismaPg(options) })
-    .$extends(exists)
-    .$extends(findManyWithPagination)
 
 @Module({})
 export class PrismaModule extends ConfigurableModuleClass {

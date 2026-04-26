@@ -38,15 +38,9 @@ export class CommentsController {
     @Param('articleId', ParseIntPipe) articleId: number,
     @Query() query: FindManyCommentsByArticleQueryDto,
   ) {
-    const { cursor, limit, orderBy, parentCommentId, sortBy } = query
+    const { cursor, limit, orderBy, parentCommentId } = query
 
-    return this.commentsService.findManyWithPagination({
-      where: { articleId, parentCommentId },
-      cursor,
-      limit,
-      orderBy,
-      sortBy,
-    })
+    return this.commentsService.findManyWithCursorPagination()
   }
 
   @Get('/users/:userId')
@@ -54,15 +48,9 @@ export class CommentsController {
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: FindManyCommentsByAuthorQueryDto,
   ) {
-    const { cursor, limit, orderBy, sortBy } = query
+    const { cursor, limit, orderBy } = query
 
-    return this.commentsService.findManyWithPagination({
-      where: { authorId: userId },
-      cursor,
-      limit,
-      orderBy,
-      sortBy,
-    })
+    return this.commentsService.findManyWithCursorPagination()
   }
 
   @Patch('/:commentId')
