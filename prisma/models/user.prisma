@@ -22,4 +22,6 @@ model User {
 
   articles Article[]
   comments Comment[]
+
+  @@map("users")
 }

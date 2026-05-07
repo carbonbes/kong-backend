@@ -16,4 +16,6 @@ model Article {
   updatedAt DateTime      @updatedAt
 
   comments Comment[]
+
+  @@map("articles")
 }

@@ -49,15 +49,17 @@ export abstract class EntityService<T> {
       limit = 10,
       orderBy = 'desc',
       sortBy,
-      where,
-      select,
+      ...etc
     } = options
+
+    const orderByFields = sortBy
+      ? [{ id: orderBy }, { [sortBy]: orderBy }]
+      : [{ id: orderBy }]
 
     const [items, meta] = await this.txHost.tx[this.modelName]
       .paginate({
-        orderBy: sortBy ? { id: orderBy, [sortBy]: orderBy } : undefined,
-        select,
-        where,
+        ...etc,
+        orderBy: orderByFields,
       })
       .withCursor({
         after,
@@ -65,12 +67,10 @@ export abstract class EntityService<T> {
         limit,
         getCursor: (item) =>
           objectToBase64(
-            sortBy
-              ? Object.keys(sortBy).reduce((acc, key) => {
-                  acc[key] = item[key]
-                  return acc
-                }, {})
-              : { id: item.id },
+            Object.keys(orderByFields).reduce((acc, key) => {
+              acc[key] = item[key]
+              return acc
+            }, {}),
           ),
         parseCursor: (cursor) => objectFromBase64(cursor),
       })

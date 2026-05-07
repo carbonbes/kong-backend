@@ -11,13 +11,16 @@ import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { EncodedJwt } from '@/shared/types'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AppModule } from '@/app.module'
-import { TestTypeOrmModule } from './modules'
 import { getFakeHeadingNode, getFakeParagraphNode } from '@/test/utils'
 import { CreateCommentDto, UpdateCommentDto } from '@/comments/dtos'
 import request from 'supertest'
 import { PrismaClient } from '@/prisma/types'
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { Comment } from '@/comments/types'
+import { JSONContent } from '@tiptap/core'
+import { execSync } from 'node:child_process'
+import { UserGender } from '@/users/enums'
+import { CursorPaginationMeta } from 'prisma-extension-pagination'
 
 describe('Comments (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -29,13 +32,35 @@ describe('Comments (e2e)', () => {
   let authJwtsService: AuthJwtsService
   let accessToken: EncodedJwt
 
-  const createRootComment = () =>
+  const truncateComments = () =>
+    prismaClient.$queryRaw`TRUNCATE TABLE comments RESTART IDENTITY CASCADE`
+
+  const createComment = (parentComment?: boolean) =>
     prismaClient.comment.create({
       data: {
         authorId: 1,
         articleId: 1,
-        content: { type: 'doc', content: [getFakeParagraphNode()] },
+        parentCommentId: parentComment ? 1 : null,
+        content: {
+          type: 'doc',
+          content: [getFakeParagraphNode() as JSONContent],
+        },
       },
+    })
+
+  const createManyComments = (count: number, parentComment?: boolean) =>
+    prismaClient.comment.createMany({
+      data: Array.from({ length: count }).map((_, i) => ({
+        authorId: 1,
+        articleId: 1,
+        content: {
+          type: 'doc',
+          content: [getFakeParagraphNode() as JSONContent],
+        },
+        parentCommentId: parentComment ? 1 : null,
+        createdAt: new Date(i),
+        rating: i,
+      })),
     })
 
   beforeAll(async () => {
@@ -52,7 +77,7 @@ describe('Comments (e2e)', () => {
     mailService = mock<MailService>()
 
     const module: TestingModule = await Test.createTestingModule({
-      imports: [AppModule, TestTypeOrmModule],
+      imports: [AppModule],
     })
       .overrideProvider(MailService)
       .useValue(mailService)
@@ -68,10 +93,23 @@ describe('Comments (e2e)', () => {
 
     accessToken = authJwtsService.sign({ sub: 'test@test.com' }).accessToken
 
+    execSync('yarn prisma db push')
+
+    await prismaClient.user.create({
+      data: {
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.male,
+      },
+    })
+
     await prismaClient.article.create({
       data: {
         authorId: 1,
-        content: { type: 'doc', content: [getFakeHeadingNode()] },
+        content: {
+          type: 'doc',
+          content: [getFakeHeadingNode() as JSONContent],
+        },
       },
     })
   }, 60000)
@@ -83,6 +121,8 @@ describe('Comments (e2e)', () => {
   })
 
   describe('POST /comments/articles/1', () => {
+    afterEach(async () => await truncateComments())
+
     test('should return 201 and root comment', async () => {
       const body: CreateCommentDto = {
         content: {
@@ -102,10 +142,10 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 201 and child comment', async () => {
-      const { id: parentCommentId } = await createRootComment()
+      await createComment()
 
       const body: CreateCommentDto = {
-        parentCommentId,
+        parentCommentId: 1,
         content: {
           type: 'doc',
           content: [getFakeParagraphNode()],
@@ -150,15 +190,10 @@ describe('Comments (e2e)', () => {
   })
 
   describe('GET /comments/articles/1', () => {
+    afterEach(async () => await truncateComments())
+
     test('should return 200 and a single page of root comments sort by rating and order by DESC', async () => {
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          rating: i,
-        })),
-      })
+      await createManyComments(10)
 
       const result = await request(server)
         .get('/comments/articles/1')
@@ -174,25 +209,20 @@ describe('Comments (e2e)', () => {
       const commentsCount = items.length
       const firstComment = items[0]
       const lastComment = items[9]
-      const cursor: null = result.body.meta.cursor
+      const { hasPreviousPage, hasNextPage } = result.body
+        .meta as CursorPaginationMeta
 
       expect(status).toBe(200)
       expect(commentsCount).toBe(10)
       items.forEach((item) => expect(item.parentCommentId === null))
       expect(firstComment.rating).toBe(9)
       expect(lastComment.rating).toBe(0)
-      expect(cursor).toBeNull()
+      expect(hasPreviousPage).toBeFalsy()
+      expect(hasNextPage).toBeFalsy()
     })
 
     test('should return 200 and a single page of root comments sort by rating and order by ASC', async () => {
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          rating: i,
-        })),
-      })
+      await createManyComments(10)
 
       const result = await request(server)
         .get('/comments/articles/1')
@@ -208,25 +238,20 @@ describe('Comments (e2e)', () => {
       const commentsCount = items.length
       const firstComment = items[0]
       const lastComment = items[9]
-      const cursor: null = result.body.meta.cursor
+      const { hasPreviousPage, hasNextPage } = result.body
+        .meta as CursorPaginationMeta
 
       expect(status).toBe(200)
       expect(commentsCount).toBe(10)
       items.forEach((item) => expect(item.parentCommentId === null))
       expect(firstComment.rating).toBe(0)
       expect(lastComment.rating).toBe(9)
-      expect(cursor).toBeNull()
+      expect(hasPreviousPage).toBeFalsy()
+      expect(hasNextPage).toBeFalsy()
     })
 
     test('should return 200 and a single page of root comments sort by createdAt and order by DESC', async () => {
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          createdAt: i,
-        })),
-      })
+      await createManyComments(10)
 
       const result = await request(server)
         .get('/comments/articles/1')
@@ -242,25 +267,20 @@ describe('Comments (e2e)', () => {
       const commentsCount = items.length
       const firstComment = items[0]
       const lastComment = items[9]
-      const cursor: null = result.body.meta.cursor
+      const { hasPreviousPage, hasNextPage } = result.body
+        .meta as CursorPaginationMeta
 
       expect(status).toBe(200)
       expect(commentsCount).toBe(10)
       items.forEach((item) => expect(item.parentCommentId === null))
-      expect(firstComment.createdAt).toBe(9)
-      expect(lastComment.createdAt).toBe(0)
-      expect(cursor).toBeNull()
+      expect(firstComment.createdAt).toBe(new Date(9).toISOString())
+      expect(lastComment.createdAt).toBe(new Date(0).toISOString())
+      expect(hasPreviousPage).toBeFalsy()
+      expect(hasNextPage).toBeFalsy()
     })
 
     test('should return 200 and a single page of root comments sort by createdAt and order by ASC', async () => {
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          createdAt: i,
-        })),
-      })
+      await createManyComments(10)
 
       const result = await request(server)
         .get('/comments/articles/1')
@@ -276,25 +296,20 @@ describe('Comments (e2e)', () => {
       const commentsCount = items.length
       const firstComment = items[0]
       const lastComment = items[9]
-      const cursor: null = result.body.meta.cursor
+      const { hasPreviousPage, hasNextPage } = result.body
+        .meta as CursorPaginationMeta
 
       expect(status).toBe(200)
       expect(commentsCount).toBe(10)
       items.forEach((item) => expect(item.parentCommentId === null))
-      expect(firstComment.createdAt).toBe(0)
-      expect(lastComment.createdAt).toBe(9)
-      expect(cursor).toBeNull()
+      expect(firstComment.createdAt).toBe(new Date(0).toISOString())
+      expect(lastComment.createdAt).toBe(new Date(9).toISOString())
+      expect(hasPreviousPage).toBeFalsy()
+      expect(hasNextPage).toBeFalsy()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by rating and order by DESC', async () => {
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          rating: i,
-        })),
-      })
+      await createManyComments(20)
 
       const result1 = await request(server)
         .get('/comments/articles/1')
@@ -306,7 +321,11 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        hasPreviousPage: firstResponseHasPreviousPage,
+        hasNextPage: firstResponseHasNextPage,
+        endCursor: firstResponseEndCursor,
+      } = result1.body.meta as CursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
@@ -315,11 +334,12 @@ describe('Comments (e2e)', () => {
       )
       expect(firstResponseFirstComment.rating).toBe(19)
       expect(firstResponseLastComment.rating).toBe(10)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponseHasPreviousPage).toBeFalsy()
+      expect(firstResponseHasNextPage).toBeTruthy()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
-        .query({ cursor: firstResponseCursor })
+        .query({ after: firstResponseEndCursor })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const secondResponseStatus = result2.status
@@ -327,7 +347,10 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        hasPreviousPage: secondResponseHasPreviousPage,
+        hasNextPage: secondResponseHasNextPage,
+      } = result1.body.meta as CursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
@@ -336,18 +359,12 @@ describe('Comments (e2e)', () => {
       )
       expect(secondResponseFirstComment.rating).toBe(9)
       expect(secondResponseLastComment.rating).toBe(0)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponseHasPreviousPage).toBeTruthy()
+      expect(secondResponseHasNextPage).toBeFalsy()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by rating and order by ASC', async () => {
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          rating: i,
-        })),
-      })
+      await createManyComments(20)
 
       const result1 = await request(server)
         .get('/comments/articles/1')
@@ -359,7 +376,11 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        hasPreviousPage: firstResponseHasPreviousPage,
+        hasNextPage: firstResponseHasNextPage,
+        endCursor: firstResponseEndCursor,
+      } = result1.body.meta as CursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
@@ -368,11 +389,12 @@ describe('Comments (e2e)', () => {
       )
       expect(firstResponseFirstComment.rating).toBe(0)
       expect(firstResponseLastComment.rating).toBe(9)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponseHasPreviousPage).toBeFalsy()
+      expect(firstResponseHasNextPage).toBeTruthy()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
-        .query({ cursor: firstResponseCursor, orderBy: 'asc' })
+        .query({ after: firstResponseEndCursor, orderBy: 'asc' })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const secondResponseStatus = result2.status
@@ -380,7 +402,10 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        hasPreviousPage: secondResponseHasPreviousPage,
+        hasNextPage: secondResponseHasNextPage,
+      } = result1.body.meta as CursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
@@ -389,18 +414,12 @@ describe('Comments (e2e)', () => {
       )
       expect(secondResponseFirstComment.rating).toBe(10)
       expect(secondResponseLastComment.rating).toBe(19)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponseHasPreviousPage).toBeTruthy()
+      expect(secondResponseHasNextPage).toBeFalsy()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by DESC', async () => {
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          createdAt: i,
-        })),
-      })
+      await createManyComments(20)
 
       const result1 = await request(server)
         .get('/comments/articles/1')
@@ -412,21 +431,30 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        hasPreviousPage: firstResponseHasPreviousPage,
+        hasNextPage: firstResponseHasNextPage,
+        endCursor: firstResponseEndCursor,
+      } = result1.body.meta as CursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
       firstResponseItems.forEach((item) =>
         expect(item.parentCommentId === null),
       )
-      expect(firstResponseFirstComment.createdAt).toBe(19)
-      expect(firstResponseLastComment.createdAt).toBe(10)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponseFirstComment.createdAt).toBe(
+        new Date(19).toISOString(),
+      )
+      expect(firstResponseLastComment.createdAt).toBe(
+        new Date(10).toISOString(),
+      )
+      expect(firstResponseHasPreviousPage).toBeFalsy()
+      expect(firstResponseHasNextPage).toBeTruthy()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
         .query({
-          cursor: firstResponseCursor,
+          after: firstResponseEndCursor,
           orderBy: 'desc',
           sortBy: 'createdAt',
         })
@@ -437,27 +465,28 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        hasPreviousPage: secondResponseHasPreviousPage,
+        hasNextPage: secondResponseHasNextPage,
+      } = result1.body.meta as CursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       secondResponseItems.forEach((item) =>
         expect(item.parentCommentId === null),
       )
-      expect(secondResponseFirstComment.createdAt).toBe(9)
-      expect(secondResponseLastComment.createdAt).toBe(0)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponseFirstComment.createdAt).toBe(
+        new Date(9).toISOString(),
+      )
+      expect(secondResponseLastComment.createdAt).toBe(
+        new Date(0).toISOString(),
+      )
+      expect(secondResponseHasPreviousPage).toBeTruthy()
+      expect(secondResponseHasNextPage).toBeFalsy()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by ASC', async () => {
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          createdAt: i,
-        })),
-      })
+      await createManyComments(20)
 
       const result1 = await request(server)
         .get('/comments/articles/1')
@@ -507,17 +536,8 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of child comments sort by rating and order by DESC', async () => {
-      await createRootComment()
-
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          parentCommentId: 1,
-          rating: i,
-        })),
-      })
+      await createComment()
+      await createManyComments(10, true)
 
       const result = await request(server)
         .get('/comments/articles/1')
@@ -545,17 +565,8 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of child comments sort by rating and order by ASC', async () => {
-      await createRootComment()
-
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          parentCommentId: 1,
-          rating: i,
-        })),
-      })
+      await createComment()
+      await createManyComments(10, true)
 
       const result = await request(server)
         .get('/comments/articles/1')
@@ -583,17 +594,8 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of child comments sort by createdAt and order by DESC', async () => {
-      await createRootComment()
-
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          parentCommentId: 1,
-          createdAt: 0 + i,
-        })),
-      })
+      await createComment()
+      await createManyComments(10, true)
 
       const result = await request(server)
         .get('/comments/articles/1')
@@ -621,17 +623,8 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of child comments sort by createdAt and order by ASC', async () => {
-      await createRootComment()
-
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          parentCommentId: 1,
-          createdAt: 0 + i,
-        })),
-      })
+      await createComment()
+      await createManyComments(10, true)
 
       const result = await request(server)
         .get('/comments/articles/1')
@@ -659,17 +652,8 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of child comments sort by rating and order by DESC', async () => {
-      await createRootComment()
-
-      await prismaClient.comment.createMany({
-        data: Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          parentCommentId: 1,
-          rating: i,
-        })),
-      })
+      await createComment()
+      await createManyComments(20, true)
 
       const result1 = await request(server)
         .get('/comments/articles/1')
@@ -722,17 +706,8 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of child comments sort by rating and order by ASC', async () => {
-      await createRootComment()
-
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          parentCommentId: 1,
-          rating: i,
-        })),
-      )
+      await createComment()
+      await createManyComments(20, true)
 
       const result1 = await request(server)
         .get('/comments/articles/1')
@@ -785,21 +760,8 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of child comments sort by createdAt and order by DESC', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: { type: 'doc', content: [getFakeParagraphNode()] },
-      })
-
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          parentCommentId: 1,
-          createdAt: i,
-        })),
-      )
+      await createComment()
+      await createManyComments(20, true)
 
       const result1 = await request(server)
         .get('/comments/articles/1')
@@ -852,21 +814,8 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of child comments sort by createdAt and order by ASC', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: { type: 'doc', content: [getFakeParagraphNode()] },
-      })
-
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          parentCommentId: 1,
-          createdAt: i,
-        })),
-      )
+      await createComment()
+      await createManyComments(20, true)
 
       const result1 = await request(server)
         .get('/comments/articles/1')
@@ -923,22 +872,10 @@ describe('Comments (e2e)', () => {
   })
 
   describe('GET /comments/users/1', () => {
-    afterEach(
-      async () =>
-        await dataSource.query(
-          'TRUNCATE TABLE comments RESTART IDENTITY CASCADE',
-        ),
-    )
+    afterEach(async () => await truncateComments())
 
     test('should return 200 and a single page of user comments sort by rating and order by DESC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          rating: i,
-        })),
-      )
+      await createManyComments(10)
 
       const result = await request(server)
         .get('/comments/users/1')
@@ -964,14 +901,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of user comments sort by rating and order by ASC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          rating: i,
-        })),
-      )
+      await createManyComments(10)
 
       const result = await request(server)
         .get('/comments/users/1')
@@ -997,14 +927,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of user comments sort by createdAt and order by DESC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          createdAt: i,
-        })),
-      )
+      await createManyComments(10)
 
       const result = await request(server)
         .get('/comments/users/1')
@@ -1030,14 +953,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of user comments sort by createdAt and order by ASC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          createdAt: i,
-        })),
-      )
+      await createManyComments(10)
 
       const result = await request(server)
         .get('/comments/users/1')
@@ -1063,14 +979,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of root comments sort by rating and order by DESC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          rating: i,
-        })),
-      )
+      await createManyComments(20)
 
       const result1 = await request(server)
         .get('/comments/users/1')
@@ -1119,14 +1028,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of root comments sort by rating and order by ASC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          rating: i,
-        })),
-      )
+      await createManyComments(20)
 
       const result1 = await request(server)
         .get('/comments/users/1')
@@ -1175,14 +1077,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by DESC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          createdAt: i,
-        })),
-      )
+      await createManyComments(20)
 
       const result1 = await request(server)
         .get('/comments/users/1')
@@ -1231,14 +1126,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by ASC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
-          authorId: 1,
-          articleId: 1,
-          content: { type: 'doc', content: [getFakeParagraphNode()] },
-          createdAt: i,
-        })),
-      )
+      await createManyComments(20)
 
       const result1 = await request(server)
         .get('/comments/users/1')
@@ -1292,21 +1180,10 @@ describe('Comments (e2e)', () => {
   })
 
   describe('PATCH /comments/1', () => {
-    afterEach(
-      async () =>
-        await dataSource.query(
-          'TRUNCATE TABLE comments RESTART IDENTITY CASCADE',
-        ),
-    )
+    afterEach(async () => await truncateComments())
 
     test('should return 200 and comment', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: { type: 'doc', content: [getFakeParagraphNode()] },
-      })
-
-      const comment = (await commentsRepository.findOneBy({ id: 1 }))!
+      const comment = await createComment()
 
       const body: UpdateCommentDto = {
         content: {
@@ -1315,21 +1192,19 @@ describe('Comments (e2e)', () => {
         },
       }
 
+      const updatedComment = { ...comment, ...body }
+
       const result = await request(server)
         .patch('/comments/1')
         .set('Authorization', `Bearer ${accessToken}`)
         .send(body)
 
       expect(result.status).toBe(200)
-      expect(result.body).toEqual({ ...comment, ...body })
+      expect(result.body).toEqual(updatedComment)
     })
 
     test('should return 400 if a doc content field contains not allowed node', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: { type: 'doc', content: [getFakeParagraphNode()] },
-      })
+      await createComment()
 
       const body: UpdateCommentDto = {
         content: {
@@ -1346,11 +1221,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 401 if user is not authenticated', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: { type: 'doc', content: [getFakeParagraphNode()] },
-      })
+      await createComment()
 
       const body: UpdateCommentDto = {
         content: {
@@ -1364,21 +1235,10 @@ describe('Comments (e2e)', () => {
   })
 
   describe('DELETE /comments/1', () => {
-    afterEach(
-      async () =>
-        await dataSource.query(
-          'TRUNCATE TABLE comments RESTART IDENTITY CASCADE',
-        ),
-    )
+    afterEach(async () => await truncateComments())
 
     test('should return 200 and comment', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: { type: 'doc', content: [getFakeParagraphNode()] },
-      })
-
-      const comment = (await commentsRepository.findOneBy({ id: 1 }))!
+      const comment = await createComment()
 
       const result = await request(server)
         .delete('/comments/1')
@@ -1389,11 +1249,7 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 401 if user is not authenticated', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: { type: 'doc', content: [getFakeParagraphNode()] },
-      })
+      await createComment()
 
       return request(server).delete('/comments/1').expect(401)
     })
