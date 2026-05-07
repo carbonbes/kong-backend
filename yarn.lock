@@ -6698,6 +6698,7 @@ __metadata:
     pg: "npm:^8.16.0"
     prettier: "npm:^3.0.0"
     prisma: "npm:^7.6.0"
+    prisma-extension-pagination: "npm:^0.7.6"
     redis: "npm:^5.8.3"
     redis-om: "npm:^0.4.7"
     reflect-metadata: "npm:^0.2.0"
@@ -8574,6 +8575,15 @@ __metadata:
     pug: "npm:^3.0.3"
     uuid: "npm:^9.0.1"
   checksum: 10c0/462276ac9a2cd84892afc7af6113e598932af6ad557a400cd9b7e0605180034e9a8545d05eea6b27c1ae5495b8e9d4852c1a80911d08a1cb3de9859d3f60024d
+  languageName: node
+  linkType: hard
+
+"prisma-extension-pagination@npm:^0.7.6":
+  version: 0.7.6
+  resolution: "prisma-extension-pagination@npm:0.7.6"
+  peerDependencies:
+    "@prisma/client": ^4.9.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+  checksum: 10c0/0d9ecc243b047defa0ee6169e068b8558736aa3c63cc74052bc4fc65ddccb2021d7607f0462ba84da3388da74fc10cfff38ffa97696b418b0e53862b45e4eca1
   languageName: node
   linkType: hard
 

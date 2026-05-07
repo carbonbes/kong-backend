@@ -1,21 +1,25 @@
-import { Article } from '@/articles/entities'
+import { Article } from '@/articles/types'
 import { ArticleStatus } from '@/articles/enums'
 import { faker } from '@faker-js/faker/locale/ru'
 import { getFakeInt } from '@/test/utils/getFakeInt'
-import { getFakeArticleContent, getFakeUser } from '@/test/utils'
+import { getFakeArticleContent } from '@/test/utils'
 
 type GetFakeArticleOptions = Partial<Article>
 
 export const getFakeArticle = ({
   id,
-  author,
+  authorId,
+  subsiteId,
+  rating,
   content,
   status,
   createdAt,
   updatedAt,
 }: GetFakeArticleOptions = {}): Article => ({
   id: id ?? getFakeInt(),
-  author: author ?? getFakeUser(),
+  authorId: authorId ?? faker.number.int(),
+  subsiteId: subsiteId ?? faker.number.int(),
+  rating: rating ?? faker.number.int(),
   content: content ?? getFakeArticleContent(),
   status: status ?? faker.helpers.enumValue(ArticleStatus),
   createdAt: createdAt ?? faker.date.past(),

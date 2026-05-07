@@ -7,25 +7,17 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import { App } from 'supertest/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { MailService } from '@/mail/mail.service'
-import { DataSource, Repository } from 'typeorm'
-import { UsersService } from '@/users/users.service'
-import { ArticlesService } from '@/articles/articles.service'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
-import { User } from '@/users/entities'
 import { EncodedJwt } from '@/shared/types'
-import {
-  initializeTransactionalContext,
-  StorageDriver,
-} from 'typeorm-transactional'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AppModule } from '@/app.module'
 import { TestTypeOrmModule } from './modules'
-import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm'
-import { UserGender } from '@/users/enums'
 import { getFakeHeadingNode, getFakeParagraphNode } from '@/test/utils'
 import { CreateCommentDto, UpdateCommentDto } from '@/comments/dtos'
 import request from 'supertest'
-import { Comment } from '@/comments/entities'
+import { PrismaClient } from '@/prisma/types'
+import { PRISMA_CLIENT } from '@/prisma/consts'
+import { Comment } from '@/comments/types'
 
 describe('Comments (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -33,13 +25,18 @@ describe('Comments (e2e)', () => {
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
-  let dataSource: DataSource
-  let usersService: UsersService
-  let articlesService: ArticlesService
-  let commentsRepository: Repository<Comment>
+  let prismaClient: PrismaClient
   let authJwtsService: AuthJwtsService
-  let user: User
   let accessToken: EncodedJwt
+
+  const createRootComment = () =>
+    prismaClient.comment.create({
+      data: {
+        authorId: 1,
+        articleId: 1,
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
+      },
+    })
 
   beforeAll(async () => {
     postgresContainer = await new PostgreSqlContainer(
@@ -54,10 +51,6 @@ describe('Comments (e2e)', () => {
 
     mailService = mock<MailService>()
 
-    initializeTransactionalContext({
-      storageDriver: StorageDriver.ASYNC_LOCAL_STORAGE,
-    })
-
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule, TestTypeOrmModule],
     })
@@ -65,12 +58,7 @@ describe('Comments (e2e)', () => {
       .useValue(mailService)
       .compile()
 
-    dataSource = module.get<DataSource>(getDataSourceToken())
-    usersService = module.get<UsersService>(UsersService)
-    articlesService = module.get<ArticlesService>(ArticlesService)
-    commentsRepository = module.get<Repository<Comment>>(
-      getRepositoryToken(Comment),
-    )
+    prismaClient = module.get<PrismaClient>(PRISMA_CLIENT)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
     app = module.createNestApplication()
@@ -78,15 +66,13 @@ describe('Comments (e2e)', () => {
     server = app.getHttpServer()
     await app.init()
 
-    user = await usersService.create({
-      email: 'test@test.com',
-      name: 'Test',
-      gender: UserGender.Male,
-    })
-    accessToken = authJwtsService.sign({ sub: user.email }).accessToken
-    await articlesService.create({
-      authorId: 1,
-      content: [getFakeHeadingNode()],
+    accessToken = authJwtsService.sign({ sub: 'test@test.com' }).accessToken
+
+    await prismaClient.article.create({
+      data: {
+        authorId: 1,
+        content: { type: 'doc', content: [getFakeHeadingNode()] },
+      },
     })
   }, 60000)
 
@@ -97,13 +83,6 @@ describe('Comments (e2e)', () => {
   })
 
   describe('POST /comments/articles/1', () => {
-    afterEach(
-      async () =>
-        await dataSource.query(
-          'TRUNCATE TABLE comments RESTART IDENTITY CASCADE',
-        ),
-    )
-
     test('should return 201 and root comment', async () => {
       const body: CreateCommentDto = {
         content: {
@@ -123,14 +102,10 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 201 and child comment', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-      })
+      const { id: parentCommentId } = await createRootComment()
 
       const body: CreateCommentDto = {
-        parentCommentId: 1,
+        parentCommentId,
         content: {
           type: 'doc',
           content: [getFakeParagraphNode()],
@@ -175,28 +150,21 @@ describe('Comments (e2e)', () => {
   })
 
   describe('GET /comments/articles/1', () => {
-    afterEach(
-      async () =>
-        await dataSource.query(
-          'TRUNCATE TABLE comments RESTART IDENTITY CASCADE',
-        ),
-    )
-
     test('should return 200 and a single page of root comments sort by rating and order by DESC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           rating: i,
         })),
-      )
+      })
 
       const result = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'rating',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -217,20 +185,20 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of root comments sort by rating and order by ASC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           rating: i,
         })),
-      )
+      })
 
       const result = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'rating',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -251,20 +219,20 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of root comments sort by createdAt and order by DESC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           createdAt: i,
         })),
-      )
+      })
 
       const result = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -285,20 +253,20 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of root comments sort by createdAt and order by ASC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           createdAt: i,
         })),
-      )
+      })
 
       const result = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -319,18 +287,18 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of root comments sort by rating and order by DESC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           rating: i,
         })),
-      )
+      })
 
       const result1 = await request(server)
         .get('/comments/articles/1')
-        .query({ limit: 10, orderBy: 'DESC', sortBy: 'rating' })
+        .query({ limit: 10, orderBy: 'desc', sortBy: 'rating' })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const firstResponseStatus = result1.status
@@ -372,18 +340,18 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of root comments sort by rating and order by ASC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           rating: i,
         })),
-      )
+      })
 
       const result1 = await request(server)
         .get('/comments/articles/1')
-        .query({ limit: 10, orderBy: 'ASC', sortBy: 'rating' })
+        .query({ limit: 10, orderBy: 'asc', sortBy: 'rating' })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const firstResponseStatus = result1.status
@@ -404,7 +372,7 @@ describe('Comments (e2e)', () => {
 
       const result2 = await request(server)
         .get('/comments/articles/1')
-        .query({ cursor: firstResponseCursor, orderBy: 'ASC' })
+        .query({ cursor: firstResponseCursor, orderBy: 'asc' })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const secondResponseStatus = result2.status
@@ -425,18 +393,18 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by DESC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           createdAt: i,
         })),
-      )
+      })
 
       const result1 = await request(server)
         .get('/comments/articles/1')
-        .query({ limit: 10, orderBy: 'DESC', sortBy: 'createdAt' })
+        .query({ limit: 10, orderBy: 'desc', sortBy: 'createdAt' })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const firstResponseStatus = result1.status
@@ -459,7 +427,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/articles/1')
         .query({
           cursor: firstResponseCursor,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -482,18 +450,18 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by ASC', async () => {
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           createdAt: i,
         })),
-      )
+      })
 
       const result1 = await request(server)
         .get('/comments/articles/1')
-        .query({ limit: 10, orderBy: 'ASC', sortBy: 'createdAt' })
+        .query({ limit: 10, orderBy: 'asc', sortBy: 'createdAt' })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const firstResponseStatus = result1.status
@@ -516,7 +484,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/articles/1')
         .query({
           cursor: firstResponseCursor,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -539,27 +507,23 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of child comments sort by rating and order by DESC', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-      })
+      await createRootComment()
 
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           parentCommentId: 1,
           rating: i,
         })),
-      )
+      })
 
       const result = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           parentCommentId: 1,
           sortBy: 'rating',
         })
@@ -581,27 +545,23 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of child comments sort by rating and order by ASC', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-      })
+      await createRootComment()
 
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           parentCommentId: 1,
           rating: i,
         })),
-      )
+      })
 
       const result = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           parentCommentId: 1,
           sortBy: 'rating',
         })
@@ -623,27 +583,23 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of child comments sort by createdAt and order by DESC', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-      })
+      await createRootComment()
 
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           parentCommentId: 1,
           createdAt: 0 + i,
         })),
-      )
+      })
 
       const result = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           parentCommentId: 1,
           sortBy: 'createdAt',
         })
@@ -665,27 +621,23 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and a single page of child comments sort by createdAt and order by ASC', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-      })
+      await createRootComment()
 
-      await commentsRepository.save(
-        Array.from({ length: 10 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           parentCommentId: 1,
           createdAt: 0 + i,
         })),
-      )
+      })
 
       const result = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           parentCommentId: 1,
           sortBy: 'createdAt',
         })
@@ -707,27 +659,23 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of child comments sort by rating and order by DESC', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-      })
+      await createRootComment()
 
-      await commentsRepository.save(
-        Array.from({ length: 20 }).map((_, i) => ({
+      await prismaClient.comment.createMany({
+        data: Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           parentCommentId: 1,
           rating: i,
         })),
-      )
+      })
 
       const result1 = await request(server)
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           parentCommentId: 1,
           sortBy: 'rating',
         })
@@ -752,7 +700,7 @@ describe('Comments (e2e)', () => {
         .query({
           cursor: firstResponseCursor,
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           parentCommentId: 1,
           sortBy: 'rating',
         })
@@ -774,17 +722,13 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 200 and the only 2 pages of child comments sort by rating and order by ASC', async () => {
-      await commentsRepository.save({
-        authorId: 1,
-        articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
-      })
+      await createRootComment()
 
       await commentsRepository.save(
         Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           parentCommentId: 1,
           rating: i,
         })),
@@ -794,7 +738,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           parentCommentId: 1,
           sortBy: 'rating',
         })
@@ -819,7 +763,7 @@ describe('Comments (e2e)', () => {
         .query({
           cursor: firstResponseCursor,
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           parentCommentId: 1,
           sortBy: 'rating',
         })
@@ -844,14 +788,14 @@ describe('Comments (e2e)', () => {
       await commentsRepository.save({
         authorId: 1,
         articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
       })
 
       await commentsRepository.save(
         Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           parentCommentId: 1,
           createdAt: i,
         })),
@@ -861,7 +805,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           parentCommentId: 1,
           sortBy: 'createdAt',
         })
@@ -886,7 +830,7 @@ describe('Comments (e2e)', () => {
         .query({
           cursor: firstResponseCursor,
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           parentCommentId: 1,
           sortBy: 'createdAt',
         })
@@ -911,14 +855,14 @@ describe('Comments (e2e)', () => {
       await commentsRepository.save({
         authorId: 1,
         articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
       })
 
       await commentsRepository.save(
         Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           parentCommentId: 1,
           createdAt: i,
         })),
@@ -928,7 +872,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/articles/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           parentCommentId: 1,
           sortBy: 'createdAt',
         })
@@ -953,7 +897,7 @@ describe('Comments (e2e)', () => {
         .query({
           cursor: firstResponseCursor,
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           parentCommentId: 1,
           sortBy: 'createdAt',
         })
@@ -991,7 +935,7 @@ describe('Comments (e2e)', () => {
         Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           rating: i,
         })),
       )
@@ -1000,7 +944,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/users/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'rating',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1024,7 +968,7 @@ describe('Comments (e2e)', () => {
         Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           rating: i,
         })),
       )
@@ -1033,7 +977,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/users/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'rating',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1057,7 +1001,7 @@ describe('Comments (e2e)', () => {
         Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           createdAt: i,
         })),
       )
@@ -1066,7 +1010,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/users/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1090,7 +1034,7 @@ describe('Comments (e2e)', () => {
         Array.from({ length: 10 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           createdAt: i,
         })),
       )
@@ -1099,7 +1043,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/users/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1123,7 +1067,7 @@ describe('Comments (e2e)', () => {
         Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           rating: i,
         })),
       )
@@ -1132,7 +1076,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/users/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'rating',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1155,7 +1099,7 @@ describe('Comments (e2e)', () => {
         .query({
           cursor: firstResponseCursor,
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'rating',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1179,7 +1123,7 @@ describe('Comments (e2e)', () => {
         Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           rating: i,
         })),
       )
@@ -1188,7 +1132,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/users/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'rating',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1211,7 +1155,7 @@ describe('Comments (e2e)', () => {
         .query({
           cursor: firstResponseCursor,
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'rating',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1235,7 +1179,7 @@ describe('Comments (e2e)', () => {
         Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           createdAt: i,
         })),
       )
@@ -1244,7 +1188,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/users/1')
         .query({
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1267,7 +1211,7 @@ describe('Comments (e2e)', () => {
         .query({
           cursor: firstResponseCursor,
           limit: 10,
-          orderBy: 'DESC',
+          orderBy: 'desc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1291,7 +1235,7 @@ describe('Comments (e2e)', () => {
         Array.from({ length: 20 }).map((_, i) => ({
           authorId: 1,
           articleId: 1,
-          content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+          content: { type: 'doc', content: [getFakeParagraphNode()] },
           createdAt: i,
         })),
       )
@@ -1300,7 +1244,7 @@ describe('Comments (e2e)', () => {
         .get('/comments/users/1')
         .query({
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1323,7 +1267,7 @@ describe('Comments (e2e)', () => {
         .query({
           cursor: firstResponseCursor,
           limit: 10,
-          orderBy: 'ASC',
+          orderBy: 'asc',
           sortBy: 'createdAt',
         })
         .set('Authorization', `Bearer ${accessToken}`)
@@ -1359,7 +1303,7 @@ describe('Comments (e2e)', () => {
       await commentsRepository.save({
         authorId: 1,
         articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
       })
 
       const comment = (await commentsRepository.findOneBy({ id: 1 }))!
@@ -1384,7 +1328,7 @@ describe('Comments (e2e)', () => {
       await commentsRepository.save({
         authorId: 1,
         articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
       })
 
       const body: UpdateCommentDto = {
@@ -1405,7 +1349,7 @@ describe('Comments (e2e)', () => {
       await commentsRepository.save({
         authorId: 1,
         articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
       })
 
       const body: UpdateCommentDto = {
@@ -1431,7 +1375,7 @@ describe('Comments (e2e)', () => {
       await commentsRepository.save({
         authorId: 1,
         articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
       })
 
       const comment = (await commentsRepository.findOneBy({ id: 1 }))!
@@ -1448,7 +1392,7 @@ describe('Comments (e2e)', () => {
       await commentsRepository.save({
         authorId: 1,
         articleId: 1,
-        content: [{ type: 'doc', content: [getFakeParagraphNode()] }],
+        content: { type: 'doc', content: [getFakeParagraphNode()] },
       })
 
       return request(server).delete('/comments/1').expect(401)

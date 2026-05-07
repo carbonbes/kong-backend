@@ -1,15 +1,18 @@
 import { Prisma } from '@/prisma/types'
+import { CursorPaginationMeta } from 'prisma-extension-pagination'
 
 export type FindManyWithCursorPaginationOptions<T> = Omit<
   Prisma.Args<T, 'findMany'>,
-  'cursor' | 'orderBy'
+  'orderBy' | 'take'
 > & {
-  cursor?: string | null
+  after?: string
+  before?: string
   limit?: number
-  orderBy?: ''
+  orderBy?: Prisma.SortOrder
+  sortBy?: keyof Prisma.Payload<T>['scalars']
 }
 
 export type FindManyWithCursorPaginationReturn<T> = Promise<{
   items: T[]
-  cursor: string | null
+  meta: CursorPaginationMeta
 }>

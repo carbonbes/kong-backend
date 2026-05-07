@@ -8,9 +8,10 @@ import {
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from 'generated/prisma/client'
+import { pagination } from 'prisma-extension-pagination'
 
 export const createPrismaClient = (options: typeof OPTIONS_TYPE) =>
-  new PrismaClient({ adapter: new PrismaPg(options) })
+  new PrismaClient({ adapter: new PrismaPg(options) }).$extends(pagination())
 
 @Module({})
 export class PrismaModule extends ConfigurableModuleClass {

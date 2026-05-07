@@ -37,9 +37,11 @@ describe('CommentsController', () => {
       const result = await commentsController.create(authorId, articleId, body)
 
       expect(commentsService.create).toHaveBeenCalledWith({
-        articleId,
-        authorId,
-        ...body,
+        data: {
+          articleId,
+          authorId,
+          ...body,
+        },
       })
       expect(result).toEqual(comment)
     })
@@ -58,9 +60,11 @@ describe('CommentsController', () => {
       const result = await commentsController.create(authorId, articleId, body)
 
       expect(commentsService.create).toHaveBeenCalledWith({
-        articleId,
-        authorId,
-        ...body,
+        data: {
+          articleId,
+          authorId,
+          ...body,
+        },
       })
       expect(result).toEqual(comment)
     })
@@ -74,9 +78,9 @@ describe('CommentsController', () => {
       const articleId = 1
       const query: FindManyCommentsByArticleQueryDto = { limit: 50 }
 
-      commentsService.findManyByArticle.mockResolvedValue({
+      commentsService.findMany.mockResolvedValue({
         items: comments,
-        meta: { cursor: null },
+        meta: { after: null },
       })
 
       const result = await commentsController.findManyByArticle(
@@ -84,7 +88,7 @@ describe('CommentsController', () => {
         query,
       )
 
-      expect(commentsService.findManyByArticle).toHaveBeenCalledWith({
+      expect(commentsService.findMany).toHaveBeenCalledWith({
         articleId,
         ...query,
       })

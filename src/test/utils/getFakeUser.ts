@@ -1,4 +1,4 @@
-import { User } from '@/users/entities'
+import { User } from '@/users/types'
 import { UserGender, UserRole } from '@/users/enums'
 import { faker } from '@faker-js/faker/locale/ru'
 import { getFakeInt } from '@/test/utils/getFakeInt'

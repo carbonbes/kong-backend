@@ -14,7 +14,12 @@ export class FindManyCommentsQueryDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
-  cursor?: string
+  after?: string
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  before?: string
 
   @IsOptional()
   @Type(() => Number)

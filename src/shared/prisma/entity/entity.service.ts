@@ -19,43 +19,74 @@ import {
   UpdateReturn,
 } from './types'
 import { Prisma } from '@/prisma/types'
+import { objectFromBase64, objectToBase64 } from './utils'
 
 @Injectable()
 export abstract class EntityService<T> {
   protected constructor(
     readonly txHost: TransactionHost<TransactionalAdapterPrisma<PrismaClient>>,
-    readonly entity: Lowercase<Prisma.ModelName>,
+    readonly modelName: Lowercase<Prisma.ModelName>,
   ) {}
 
   create(options: CreateOptions<T>): CreateReturn<T> {
-    return this.txHost.tx[this.entity].create(options)
+    return this.txHost.tx[this.modelName].create(options)
   }
 
   findUnique(options: FindUniqueOptions<T>): FindUniqueReturn<T> {
-    return this.txHost.tx[this.entity].findUnique(options)
+    return this.txHost.tx[this.modelName].findUnique(options)
   }
 
   findMany(options: FindManyOptions<T>): FindManyReturn<T> {
-    return this.txHost.tx[this.entity].findMany(options)
+    return this.txHost.tx[this.modelName].findMany(options)
   }
 
   async findManyWithCursorPagination(
     options: FindManyWithCursorPaginationOptions<T>,
   ): FindManyWithCursorPaginationReturn<T> {
-    const items = await this.txHost.tx[this.entity].findMany(options)
+    const {
+      after,
+      before,
+      limit = 10,
+      orderBy = 'desc',
+      sortBy,
+      where,
+      select,
+    } = options
 
-    return { items, cursor: '' }
+    const [items, meta] = await this.txHost.tx[this.modelName]
+      .paginate({
+        orderBy: sortBy ? { id: orderBy, [sortBy]: orderBy } : undefined,
+        select,
+        where,
+      })
+      .withCursor({
+        after,
+        before,
+        limit,
+        getCursor: (item) =>
+          objectToBase64(
+            sortBy
+              ? Object.keys(sortBy).reduce((acc, key) => {
+                  acc[key] = item[key]
+                  return acc
+                }, {})
+              : { id: item.id },
+          ),
+        parseCursor: (cursor) => objectFromBase64(cursor),
+      })
+
+    return { items, meta }
   }
 
   update(options: UpdateOptions<T>): UpdateReturn<T> {
-    return this.txHost.tx[this.entity].update(options)
+    return this.txHost.tx[this.modelName].update(options)
   }
 
   delete(options: DeleteOptions<T>): DeleteReturn<T> {
-    return this.txHost.tx[this.entity].delete(options)
+    return this.txHost.tx[this.modelName].delete(options)
   }
 
-  async exists(options: ExistsOptions<T>): ExistsReturn {
-    return (await this.txHost.tx[this.entity].count(options)) > 0
+  async exists(options: ExistsOptions<T>): ExistsReturn<T> {
+    return (await this.txHost.tx[this.modelName].count(options)) > 0
   }
 }
