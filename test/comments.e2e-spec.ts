@@ -357,8 +357,6 @@ describe('Comments (e2e)', () => {
         nextCursor: secondResponseNextCursor,
       } = result2.body.meta as FindManyWithCursorPaginationMeta
 
-      console.log(result2.body)
-
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       secondResponseItems.forEach((item) =>
@@ -384,10 +382,9 @@ describe('Comments (e2e)', () => {
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
       const {
-        hasPreviousPage: firstResponseHasPreviousPage,
-        hasNextPage: firstResponseHasNextPage,
-        endCursor: firstResponseEndCursor,
-      } = result1.body.meta as CursorPaginationMeta
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
@@ -396,12 +393,17 @@ describe('Comments (e2e)', () => {
       )
       expect(firstResponseFirstComment.rating).toBe(0)
       expect(firstResponseLastComment.rating).toBe(9)
-      expect(firstResponseHasPreviousPage).toBeFalsy()
-      expect(firstResponseHasNextPage).toBeTruthy()
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
-        .query({ after: firstResponseEndCursor, orderBy: 'asc' })
+        .query({
+          limit: 10,
+          nextCursor: firstResponseNextCursor,
+          orderBy: 'asc',
+          sortBy: 'rating',
+        })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const secondResponseStatus = result2.status
@@ -410,9 +412,9 @@ describe('Comments (e2e)', () => {
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
       const {
-        hasPreviousPage: secondResponseHasPreviousPage,
-        hasNextPage: secondResponseHasNextPage,
-      } = result1.body.meta as CursorPaginationMeta
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
@@ -421,8 +423,8 @@ describe('Comments (e2e)', () => {
       )
       expect(secondResponseFirstComment.rating).toBe(10)
       expect(secondResponseLastComment.rating).toBe(19)
-      expect(secondResponseHasPreviousPage).toBeTruthy()
-      expect(secondResponseHasNextPage).toBeFalsy()
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by DESC', async () => {
@@ -439,10 +441,9 @@ describe('Comments (e2e)', () => {
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
       const {
-        hasPreviousPage: firstResponseHasPreviousPage,
-        hasNextPage: firstResponseHasNextPage,
-        endCursor: firstResponseEndCursor,
-      } = result1.body.meta as CursorPaginationMeta
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
@@ -455,13 +456,14 @@ describe('Comments (e2e)', () => {
       expect(firstResponseLastComment.createdAt).toBe(
         new Date(10).toISOString(),
       )
-      expect(firstResponseHasPreviousPage).toBeFalsy()
-      expect(firstResponseHasNextPage).toBeTruthy()
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
         .query({
-          after: firstResponseEndCursor,
+          limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'desc',
           sortBy: 'createdAt',
         })
@@ -473,9 +475,9 @@ describe('Comments (e2e)', () => {
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
       const {
-        hasPreviousPage: secondResponseHasPreviousPage,
-        hasNextPage: secondResponseHasNextPage,
-      } = result1.body.meta as CursorPaginationMeta
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
@@ -488,8 +490,8 @@ describe('Comments (e2e)', () => {
       expect(secondResponseLastComment.createdAt).toBe(
         new Date(0).toISOString(),
       )
-      expect(secondResponseHasPreviousPage).toBeTruthy()
-      expect(secondResponseHasNextPage).toBeFalsy()
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by ASC', async () => {
@@ -505,21 +507,28 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
       firstResponseItems.forEach((item) =>
         expect(item.parentCommentId === null),
       )
-      expect(firstResponseFirstComment.createdAt).toBe(0)
-      expect(firstResponseLastComment.createdAt).toBe(9)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponseFirstComment.createdAt).toBe(
+        new Date(0).toISOString(),
+      )
+      expect(firstResponseLastComment.createdAt).toBe(new Date(9).toISOString())
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
         .query({
-          cursor: firstResponseCursor,
+          limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'asc',
           sortBy: 'createdAt',
         })
@@ -530,16 +539,24 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       secondResponseItems.forEach((item) =>
         expect(item.parentCommentId === null),
       )
-      expect(secondResponseFirstComment.createdAt).toBe(10)
-      expect(secondResponseLastComment.createdAt).toBe(19)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponseFirstComment.createdAt).toBe(
+        new Date(10).toISOString(),
+      )
+      expect(secondResponseLastComment.createdAt).toBe(
+        new Date(19).toISOString(),
+      )
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and a single page of child comments sort by rating and order by DESC', async () => {
@@ -677,20 +694,24 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
       firstResponseItems.forEach((item) => expect(item.parentCommentId === 1))
       expect(firstResponseFirstComment.rating).toBe(19)
       expect(firstResponseLastComment.rating).toBe(10)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
         .query({
-          cursor: firstResponseCursor,
           limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'desc',
           parentCommentId: 1,
           sortBy: 'rating',
@@ -702,14 +723,18 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       secondResponseItems.forEach((item) => expect(item.parentCommentId === 1))
       expect(secondResponseFirstComment.rating).toBe(9)
       expect(secondResponseLastComment.rating).toBe(0)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of child comments sort by rating and order by ASC', async () => {
@@ -731,20 +756,24 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
       firstResponseItems.forEach((item) => expect(item.parentCommentId === 1))
       expect(firstResponseFirstComment.rating).toBe(0)
       expect(firstResponseLastComment.rating).toBe(9)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
         .query({
-          cursor: firstResponseCursor,
           limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'asc',
           parentCommentId: 1,
           sortBy: 'rating',
@@ -756,14 +785,18 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       secondResponseItems.forEach((item) => expect(item.parentCommentId === 1))
       expect(secondResponseFirstComment.rating).toBe(10)
       expect(secondResponseLastComment.rating).toBe(19)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of child comments sort by createdAt and order by DESC', async () => {
@@ -785,20 +818,28 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
       firstResponseItems.forEach((item) => expect(item.parentCommentId === 1))
-      expect(firstResponseFirstComment.createdAt).toBe(19)
-      expect(firstResponseLastComment.createdAt).toBe(10)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponseFirstComment.createdAt).toBe(
+        new Date(19).toISOString(),
+      )
+      expect(firstResponseLastComment.createdAt).toBe(
+        new Date(10).toISOString(),
+      )
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
         .query({
-          cursor: firstResponseCursor,
           limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'desc',
           parentCommentId: 1,
           sortBy: 'createdAt',
@@ -810,14 +851,22 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       secondResponseItems.forEach((item) => expect(item.parentCommentId === 1))
-      expect(secondResponseFirstComment.createdAt).toBe(9)
-      expect(secondResponseLastComment.createdAt).toBe(0)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponseFirstComment.createdAt).toBe(
+        new Date(9).toISOString(),
+      )
+      expect(secondResponseLastComment.createdAt).toBe(
+        new Date(0).toISOString(),
+      )
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of child comments sort by createdAt and order by ASC', async () => {
@@ -839,20 +888,26 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
       firstResponseItems.forEach((item) => expect(item.parentCommentId === 1))
-      expect(firstResponseFirstComment.createdAt).toBe(0)
-      expect(firstResponseLastComment.createdAt).toBe(9)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponseFirstComment.createdAt).toBe(
+        new Date(0).toISOString(),
+      )
+      expect(firstResponseLastComment.createdAt).toBe(new Date(9).toISOString())
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
         .query({
-          cursor: firstResponseCursor,
           limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'asc',
           parentCommentId: 1,
           sortBy: 'createdAt',
@@ -864,14 +919,22 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       secondResponseItems.forEach((item) => expect(item.parentCommentId === 1))
-      expect(secondResponseFirstComment.createdAt).toBe(10)
-      expect(secondResponseLastComment.createdAt).toBe(19)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponseFirstComment.createdAt).toBe(
+        new Date(10).toISOString(),
+      )
+      expect(secondResponseLastComment.createdAt).toBe(
+        new Date(19).toISOString(),
+      )
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 401 if user is not authenticated', async () =>
@@ -1002,19 +1065,23 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
       expect(firstResponseFirstComment.rating).toBe(19)
       expect(firstResponseLastComment.rating).toBe(10)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/users/1')
         .query({
-          cursor: firstResponseCursor,
           limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'desc',
           sortBy: 'rating',
         })
@@ -1025,13 +1092,17 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       expect(secondResponseFirstComment.rating).toBe(9)
       expect(secondResponseLastComment.rating).toBe(0)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by rating and order by ASC', async () => {
@@ -1051,19 +1122,23 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
       expect(firstResponseFirstComment.rating).toBe(0)
       expect(firstResponseLastComment.rating).toBe(9)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/users/1')
         .query({
-          cursor: firstResponseCursor,
           limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'asc',
           sortBy: 'rating',
         })
@@ -1074,13 +1149,17 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
       expect(secondResponseFirstComment.rating).toBe(10)
       expect(secondResponseLastComment.rating).toBe(19)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by DESC', async () => {
@@ -1100,19 +1179,27 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
-      expect(firstResponseFirstComment.createdAt).toBe(19)
-      expect(firstResponseLastComment.createdAt).toBe(10)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponseFirstComment.createdAt).toBe(
+        new Date(19).toISOString(),
+      )
+      expect(firstResponseLastComment.createdAt).toBe(
+        new Date(10).toISOString(),
+      )
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/users/1')
         .query({
-          cursor: firstResponseCursor,
           limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'desc',
           sortBy: 'createdAt',
         })
@@ -1123,13 +1210,21 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
-      expect(secondResponseFirstComment.createdAt).toBe(9)
-      expect(secondResponseLastComment.createdAt).toBe(0)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponseFirstComment.createdAt).toBe(
+        new Date(9).toISOString(),
+      )
+      expect(secondResponseLastComment.createdAt).toBe(
+        new Date(0).toISOString(),
+      )
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by createdAt and order by ASC', async () => {
@@ -1149,19 +1244,25 @@ describe('Comments (e2e)', () => {
       const firstResponseCommentsCount = firstResponseItems.length
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
-      const firstResponseCursor: string = result1.body.meta.cursor
+      const {
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
-      expect(firstResponseFirstComment.createdAt).toBe(0)
-      expect(firstResponseLastComment.createdAt).toBe(9)
-      expect(firstResponseCursor).not.toBeNull()
+      expect(firstResponseFirstComment.createdAt).toBe(
+        new Date(0).toISOString(),
+      )
+      expect(firstResponseLastComment.createdAt).toBe(new Date(9).toISOString())
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/users/1')
         .query({
-          cursor: firstResponseCursor,
           limit: 10,
+          nextCursor: firstResponseNextCursor,
           orderBy: 'asc',
           sortBy: 'createdAt',
         })
@@ -1172,13 +1273,21 @@ describe('Comments (e2e)', () => {
       const secondResponseCommentsCount = secondResponseItems.length
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
-      const secondResponseCursor: null = result2.body.meta.cursor
+      const {
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
-      expect(secondResponseFirstComment.createdAt).toBe(10)
-      expect(secondResponseLastComment.createdAt).toBe(19)
-      expect(secondResponseCursor).toBeNull()
+      expect(secondResponseFirstComment.createdAt).toBe(
+        new Date(10).toISOString(),
+      )
+      expect(secondResponseLastComment.createdAt).toBe(
+        new Date(19).toISOString(),
+      )
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 401 if user is not authenticated', async () => {
