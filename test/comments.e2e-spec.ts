@@ -21,6 +21,7 @@ import { JSONContent } from '@tiptap/core'
 import { execSync } from 'node:child_process'
 import { UserGender } from '@/users/enums'
 import { CursorPaginationMeta } from 'prisma-extension-pagination'
+import { FindManyWithCursorPaginationMeta } from '@/shared/prisma/entity/types'
 
 describe('Comments (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -322,10 +323,9 @@ describe('Comments (e2e)', () => {
       const firstResponseFirstComment = firstResponseItems[0]
       const firstResponseLastComment = firstResponseItems[9]
       const {
-        hasPreviousPage: firstResponseHasPreviousPage,
-        hasNextPage: firstResponseHasNextPage,
-        endCursor: firstResponseEndCursor,
-      } = result1.body.meta as CursorPaginationMeta
+        previousCursor: firstResponsePreviousCursor,
+        nextCursor: firstResponseNextCursor,
+      } = result1.body.meta as FindManyWithCursorPaginationMeta
 
       expect(firstResponseStatus).toBe(200)
       expect(firstResponseCommentsCount).toBe(10)
@@ -334,12 +334,17 @@ describe('Comments (e2e)', () => {
       )
       expect(firstResponseFirstComment.rating).toBe(19)
       expect(firstResponseLastComment.rating).toBe(10)
-      expect(firstResponseHasPreviousPage).toBeFalsy()
-      expect(firstResponseHasNextPage).toBeTruthy()
+      expect(firstResponsePreviousCursor).toBeNull()
+      expect(firstResponseNextCursor).not.toBeNull()
 
       const result2 = await request(server)
         .get('/comments/articles/1')
-        .query({ after: firstResponseEndCursor })
+        .query({
+          limit: 10,
+          nextCursor: firstResponseNextCursor,
+          orderBy: 'desc',
+          sortBy: 'rating',
+        })
         .set('Authorization', `Bearer ${accessToken}`)
 
       const secondResponseStatus = result2.status
@@ -348,9 +353,11 @@ describe('Comments (e2e)', () => {
       const secondResponseFirstComment = secondResponseItems[0]
       const secondResponseLastComment = secondResponseItems[9]
       const {
-        hasPreviousPage: secondResponseHasPreviousPage,
-        hasNextPage: secondResponseHasNextPage,
-      } = result1.body.meta as CursorPaginationMeta
+        previousCursor: secondResponsePreviousCursor,
+        nextCursor: secondResponseNextCursor,
+      } = result2.body.meta as FindManyWithCursorPaginationMeta
+
+      console.log(result2.body)
 
       expect(secondResponseStatus).toBe(200)
       expect(secondResponseCommentsCount).toBe(10)
@@ -359,8 +366,8 @@ describe('Comments (e2e)', () => {
       )
       expect(secondResponseFirstComment.rating).toBe(9)
       expect(secondResponseLastComment.rating).toBe(0)
-      expect(secondResponseHasPreviousPage).toBeTruthy()
-      expect(secondResponseHasNextPage).toBeFalsy()
+      expect(secondResponsePreviousCursor).not.toBeNull()
+      expect(secondResponseNextCursor).toBeNull()
     })
 
     test('should return 200 and the only 2 pages of root comments sort by rating and order by ASC', async () => {

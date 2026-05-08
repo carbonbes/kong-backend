@@ -44,10 +44,10 @@ export abstract class EntityService<T> {
     options: FindManyWithCursorPaginationOptions<T>,
   ): FindManyWithCursorPaginationReturn<T> {
     const {
-      after,
-      before,
       limit = 10,
+      nextCursor,
       orderBy = 'desc',
+      previousCursor,
       sortBy,
       ...etc
     } = options
@@ -62,20 +62,32 @@ export abstract class EntityService<T> {
         orderBy: orderByFields,
       })
       .withCursor({
-        after,
-        before,
+        after: nextCursor,
+        before: previousCursor,
         limit,
-        getCursor: (item) =>
-          objectToBase64(
-            Object.keys(orderByFields).reduce((acc, key) => {
-              acc[key] = item[key]
-              return acc
-            }, {}),
-          ),
+        getCursor: (item) => {
+          return objectToBase64(
+            Object.keys(Object.assign({}, ...orderByFields)).reduce(
+              (acc, key) => {
+                acc[key] = item[key]
+                return acc
+              },
+              {},
+            ),
+          )
+        },
         parseCursor: (cursor) => objectFromBase64(cursor),
       })
 
-    return { items, meta }
+    const { hasPreviousPage, hasNextPage, startCursor, endCursor } = meta
+
+    return {
+      items,
+      meta: {
+        previousCursor: hasPreviousPage ? startCursor : null,
+        nextCursor: hasNextPage ? endCursor : null,
+      },
+    }
   }
 
   update(options: UpdateOptions<T>): UpdateReturn<T> {
