@@ -17,8 +17,8 @@ model User {
   gender    UserGender
   role      UserRole   @default(user)
   isActive  Boolean    @default(false)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt Int        @default(dbgenerated("extract(epoch from now())"))
+  updatedAt Int        @default(dbgenerated("extract(epoch from now())"))
 
   articles Article[]
   comments Comment[]

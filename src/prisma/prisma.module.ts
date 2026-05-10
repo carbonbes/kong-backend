@@ -7,11 +7,14 @@ import {
 } from './prisma.module-definition'
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from 'generated/prisma/client'
+import { PrismaClient } from '@/prisma/client'
 import { pagination } from 'prisma-extension-pagination'
+import { unixUpdatedAt } from '@/lib/prisma/extensions'
 
 export const createPrismaClient = (options: typeof OPTIONS_TYPE) =>
-  new PrismaClient({ adapter: new PrismaPg(options) }).$extends(pagination())
+  new PrismaClient({ adapter: new PrismaPg(options) })
+    .$extends(unixUpdatedAt())
+    .$extends(pagination())
 
 @Module({})
 export class PrismaModule extends ConfigurableModuleClass {

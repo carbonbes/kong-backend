@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { PrismaClient } from '@/prisma/types'
+import { Prisma, PrismaClient } from '@/prisma/types'
 import {
   CreateOptions,
   CreateReturn,
@@ -18,7 +18,6 @@ import {
   UpdateOptions,
   UpdateReturn,
 } from './types'
-import { Prisma } from '@/prisma/types'
 import { objectFromBase64, objectToBase64 } from './utils'
 
 @Injectable()
@@ -98,7 +97,7 @@ export abstract class EntityService<T> {
     return this.txHost.tx[this.modelName].delete(options)
   }
 
-  async exists(options: ExistsOptions<T>): ExistsReturn<T> {
+  async exists(options: ExistsOptions<T>): ExistsReturn {
     return (await this.txHost.tx[this.modelName].count(options)) > 0
   }
 }

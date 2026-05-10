@@ -3,5 +3,5 @@ import { CommentDto } from '@/comments/dtos/comment.dto'
 
 export class CreateCommentDto extends IntersectionType(
   PartialType(PickType(CommentDto, ['parentCommentId'] as const)),
-  PickType(CommentDto, ['content'] as const),
+  PickType(CommentDto, ['articleId', 'content'] as const),
 ) {}

@@ -8,9 +8,21 @@ import {
   Min,
 } from 'class-validator'
 import { Type } from 'class-transformer'
-import { ORDER_BY, SORT_BY_FIELD } from '@/comments/consts'
+import { ORDER_BY, SORT_BY_FIELD } from '../consts'
 
-export class FindManyCommentsQueryDto {
+export class FindManyArticlesQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  authorId?: number
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  subsiteId?: number
+
   @IsOptional()
   @Type(() => Number)
   @IsInt()

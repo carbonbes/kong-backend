@@ -6,7 +6,7 @@ import { getFakeComment, getFakeHeadingNode } from '@/test/utils'
 import {
   CreateCommentDto,
   FindManyCommentsByArticleQueryDto,
-  FindManyCommentsByAuthorQueryDto,
+  FindManyCommentsQueryDto,
   UpdateCommentDto,
 } from '@/comments/dtos'
 
@@ -131,7 +131,7 @@ describe('CommentsController', () => {
     test('should find a comments', async () => {
       const comments = Array.from({ length: 50 }).map(() => getFakeComment())
       const userId = 1
-      const query: FindManyCommentsByAuthorQueryDto = { limit: 50 }
+      const query: FindManyCommentsQueryDto = { limit: 50 }
 
       commentsService.findManyByAuthor.mockResolvedValue({
         items: comments,

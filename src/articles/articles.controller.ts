@@ -7,9 +7,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common'
 import { ArticlesService } from './articles.service'
-import { CreateArticleDto, UpdateArticleDto } from './dtos'
+import {
+  CreateArticleDto,
+  FindManyArticlesQueryDto,
+  UpdateArticleDto,
+} from './dtos'
 import { Session } from '@/shared/decorators'
 
 @Controller('articles')
@@ -27,6 +32,16 @@ export class ArticlesController {
   @Get('/:articleId')
   findUnique(@Param('articleId', ParseIntPipe) articleId: number) {
     return this.articlesService.findUnique({ where: { id: articleId } })
+  }
+
+  @Get()
+  findMany(@Query() query: FindManyArticlesQueryDto) {
+    const { authorId, subsiteId, ...etc } = query
+
+    return this.articlesService.findManyWithCursorPagination({
+      where: { authorId, subsiteId },
+      ...etc,
+    })
   }
 
   @Patch('/:articleId')

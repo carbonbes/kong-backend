@@ -12,8 +12,7 @@ import {
 import { CommentsService } from '@/comments/comments.service'
 import {
   CreateCommentDto,
-  FindManyCommentsByArticleQueryDto,
-  FindManyCommentsByAuthorQueryDto,
+  FindManyCommentsQueryDto,
   UpdateCommentDto,
 } from '@/comments/dtos'
 import { Session } from '@/shared/decorators'
@@ -22,38 +21,20 @@ import { Session } from '@/shared/decorators'
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
-  @Post('/articles/:articleId')
-  create(
-    @Session('id') authorId: number,
-    @Param('articleId', ParseIntPipe) articleId: number,
-    @Body() body: CreateCommentDto,
-  ) {
+  @Post()
+  create(@Session('id') authorId: number, @Body() body: CreateCommentDto) {
     return this.commentsService.create({
-      data: { authorId, articleId, ...body },
+      data: { authorId, ...body },
     })
   }
 
-  @Get('/articles/:articleId')
-  async findManyByArticle(
-    @Param('articleId', ParseIntPipe) articleId: number,
-    @Query() query: FindManyCommentsByArticleQueryDto,
-  ) {
-    const { parentCommentId, ...etc } = query
+  @Get()
+  async findMany(@Query() query: FindManyCommentsQueryDto) {
+    const { articleId, authorId, parentCommentId, ...etc } = query
 
     return this.commentsService.findManyWithCursorPagination({
-      where: { articleId, parentCommentId },
+      where: { articleId, authorId, parentCommentId },
       ...etc,
-    })
-  }
-
-  @Get('/users/:userId')
-  async findManyByUser(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: FindManyCommentsByAuthorQueryDto,
-  ) {
-    return this.commentsService.findManyWithCursorPagination({
-      where: { authorId: userId },
-      ...query,
     })
   }
 
