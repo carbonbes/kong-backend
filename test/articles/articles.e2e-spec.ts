@@ -99,7 +99,7 @@ describe('Articles (e2e)', () => {
   describe('POST /articles', () => {
     afterEach(async () => await truncateArticles(prismaClient))
 
-    test('should return 201 and article', async () => {
+    test('should return an article', async () => {
       const body: CreateArticleDto = {
         content: {
           type: 'doc',
@@ -168,7 +168,7 @@ describe('Articles (e2e)', () => {
         beforeEach(async () => await createArticles(prismaClient, 10))
         afterEach(async () => await truncateArticles(prismaClient))
 
-        test('should return 200 and sort by rating and order by DESC', async () => {
+        test('should return articles sorted by rating and ordered by DESC', async () => {
           const result = await request(server)
             .get('/articles')
             .query({
@@ -195,7 +195,7 @@ describe('Articles (e2e)', () => {
           expect(nextCursor).toBeNull()
         })
 
-        test('should return 200 and sort by rating and order by ASC', async () => {
+        test('should return articles sorted by rating and ordered by ASC', async () => {
           const result = await request(server)
             .get('/articles')
             .query({
@@ -222,7 +222,7 @@ describe('Articles (e2e)', () => {
           expect(nextCursor).toBeNull()
         })
 
-        test('should return 200 and sort by createdAt and order by DESC', async () => {
+        test('should return articles sorted by createdAt and ordered by DESC', async () => {
           const result = await request(server)
             .get('/articles')
             .query({
@@ -249,7 +249,7 @@ describe('Articles (e2e)', () => {
           expect(nextCursor).toBeNull()
         })
 
-        test('should return 200 and page sort by createdAt and order by ASC', async () => {
+        test('should return articles sorted by createdAt and ordered by ASC', async () => {
           const result = await request(server)
             .get('/articles')
             .query({
@@ -281,7 +281,7 @@ describe('Articles (e2e)', () => {
         beforeEach(async () => await createArticles(prismaClient, 20))
         afterEach(async () => await truncateArticles(prismaClient))
 
-        test('should return 200 and sort by rating and order by DESC', async () => {
+        test('should return articles sorted by rating and ordered by DESC', async () => {
           const result1 = await request(server)
             .get('/articles')
             .query({
@@ -338,7 +338,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseNextCursor).toBeNull()
         })
 
-        test('should return 200 and sort by rating and order by ASC', async () => {
+        test('should return articles sorted by rating and ordered by ASC', async () => {
           const result1 = await request(server)
             .get('/articles')
             .query({ authorId: 1, limit: 10, orderBy: 'asc', sortBy: 'rating' })
@@ -390,7 +390,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseNextCursor).toBeNull()
         })
 
-        test('should return 200 and sort by createdAt and order by DESC', async () => {
+        test('should return articles sorted by createdAt and ordered by DESC', async () => {
           const result1 = await request(server)
             .get('/articles')
             .query({
@@ -447,7 +447,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseNextCursor).toBeNull()
         })
 
-        test('should return 200 and sort by createdAt and order by ASC', async () => {
+        test('should return articles sorted by createdAt and ordered by ASC', async () => {
           const result1 = await request(server)
             .get('/articles')
             .query({
@@ -505,7 +505,7 @@ describe('Articles (e2e)', () => {
         })
       })
 
-      test('should return 200 and empty, if a user is not have an articles', async () => {
+      test('should return empty articles if a user is not have an articles', async () => {
         const result = await request(server)
           .get('/articles')
           .query({
@@ -534,7 +534,7 @@ describe('Articles (e2e)', () => {
         beforeEach(async () => await createArticles(prismaClient, 10))
         afterEach(async () => await truncateArticles(prismaClient))
 
-        test('should return 200 and a single page sort by rating and order by DESC', async () => {
+        test('should return articles sorted by rating and ordered by DESC', async () => {
           const result = await request(server)
             .get('/articles')
             .query({
@@ -561,7 +561,7 @@ describe('Articles (e2e)', () => {
           expect(nextCursor).toBeNull()
         })
 
-        test('should return 200 and a single page sort by rating and order by ASC', async () => {
+        test('should return articles sorted by rating and ordered by ASC', async () => {
           const result = await request(server)
             .get('/articles')
             .query({
@@ -588,7 +588,7 @@ describe('Articles (e2e)', () => {
           expect(nextCursor).toBeNull()
         })
 
-        test('should return 200 and a single page sort by createdAt and order by DESC', async () => {
+        test('should return articles sorted by createdAt and ordered by DESC', async () => {
           const result = await request(server)
             .get('/articles')
             .query({
@@ -615,7 +615,7 @@ describe('Articles (e2e)', () => {
           expect(nextCursor).toBeNull()
         })
 
-        test('should return 200 and a single page sort by createdAt and order by ASC', async () => {
+        test('should return articles sorted by createdAt and ordered by ASC', async () => {
           const result = await request(server)
             .get('/articles')
             .query({
@@ -647,7 +647,7 @@ describe('Articles (e2e)', () => {
         beforeEach(async () => await createArticles(prismaClient, 20))
         afterEach(async () => await truncateArticles(prismaClient))
 
-        test('should return 200 and sort by rating and order by DESC', async () => {
+        test('should return articles sorted by rating and ordered by DESC', async () => {
           const result1 = await request(server)
             .get('/articles')
             .query({
@@ -704,7 +704,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseNextCursor).toBeNull()
         })
 
-        test('should return 200 and sort by rating and order by ASC', async () => {
+        test('should return articles sorted by rating and ordered by ASC', async () => {
           const result1 = await request(server)
             .get('/articles')
             .query({
@@ -761,7 +761,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseNextCursor).toBeNull()
         })
 
-        test('should return 200 and sort by createdAt and order by DESC', async () => {
+        test('should return articles sorted by createdAt and ordered by DESC', async () => {
           const result1 = await request(server)
             .get('/articles')
             .query({
@@ -818,7 +818,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseNextCursor).toBeNull()
         })
 
-        test('should return 200 and sort by createdAt and order by ASC', async () => {
+        test('should return articles sorted by createdAt and ordered by ASC', async () => {
           const result1 = await request(server)
             .get('/articles')
             .query({
@@ -876,7 +876,7 @@ describe('Articles (e2e)', () => {
         })
       })
 
-      test('should return 200 and empty, if a subsite is not have an articles', async () => {
+      test('should return empty articles if a subsite is not have an articles', async () => {
         const result = await request(server)
           .get('/articles')
           .query({
