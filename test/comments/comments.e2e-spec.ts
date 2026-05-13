@@ -1383,8 +1383,9 @@ describe('Comments (e2e)', () => {
       })
     })
 
-    test('should return 401 if user is not authenticated', async () =>
-      request(server).get('/comments').expect(401))
+    test('should return 401 if user is not authenticated', async () => {
+      return request(server).get('/comments').expect(401)
+    })
   })
 
   describe('PATCH /comments/1', () => {
@@ -1429,8 +1430,6 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 401 if user is not authenticated', async () => {
-      await createComment(prismaClient)
-
       const body: UpdateCommentDto = {
         content: {
           type: 'doc',
