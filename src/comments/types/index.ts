@@ -1,4 +1,5 @@
 export * from './comment.type'
+export * from './comment-delegate.type'
 export * from './create-comment.types'
 export * from './delete-comment.types'
 export * from './exists-comment.types'

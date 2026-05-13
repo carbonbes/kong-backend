@@ -22,6 +22,6 @@ export const getFakeUser = ({
   gender: gender ?? faker.helpers.enumValue(UserGender),
   role: role ?? faker.helpers.enumValue(UserRole),
   isActive: isActive ?? faker.datatype.boolean(),
-  createdAt: createdAt ?? faker.date.past(),
-  updatedAt: updatedAt ?? faker.date.future(),
+  createdAt: createdAt ?? faker.date.past().getTime(),
+  updatedAt: updatedAt ?? faker.date.future().getTime(),
 })

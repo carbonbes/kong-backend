@@ -2,8 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ArticlesController } from './articles.controller'
 import { ArticlesService } from './articles.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
-import { CreateArticleDto, UpdateArticleDto } from './dtos'
+import { getFakeArticle, getFakeInt } from '@/test/utils'
+import {
+  CreateArticleDto,
+  FindManyArticlesQueryDto,
+  UpdateArticleDto,
+} from './dtos'
 import { ArticleStatus } from '@/articles/enums'
 import { CreateArticleOptions } from '@/articles/types'
 
@@ -24,21 +28,21 @@ describe('ArticlesController', () => {
 
   describe('create', () => {
     test('should create and return article', async () => {
-      const user = getFakeUser()
+      const authorId = getFakeInt()
       const article = getFakeArticle({
-        author: user,
+        authorId,
         status: ArticleStatus.draft,
       })
       const body: CreateArticleDto = {
         content: article.content,
       }
       const options: CreateArticleOptions = {
-        data: { authorId: user.id, content: body.content },
+        data: { authorId, content: body.content },
       }
 
       articlesService.create.mockResolvedValue(article)
 
-      const result = await articlesController.create(user.id, body)
+      const result = await articlesController.create(authorId, body)
 
       expect(articlesService.create).toHaveBeenCalledWith(options)
       expect(result).toEqual(article)
@@ -48,13 +52,14 @@ describe('ArticlesController', () => {
   describe('findUnique', () => {
     test('should find and return article', async () => {
       const article = getFakeArticle()
-      const id = article.id
 
       articlesService.findUnique.mockResolvedValue(article)
 
-      const result = await articlesController.findUnique(id)
+      const result = await articlesController.findUnique(article.id)
 
-      expect(articlesService.findUnique).toHaveBeenCalledWith({ where: { id } })
+      expect(articlesService.findUnique).toHaveBeenCalledWith({
+        where: { id: article.id },
+      })
       expect(result).toEqual(article)
     })
 
@@ -71,7 +76,27 @@ describe('ArticlesController', () => {
   })
 
   describe('findMany', () => {
-    test('should find and return articles', async () => {})
+    test('should find and return articles', async () => {
+      const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
+      const query: FindManyArticlesQueryDto = { authorId: 1 }
+
+      articlesService.findManyWithCursorPagination.mockResolvedValue({
+        items: articles,
+        meta: { previousCursor: null, nextCursor: null },
+      })
+
+      const result = await articlesController.findMany(query)
+
+      expect(articlesService.findManyWithCursorPagination).toHaveBeenCalledWith(
+        {
+          where: { authorId: 1 },
+        },
+      )
+      expect(result).toEqual({
+        items: articles,
+        meta: { previousCursor: null, nextCursor: null },
+      })
+    })
 
     test('should not found and return empty array', async () => {})
   })

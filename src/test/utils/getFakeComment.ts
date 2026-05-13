@@ -1,7 +1,10 @@
 import { Comment } from '@/comments/types'
 import { faker } from '@faker-js/faker/locale/ru'
+import { JSONContent } from '@tiptap/core'
 
-type GetFakeCommentOptions = Partial<Comment>
+type FakeComment = Omit<Comment, 'content'> & { content: JSONContent }
+type GetFakeCommentOptions = Partial<FakeComment>
+type GetFakeCommentReturn = FakeComment
 
 export const getFakeComment = ({
   id,
@@ -12,7 +15,7 @@ export const getFakeComment = ({
   rating,
   createdAt,
   updatedAt,
-}: GetFakeCommentOptions = {}): Comment => ({
+}: GetFakeCommentOptions = {}): GetFakeCommentReturn => ({
   id: id ?? faker.number.int(),
   authorId: authorId ?? faker.number.int(),
   articleId: articleId ?? faker.number.int(),
@@ -22,6 +25,6 @@ export const getFakeComment = ({
     content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Test' }] }],
   },
   rating: rating ?? faker.number.int(),
-  createdAt: createdAt ?? faker.date.past(),
-  updatedAt: updatedAt ?? faker.date.future(),
+  createdAt: createdAt ?? faker.date.past().getTime(),
+  updatedAt: updatedAt ?? faker.date.future().getTime(),
 })

@@ -1,4 +1,5 @@
 export * from './article.type'
+export * from './article-delegate.type'
 export * from './create-article.types'
 export * from './delete-article.types'
 export * from './exists-article.types'

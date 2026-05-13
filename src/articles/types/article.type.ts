@@ -1,1 +1,1 @@
-export type { ArticleModel as Article, ArticleDelegate } from '@/prisma/models'
+export type { ArticleModel as Article } from '@/prisma/models'

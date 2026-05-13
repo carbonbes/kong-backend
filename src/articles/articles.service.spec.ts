@@ -8,7 +8,7 @@ import {
   FindUniqueArticleOptions,
   UpdateArticleOptions,
 } from './types'
-import { getFakeArticle, getFakeInt, getFakeUser } from '@/test/utils'
+import { getFakeArticle, getFakeInt } from '@/test/utils'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { PrismaClient } from '@/prisma/types'
@@ -36,9 +36,9 @@ describe('ArticlesService', () => {
 
   describe('create', () => {
     test('should create article', async () => {
-      const { author, content } = getFakeArticle()
-      const options: CreateArticleOptions = { data: { author, content } }
-      const article = getFakeArticle({ author, content })
+      const { authorId, content } = getFakeArticle()
+      const options: CreateArticleOptions = { data: { authorId, content } }
+      const article = getFakeArticle({ authorId, content })
 
       txHost.tx.article.create.mockResolvedValue(article)
 
@@ -51,9 +51,8 @@ describe('ArticlesService', () => {
 
   describe('findUnique', () => {
     test('should find article', async () => {
-      const id = getFakeInt()
-      const options: FindUniqueArticleOptions = { where: { id } }
-      const article = getFakeArticle({ id })
+      const options: FindUniqueArticleOptions = { where: { id: getFakeInt() } }
+      const article = getFakeArticle()
 
       txHost.tx.article.findUnique.mockResolvedValue(article)
 
@@ -64,8 +63,7 @@ describe('ArticlesService', () => {
     })
 
     test('should find null', async () => {
-      const id = getFakeInt()
-      const options: FindUniqueArticleOptions = { where: { id } }
+      const options: FindUniqueArticleOptions = { where: { id: getFakeInt() } }
 
       txHost.tx.article.findUnique.mockResolvedValue(null)
 
@@ -78,26 +76,37 @@ describe('ArticlesService', () => {
 
   describe('findMany', () => {
     test('should find articles', async () => {
-      const user = getFakeUser()
       const options: FindManyArticlesOptions = {
-        where: { author: { id: user.id } },
+        where: { authorId: getFakeInt() },
       }
 
-      const articles = Array.from({ length: 10 }).map(() =>
-        getFakeArticle({ author: user }),
-      )
+      const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
 
-      txHost.tx.article.findMany.mockResolvedValue(articles)
+      txHost.tx.article.paginate().withCursor.mockResolvedValue([
+        articles,
+        {
+          previousCursor: null,
+          nextCursor: null,
+        },
+      ])
 
       const result = await articlesService.findMany(options)
 
       expect(txHost.tx.article.findMany).toHaveBeenCalledWith(options)
-      expect(result).toEqual(articles)
+      expect(result).toEqual({
+        items: articles,
+        meta: {
+          previousPage: false,
+          nextPage: false,
+          previousCursor: null,
+          nextCursor: null,
+        },
+      })
     })
 
     test('should find empty', async () => {
       const options: FindManyArticlesOptions = {
-        where: { author: { id: getFakeInt() } },
+        where: { authorId: getFakeInt() },
       }
 
       txHost.tx.article.findMany.mockResolvedValue([])
@@ -111,10 +120,11 @@ describe('ArticlesService', () => {
 
   describe('update', () => {
     test('should update article', async () => {
-      const id = getFakeInt()
-      const { content } = getFakeArticle()
-      const options: UpdateArticleOptions = { where: { id }, data: { content } }
-      const article = getFakeArticle({ content })
+      const options: UpdateArticleOptions = {
+        where: { id: getFakeInt() },
+        data: { content: getFakeArticle() },
+      }
+      const article = getFakeArticle()
 
       txHost.tx.article.update.mockResolvedValue(article)
 
@@ -127,9 +137,8 @@ describe('ArticlesService', () => {
 
   describe('delete', () => {
     test('should delete article', async () => {
-      const id = getFakeInt()
-      const options: DeleteArticleOptions = { where: { id } }
-      const article = getFakeArticle({ id })
+      const options: DeleteArticleOptions = { where: { id: getFakeInt() } }
+      const article = getFakeArticle()
 
       txHost.tx.article.delete.mockResolvedValue(article)
 
@@ -142,26 +151,24 @@ describe('ArticlesService', () => {
 
   describe('exists', () => {
     test('should return true', async () => {
-      const id = getFakeInt()
-      const options: ExistsArticleOptions = { where: { id } }
+      const options: ExistsArticleOptions = { where: { id: getFakeInt() } }
 
-      txHost.tx.article.exists.mockResolvedValue(true)
+      txHost.tx.article.count.mockResolvedValue(1)
 
       const result = await articlesService.exists(options)
 
-      expect(txHost.tx.article.exists).toHaveBeenCalledWith(options)
+      expect(txHost.tx.article.count).toHaveBeenCalledWith(options)
       expect(result).toBeTruthy()
     })
 
     test('should return false', async () => {
-      const id = getFakeInt()
-      const options: ExistsArticleOptions = { where: { id } }
+      const options: ExistsArticleOptions = { where: { id: getFakeInt() } }
 
-      txHost.tx.article.exists.mockResolvedValue(false)
+      txHost.tx.article.count.mockResolvedValue(0)
 
       const result = await articlesService.exists(options)
 
-      expect(txHost.tx.article.exists).toHaveBeenCalledWith(options)
+      expect(txHost.tx.article.count).toHaveBeenCalledWith(options)
       expect(result).toBeFalsy()
     })
   })
