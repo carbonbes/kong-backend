@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
 import { AppModule } from '@/app.module'
 import { App } from 'supertest/types'
-import { CreateArticleDto } from '@/articles/dtos'
+import { CreateArticleDto, UpdateArticleDto } from '@/articles/dtos'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { EncodedJwt } from '@/shared/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
@@ -19,7 +19,8 @@ import { UserGender } from '@/users/enums'
 import { execSync } from 'node:child_process'
 import { FindManyWithCursorPaginationMeta } from '@/shared/prisma/entity/types'
 import { Article } from '@/articles/types'
-import { createArticles, truncateArticles } from './utils'
+import { createArticle, createArticles, truncateArticles } from './utils'
+import { getFakeHeadingNode, getFakeTextNode } from '@/test/utils'
 
 describe('Articles (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -103,13 +104,7 @@ describe('Articles (e2e)', () => {
       const body: CreateArticleDto = {
         content: {
           type: 'doc',
-          content: [
-            {
-              type: 'heading',
-              attrs: { level: 1 },
-              content: [{ type: 'text', text: 'Test' }],
-            },
-          ],
+          content: [getFakeHeadingNode()],
         },
       }
 
@@ -146,7 +141,7 @@ describe('Articles (e2e)', () => {
       const body: CreateArticleDto = {
         content: {
           type: 'doc',
-          content: [{ type: 'text', text: 'Test' }],
+          content: [getFakeTextNode()],
         },
       }
 
@@ -164,7 +159,7 @@ describe('Articles (e2e)', () => {
 
   describe('GET /articles', () => {
     describe('user', () => {
-      describe('1 page', async () => {
+      describe('1 page', () => {
         beforeEach(async () => await createArticles(prismaClient, 10))
         afterEach(async () => await truncateArticles(prismaClient))
 
@@ -902,6 +897,71 @@ describe('Articles (e2e)', () => {
 
     test('should return 401 if user is not authenticated', async () => {
       return request(server).get('/articles/1').expect(401)
+    })
+  })
+
+  describe('PATCH /articles/1', () => {
+    afterEach(async () => await truncateArticles(prismaClient))
+
+    test('should return an article', async () => {
+      const originalArticle = await createArticle(prismaClient)
+
+      const body: UpdateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [getFakeHeadingNode()],
+        },
+      }
+
+      const updatedArticle = { ...originalArticle, ...body }
+
+      const result = await request(server)
+        .patch('/articles/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+
+      expect(result.status).toBe(200)
+      expect(result.body.content).toEqual(updatedArticle.content)
+    })
+
+    test('should return 400 if a doc content field contains not allowed node', async () => {
+      await createArticle(prismaClient)
+
+      const body: UpdateArticleDto = {
+        content: {
+          type: 'doc',
+          content: [getFakeTextNode()],
+        },
+      }
+
+      return request(server)
+        .patch('/articles/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(body)
+        .expect(400)
+    })
+
+    test('should return 401 if user is not authenticated', async () => {
+      return request(server).patch('/articles/1').expect(401)
+    })
+  })
+
+  describe('DELETE /articles/1', () => {
+    afterEach(async () => await truncateArticles(prismaClient))
+
+    test('should return an article', async () => {
+      const deletedArticle = await createArticle(prismaClient)
+
+      const result = await request(server)
+        .delete('/articles/1')
+        .set('Authorization', `Bearer ${accessToken}`)
+
+      expect(result.status).toBe(200)
+      expect(result.body).toEqual(deletedArticle)
+    })
+
+    test('should return 401 if user is not authenticated', async () => {
+      return request(server).delete('/articles/1').expect(401)
     })
   })
 })

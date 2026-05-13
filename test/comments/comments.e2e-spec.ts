@@ -1457,8 +1457,6 @@ describe('Comments (e2e)', () => {
     })
 
     test('should return 401 if user is not authenticated', async () => {
-      await createComment(prismaClient)
-
       return request(server).delete('/comments/1').expect(401)
     })
   })
