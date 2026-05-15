@@ -1,5 +1,7 @@
 import { Prisma } from '@/prisma/types'
 
+export type PaginateWithCursorOrder = Prisma.SortOrder
+
 export type PaginateWithCursorMeta = {
   nextCursor: string | null
   previousCursor: string | null
@@ -8,7 +10,7 @@ export type PaginateWithCursorMeta = {
 export type PaginateWithCursorOptions<T> = {
   limit?: number
   nextCursor?: string | null
-  orderBy?: 'ASC' | 'DESC'
+  orderBy?: PaginateWithCursorOrder
   paginationKeys?: (keyof Prisma.Payload<T, 'findMany'>['scalars'])[]
   previousCursor?: string | null
 } & Omit<Prisma.Args<T, 'findMany'>, 'cursor' | 'orderBy' | 'skip' | 'take'>

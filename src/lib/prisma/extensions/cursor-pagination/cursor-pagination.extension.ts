@@ -11,13 +11,37 @@ export const cursorPagination = () =>
       $allModels: {
         async paginateWithCursor<T>(
           this: T,
-          options?: PaginateWithCursorOptions<T>,
+          options: PaginateWithCursorOptions<T>,
         ): PaginateWithCursorReturn<T> {
           const context = Prisma.getExtensionContext(this)
+          const {
+            limit: take = 10,
+            nextCursor,
+            orderBy: order = 'asc',
+            paginationKeys = ['id'],
+            previousCursor,
+            ...etc
+          } = options
 
-          const result = (context as any).findMany(options)
+          const cursor = {}
 
-          return { items: [], nextCursor: null, previousCursor: null }
+          const orderBy = paginationKeys.reduce(
+            (acc, field) => {
+              acc[field] = order
+
+              return acc
+            },
+            {} as Prisma.Args<T, 'findMany'>['orderBy'],
+          )
+
+          const result = (context as any).findMany({
+            ...etc,
+            cursor,
+            orderBy,
+            take,
+          })
+
+          return { items: result, nextCursor: null, previousCursor: null }
         },
       },
     },
