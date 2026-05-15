@@ -18,7 +18,6 @@ import {
   UpdateOptions,
   UpdateReturn,
 } from './types'
-import { objectFromBase64, objectToBase64 } from './utils'
 
 @Injectable()
 export abstract class EntityService<T> {
@@ -42,51 +41,7 @@ export abstract class EntityService<T> {
   async findManyWithCursorPagination(
     options: FindManyWithCursorPaginationOptions<T>,
   ): FindManyWithCursorPaginationReturn<T> {
-    const {
-      limit = 10,
-      nextCursor,
-      orderBy = 'desc',
-      previousCursor,
-      sortBy,
-      ...etc
-    } = options
-
-    const orderByFields = sortBy
-      ? [{ id: orderBy }, { [sortBy]: orderBy }]
-      : [{ id: orderBy }]
-
-    const [items, meta] = await this.txHost.tx[this.modelName]
-      .paginate({
-        ...etc,
-        orderBy: orderByFields,
-      })
-      .withCursor({
-        after: nextCursor,
-        before: previousCursor,
-        limit,
-        getCursor: (item) => {
-          return objectToBase64(
-            Object.keys(Object.assign({}, ...orderByFields)).reduce(
-              (acc, key) => {
-                acc[key] = item[key]
-                return acc
-              },
-              {},
-            ),
-          )
-        },
-        parseCursor: (cursor) => objectFromBase64(cursor),
-      })
-
-    const { hasPreviousPage, hasNextPage, startCursor, endCursor } = meta
-
-    return {
-      items,
-      meta: {
-        previousCursor: hasPreviousPage ? startCursor : null,
-        nextCursor: hasNextPage ? endCursor : null,
-      },
-    }
+    return (this.txHost.tx as any)[this.modelName].paginateWithCursor(options)
   }
 
   update(options: UpdateOptions<T>): UpdateReturn<T> {

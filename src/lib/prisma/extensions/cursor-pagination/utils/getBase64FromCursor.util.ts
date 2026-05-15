@@ -1,2 +1,2 @@
-export const objectToBase64 = (value: object) =>
+export const getBase64FromCursor = (value: object) =>
   Buffer.from(JSON.stringify(value)).toString('base64')

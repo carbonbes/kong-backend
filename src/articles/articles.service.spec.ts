@@ -79,10 +79,9 @@ describe('ArticlesService', () => {
       const options: FindManyArticlesOptions = {
         where: { authorId: getFakeInt() },
       }
-
       const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
 
-      txHost.tx.article.paginate().withCursor.mockResolvedValue([
+      const mockWithCursor = vi.fn().mockResolvedValue([
         articles,
         {
           previousCursor: null,
@@ -90,8 +89,14 @@ describe('ArticlesService', () => {
         },
       ])
 
+      // @ts-expect-error missing withPages
+      txHost.tx.article.paginate.mockReturnValue({
+        withCursor: mockWithCursor,
+      })
+
       const result = await articlesService.findMany(options)
 
+      expect(txHost.tx.article.paginate).toHaveBeenCalled()
       expect(txHost.tx.article.findMany).toHaveBeenCalledWith(options)
       expect(result).toEqual({
         items: articles,

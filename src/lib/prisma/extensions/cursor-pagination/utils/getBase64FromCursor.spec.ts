@@ -1,6 +1,6 @@
-import { objectToBase64, objectFromBase64 } from './'
+import { getBase64FromCursor, getCursorFromBase64 } from './'
 
-describe('objectToBase64', () => {
+describe('getBase64FromCursor', () => {
   test('should get base64 from object', () => {
     const object = {
       a: 1,
@@ -11,9 +11,9 @@ describe('objectToBase64', () => {
       f: [1, 2],
       g: [],
     }
-    const base64Object = objectToBase64(object)
+    const base64Object = getBase64FromCursor(object)
 
-    const result = objectToBase64(object)
+    const result = getCursorFromBase64(object)
 
     expect(result).toEqual(base64Object)
   })
