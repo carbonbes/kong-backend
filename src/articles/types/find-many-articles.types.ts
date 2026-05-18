@@ -1,9 +1,4 @@
-import { Article } from './article.type'
-import { ArticleDelegate } from './article-delegate.type'
-import {
-  PaginateWithCursorOptions,
-  PaginateWithCursorReturn,
-} from '@/lib/prisma/extensions/cursor-pagination/types'
+import { FindManyOptions, FindManyReturn } from '@/prisma/types'
 
-export type FindManyArticlesOptions = PaginateWithCursorOptions<ArticleDelegate>
-export type FindManyArticlesReturn = PaginateWithCursorReturn<Article>
+export type FindManyArticlesOptions<T> = FindManyOptions<T>
+export type FindManyArticlesReturn<T> = FindManyReturn<T>

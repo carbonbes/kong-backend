@@ -8,8 +8,8 @@ model Comment {
   parentComment   Comment?  @relation("ParentComment", fields: [parentCommentId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   rating          Int       @default(0)
   content         Json
-  createdAt       Int       @default(dbgenerated("extract(epoch from now())"))
-  updatedAt       Int       @default(dbgenerated("extract(epoch from now())"))
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   childComments   Comment[] @relation("ParentComment")
 

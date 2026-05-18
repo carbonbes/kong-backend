@@ -38,7 +38,7 @@ export class ArticlesController {
   findMany(@Query() query: FindManyArticlesQueryDto) {
     const { authorId, subsiteId, ...etc } = query
 
-    return this.articlesService.findManyWithCursorPagination({
+    return this.articlesService.findMany({
       where: { authorId, subsiteId },
       ...etc,
     })

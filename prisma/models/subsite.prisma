@@ -1,8 +1,8 @@
 model Subsite {
   id        Int      @id @default(autoincrement())
   name      String
-  createdAt Int      @default(dbgenerated("extract(epoch from now())"))
-  updatedAt Int      @default(dbgenerated("extract(epoch from now())"))
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   articles Article[]
 

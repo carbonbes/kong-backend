@@ -1,5 +1,9 @@
-import { Prisma } from '@/prisma/types'
-import { Article } from './article.type'
+import { CreateOptions, CreateReturn } from '@/prisma/types'
+import { ArticleDelegate } from './article-delegate.type'
 
-export type CreateArticleOptions = Prisma.ArticleCreateArgs
-export type CreateArticleReturn = Promise<Article>
+export type CreateArticleOptions = CreateOptions<ArticleDelegate>
+
+export type CreateArticleReturn = CreateReturn<
+  ArticleDelegate,
+  CreateArticleOptions
+>

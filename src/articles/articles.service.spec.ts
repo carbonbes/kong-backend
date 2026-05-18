@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ArticlesService } from './articles.service'
 import {
+  ArticleDelegate,
   CreateArticleOptions,
   DeleteArticleOptions,
   ExistsArticleOptions,
@@ -76,7 +77,7 @@ describe('ArticlesService', () => {
 
   describe('findMany', () => {
     test('should find articles', async () => {
-      const options: FindManyArticlesOptions = {
+      const options: FindManyArticlesOptions<ArticleDelegate> = {
         where: { authorId: getFakeInt() },
       }
       const articles = Array.from({ length: 10 }).map(() => getFakeArticle())

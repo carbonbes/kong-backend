@@ -1,4 +1,5 @@
-import { Prisma } from '@/prisma/types'
+import { ExistsOptions, ExistsReturn } from '@/prisma/types'
+import { ArticleDelegate } from './article-delegate.type'
 
-export type ExistsArticleOptions = Pick<Prisma.ArticleCountArgs, 'where'>
-export type ExistsArticleReturn = Promise<boolean>
+export type ExistsArticleOptions = ExistsOptions<ArticleDelegate>
+export type ExistsArticleReturn = ExistsReturn

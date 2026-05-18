@@ -1,5 +1,9 @@
-import { createPrismaClient } from '@/prisma/prisma.module'
-
-export type { Prisma } from 'generated/prisma/client'
-export type PrismaClient = ReturnType<typeof createPrismaClient>
+export * from './create.types'
+export * from './delete.types'
+export * from './exists.types'
+export * from './find-many.types'
+export * from './find-unique.types'
+export * from './prisma.type'
+export * from './prisma-client.type'
 export * from './prisma-module-options.type'
+export * from './update.types'

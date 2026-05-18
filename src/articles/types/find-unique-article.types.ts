@@ -1,5 +1,9 @@
-import { Prisma } from '@/prisma/types'
-import { Article } from './article.type'
+import { FindUniqueOptions, FindUniqueReturn } from '@/prisma/types'
+import { ArticleDelegate } from './article-delegate.type'
 
-export type FindUniqueArticleOptions = Prisma.ArticleFindUniqueArgs
-export type FindUniqueArticleReturn = Promise<Article | null>
+export type FindUniqueArticleOptions = FindUniqueOptions<ArticleDelegate>
+
+export type FindUniqueArticleReturn = FindUniqueReturn<
+  ArticleDelegate,
+  FindUniqueArticleOptions
+>

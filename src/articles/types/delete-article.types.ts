@@ -1,5 +1,9 @@
-import { Prisma } from '@/prisma/types'
-import { Article } from './article.type'
+import { DeleteOptions, DeleteReturn } from '@/prisma/types'
+import { ArticleDelegate } from './article-delegate.type'
 
-export type DeleteArticleOptions = Prisma.ArticleDeleteArgs
-export type DeleteArticleReturn = Promise<Article>
+export type DeleteArticleOptions = DeleteOptions<ArticleDelegate>
+
+export type DeleteArticleReturn = DeleteReturn<
+  ArticleDelegate,
+  DeleteArticleOptions
+>
