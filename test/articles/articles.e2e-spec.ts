@@ -17,10 +17,10 @@ import { PrismaClient } from '@/prisma/types'
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { UserGender } from '@/users/enums'
 import { execSync } from 'node:child_process'
-import { FindManyWithCursorPaginationMeta } from '@/shared/prisma/entity/types'
 import { Article } from '@/articles/types'
 import { createArticle, createArticles, truncateArticles } from './utils'
 import { getFakeHeadingNode, getFakeTextNode } from '@/test/utils'
+import { CursorPaginateMeta } from '@/lib/prisma/extensions/cursor-pagination/types'
 
 describe('Articles (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -179,15 +179,14 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { previousCursor, nextCursor } = result.body
-            .meta as FindManyWithCursorPaginationMeta
+          const { after, before } = result.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.rating).toBe(9)
           expect(lastArticle.rating).toBe(0)
-          expect(previousCursor).toBeNull()
-          expect(nextCursor).toBeNull()
+          expect(after).toBeNull()
+          expect(before).toBeNull()
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
@@ -206,15 +205,14 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { previousCursor, nextCursor } = result.body
-            .meta as FindManyWithCursorPaginationMeta
+          const { after, before } = result.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.rating).toBe(0)
           expect(lastArticle.rating).toBe(9)
-          expect(previousCursor).toBeNull()
-          expect(nextCursor).toBeNull()
+          expect(after).toBeNull()
+          expect(before).toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
@@ -233,15 +231,14 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { previousCursor, nextCursor } = result.body
-            .meta as FindManyWithCursorPaginationMeta
+          const { after, before } = result.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.createdAt).toBe(9)
           expect(lastArticle.createdAt).toBe(0)
-          expect(previousCursor).toBeNull()
-          expect(nextCursor).toBeNull()
+          expect(after).toBeNull()
+          expect(before).toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
@@ -260,15 +257,14 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { previousCursor, nextCursor } = result.body
-            .meta as FindManyWithCursorPaginationMeta
+          const { after, before } = result.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.createdAt).toBe(0)
           expect(lastArticle.createdAt).toBe(9)
-          expect(previousCursor).toBeNull()
-          expect(nextCursor).toBeNull()
+          expect(after).toBeNull()
+          expect(before).toBeNull()
         })
       })
 
@@ -292,24 +288,22 @@ describe('Articles (e2e)', () => {
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const {
-            previousCursor: firstResponsePreviousCursor,
-            nextCursor: firstResponseNextCursor,
-          } = result1.body.meta as FindManyWithCursorPaginationMeta
+          const { after: firstResponseAfter, before: firstResponseBefore } =
+            result1.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.rating).toBe(19)
           expect(firstResponseLastArticle.rating).toBe(10)
-          expect(firstResponsePreviousCursor).toBeNull()
-          expect(firstResponseNextCursor).not.toBeNull()
+          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
 
           const result2 = await request(server)
             .get('/articles')
             .query({
+              after: firstResponseAfter,
               authorId: 1,
               limit: 10,
-              nextCursor: firstResponseNextCursor,
               orderBy: 'desc',
               sortBy: 'rating',
             })
@@ -320,17 +314,15 @@ describe('Articles (e2e)', () => {
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const {
-            previousCursor: secondResponsePreviousCursor,
-            nextCursor: secondResponseNextCursor,
-          } = result2.body.meta as FindManyWithCursorPaginationMeta
+          const { after: secondResponseAfter, before: secondResponseBefore } =
+            result2.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.rating).toBe(9)
           expect(secondResponseLastArticle.rating).toBe(0)
-          expect(secondResponsePreviousCursor).not.toBeNull()
-          expect(secondResponseNextCursor).toBeNull()
+          expect(secondResponseAfter).not.toBeNull()
+          expect(secondResponseBefore).toBeNull()
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
@@ -344,24 +336,22 @@ describe('Articles (e2e)', () => {
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const {
-            previousCursor: firstResponsePreviousCursor,
-            nextCursor: firstResponseNextCursor,
-          } = result1.body.meta as FindManyWithCursorPaginationMeta
+          const { after: firstResponseAfter, before: firstResponseBefore } =
+            result1.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.rating).toBe(0)
           expect(firstResponseLastArticle.rating).toBe(9)
-          expect(firstResponsePreviousCursor).toBeNull()
-          expect(firstResponseNextCursor).not.toBeNull()
+          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
 
           const result2 = await request(server)
             .get('/articles')
             .query({
+              after: firstResponseAfter,
               authorId: 1,
               limit: 10,
-              nextCursor: firstResponseNextCursor,
               orderBy: 'asc',
               sortBy: 'rating',
             })
@@ -372,17 +362,15 @@ describe('Articles (e2e)', () => {
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const {
-            previousCursor: secondResponsePreviousCursor,
-            nextCursor: secondResponseNextCursor,
-          } = result2.body.meta as FindManyWithCursorPaginationMeta
+          const { after: secondResponseAfter, before: secondResponseBefore } =
+            result2.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.rating).toBe(10)
           expect(secondResponseLastArticle.rating).toBe(19)
-          expect(secondResponsePreviousCursor).not.toBeNull()
-          expect(secondResponseNextCursor).toBeNull()
+          expect(secondResponseAfter).not.toBeNull()
+          expect(secondResponseBefore).toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
@@ -401,24 +389,22 @@ describe('Articles (e2e)', () => {
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const {
-            previousCursor: firstResponsePreviousCursor,
-            nextCursor: firstResponseNextCursor,
-          } = result1.body.meta as FindManyWithCursorPaginationMeta
+          const { after: firstResponseAfter, before: firstResponseBefore } =
+            result1.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.createdAt).toBe(19)
           expect(firstResponseLastArticle.createdAt).toBe(10)
-          expect(firstResponsePreviousCursor).toBeNull()
-          expect(firstResponseNextCursor).not.toBeNull()
+          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
 
           const result2 = await request(server)
             .get('/articles')
             .query({
+              after: firstResponseAfter,
               authorId: 1,
               limit: 10,
-              nextCursor: firstResponseNextCursor,
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
@@ -429,17 +415,15 @@ describe('Articles (e2e)', () => {
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const {
-            previousCursor: secondResponsePreviousCursor,
-            nextCursor: secondResponseNextCursor,
-          } = result2.body.meta as FindManyWithCursorPaginationMeta
+          const { after: secondResponseAfter, before: secondResponseBefore } =
+            result2.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.createdAt).toBe(9)
           expect(secondResponseLastArticle.createdAt).toBe(0)
-          expect(secondResponsePreviousCursor).not.toBeNull()
-          expect(secondResponseNextCursor).toBeNull()
+          expect(secondResponseAfter).not.toBeNull()
+          expect(secondResponseBefore).toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
@@ -458,24 +442,22 @@ describe('Articles (e2e)', () => {
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const {
-            previousCursor: firstResponsePreviousCursor,
-            nextCursor: firstResponseNextCursor,
-          } = result1.body.meta as FindManyWithCursorPaginationMeta
+          const { after: firstResponseAfter, before: firstResponseBefore } =
+            result1.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.createdAt).toBe(0)
           expect(firstResponseLastArticle.createdAt).toBe(9)
-          expect(firstResponsePreviousCursor).toBeNull()
-          expect(firstResponseNextCursor).not.toBeNull()
+          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
 
           const result2 = await request(server)
             .get('/articles')
             .query({
+              after: firstResponseAfter,
               authorId: 1,
               limit: 10,
-              nextCursor: firstResponseNextCursor,
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
@@ -486,17 +468,15 @@ describe('Articles (e2e)', () => {
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const {
-            previousCursor: secondResponsePreviousCursor,
-            nextCursor: secondResponseNextCursor,
-          } = result2.body.meta as FindManyWithCursorPaginationMeta
+          const { after: secondResponseAfter, before: secondResponseBefore } =
+            result2.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.createdAt).toBe(10)
           expect(secondResponseLastArticle.createdAt).toBe(19)
-          expect(secondResponsePreviousCursor).not.toBeNull()
-          expect(secondResponseNextCursor).toBeNull()
+          expect(secondResponseAfter).not.toBeNull()
+          expect(secondResponseBefore).toBeNull()
         })
       })
 
@@ -514,13 +494,12 @@ describe('Articles (e2e)', () => {
         const status = result.status
         const items: Article[] = result.body.items
         const articlesCount = items.length
-        const { previousCursor, nextCursor } = result.body
-          .meta as FindManyWithCursorPaginationMeta
+        const { after, before } = result.body.meta as CursorPaginateMeta
 
         expect(status).toBe(200)
         expect(articlesCount).toBe(0)
-        expect(previousCursor).toBeNull()
-        expect(nextCursor).toBeNull()
+        expect(after).toBeNull()
+        expect(before).toBeNull()
       })
     })
 
@@ -545,15 +524,14 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { previousCursor, nextCursor } = result.body
-            .meta as FindManyWithCursorPaginationMeta
+          const { after, before } = result.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.rating).toBe(9)
           expect(lastArticle.rating).toBe(0)
-          expect(previousCursor).toBeNull()
-          expect(nextCursor).toBeNull()
+          expect(after).toBeNull()
+          expect(before).toBeNull()
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
@@ -572,15 +550,14 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { previousCursor, nextCursor } = result.body
-            .meta as FindManyWithCursorPaginationMeta
+          const { after, before } = result.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.rating).toBe(0)
           expect(lastArticle.rating).toBe(9)
-          expect(previousCursor).toBeNull()
-          expect(nextCursor).toBeNull()
+          expect(after).toBeNull()
+          expect(before).toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
@@ -599,15 +576,14 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { previousCursor, nextCursor } = result.body
-            .meta as FindManyWithCursorPaginationMeta
+          const { after, before } = result.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.createdAt).toBe(9)
           expect(lastArticle.createdAt).toBe(0)
-          expect(previousCursor).toBeNull()
-          expect(nextCursor).toBeNull()
+          expect(after).toBeNull()
+          expect(before).toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
@@ -626,15 +602,14 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { previousCursor, nextCursor } = result.body
-            .meta as FindManyWithCursorPaginationMeta
+          const { after, before } = result.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.createdAt).toBe(0)
           expect(lastArticle.createdAt).toBe(9)
-          expect(previousCursor).toBeNull()
-          expect(nextCursor).toBeNull()
+          expect(after).toBeNull()
+          expect(before).toBeNull()
         })
       })
 
@@ -658,24 +633,22 @@ describe('Articles (e2e)', () => {
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const {
-            previousCursor: firstResponsePreviousCursor,
-            nextCursor: firstResponseNextCursor,
-          } = result1.body.meta as FindManyWithCursorPaginationMeta
+          const { after: firstResponseAfter, before: firstResponseBefore } =
+            result1.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.rating).toBe(19)
           expect(firstResponseLastArticle.rating).toBe(10)
-          expect(firstResponsePreviousCursor).toBeNull()
-          expect(firstResponseNextCursor).not.toBeNull()
+          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
 
           const result2 = await request(server)
             .get('/articles')
             .query({
+              after: firstResponseAfter,
               authorId: 1,
               limit: 10,
-              nextCursor: firstResponseNextCursor,
               orderBy: 'desc',
               sortBy: 'rating',
             })
@@ -686,17 +659,15 @@ describe('Articles (e2e)', () => {
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const {
-            previousCursor: secondResponsePreviousCursor,
-            nextCursor: secondResponseNextCursor,
-          } = result2.body.meta as FindManyWithCursorPaginationMeta
+          const { after: secondResponseAfter, before: secondResponseBefore } =
+            result2.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.rating).toBe(9)
           expect(secondResponseLastArticle.rating).toBe(0)
-          expect(secondResponsePreviousCursor).not.toBeNull()
-          expect(secondResponseNextCursor).toBeNull()
+          expect(secondResponseAfter).not.toBeNull()
+          expect(secondResponseBefore).toBeNull()
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
@@ -715,24 +686,22 @@ describe('Articles (e2e)', () => {
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const {
-            previousCursor: firstResponsePreviousCursor,
-            nextCursor: firstResponseNextCursor,
-          } = result1.body.meta as FindManyWithCursorPaginationMeta
+          const { after: firstResponseAfter, before: firstResponseBefore } =
+            result1.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.rating).toBe(0)
           expect(firstResponseLastArticle.rating).toBe(9)
-          expect(firstResponsePreviousCursor).toBeNull()
-          expect(firstResponseNextCursor).not.toBeNull()
+          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
 
           const result2 = await request(server)
             .get('/articles')
             .query({
+              after: firstResponseAfter,
               authorId: 1,
               limit: 10,
-              nextCursor: firstResponseNextCursor,
               orderBy: 'asc',
               sortBy: 'rating',
             })
@@ -743,17 +712,15 @@ describe('Articles (e2e)', () => {
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const {
-            previousCursor: secondResponsePreviousCursor,
-            nextCursor: secondResponseNextCursor,
-          } = result2.body.meta as FindManyWithCursorPaginationMeta
+          const { after: secondResponseAfter, before: secondResponseBefore } =
+            result2.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.rating).toBe(10)
           expect(secondResponseLastArticle.rating).toBe(19)
-          expect(secondResponsePreviousCursor).not.toBeNull()
-          expect(secondResponseNextCursor).toBeNull()
+          expect(secondResponseAfter).not.toBeNull()
+          expect(secondResponseBefore).toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
@@ -772,24 +739,22 @@ describe('Articles (e2e)', () => {
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const {
-            previousCursor: firstResponsePreviousCursor,
-            nextCursor: firstResponseNextCursor,
-          } = result1.body.meta as FindManyWithCursorPaginationMeta
+          const { after: firstResponseAfter, before: firstResponseBefore } =
+            result1.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.createdAt).toBe(19)
           expect(firstResponseLastArticle.createdAt).toBe(10)
-          expect(firstResponsePreviousCursor).toBeNull()
-          expect(firstResponseNextCursor).not.toBeNull()
+          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
 
           const result2 = await request(server)
             .get('/articles')
             .query({
+              after: firstResponseAfter,
               authorId: 1,
               limit: 10,
-              nextCursor: firstResponseNextCursor,
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
@@ -800,17 +765,15 @@ describe('Articles (e2e)', () => {
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const {
-            previousCursor: secondResponsePreviousCursor,
-            nextCursor: secondResponseNextCursor,
-          } = result2.body.meta as FindManyWithCursorPaginationMeta
+          const { after: secondResponseAfter, before: secondResponseBefore } =
+            result2.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.createdAt).toBe(9)
           expect(secondResponseLastArticle.createdAt).toBe(0)
-          expect(secondResponsePreviousCursor).not.toBeNull()
-          expect(secondResponseNextCursor).toBeNull()
+          expect(secondResponseAfter).not.toBeNull()
+          expect(secondResponseBefore).toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
@@ -829,24 +792,22 @@ describe('Articles (e2e)', () => {
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const {
-            previousCursor: firstResponsePreviousCursor,
-            nextCursor: firstResponseNextCursor,
-          } = result1.body.meta as FindManyWithCursorPaginationMeta
+          const { after: firstResponseAfter, before: firstResponseBefore } =
+            result1.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.createdAt).toBe(0)
           expect(firstResponseLastArticle.createdAt).toBe(9)
-          expect(firstResponsePreviousCursor).toBeNull()
-          expect(firstResponseNextCursor).not.toBeNull()
+          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
 
           const result2 = await request(server)
             .get('/articles')
             .query({
+              after: firstResponseAfter,
               authorId: 1,
               limit: 10,
-              nextCursor: firstResponseNextCursor,
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
@@ -857,17 +818,15 @@ describe('Articles (e2e)', () => {
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const {
-            previousCursor: secondResponsePreviousCursor,
-            nextCursor: secondResponseNextCursor,
-          } = result2.body.meta as FindManyWithCursorPaginationMeta
+          const { after: secondResponseAfter, before: secondResponseBefore } =
+            result2.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.createdAt).toBe(10)
           expect(secondResponseLastArticle.createdAt).toBe(19)
-          expect(secondResponsePreviousCursor).not.toBeNull()
-          expect(secondResponseNextCursor).toBeNull()
+          expect(secondResponseAfter).not.toBeNull()
+          expect(secondResponseBefore).toBeNull()
         })
       })
 
@@ -885,13 +844,12 @@ describe('Articles (e2e)', () => {
         const status = result.status
         const items: Article[] = result.body.items
         const articlesCount = items.length
-        const { previousCursor, nextCursor } = result.body
-          .meta as FindManyWithCursorPaginationMeta
+        const { after, before } = result.body.meta as CursorPaginateMeta
 
         expect(status).toBe(200)
         expect(articlesCount).toBe(0)
-        expect(previousCursor).toBeNull()
-        expect(nextCursor).toBeNull()
+        expect(after).toBeNull()
+        expect(before).toBeNull()
       })
     })
 

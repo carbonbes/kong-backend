@@ -36,11 +36,7 @@ export abstract class PrismaModelService<T> {
   }
 
   findMany(options: FindManyOptions<T>): FindManyReturn<T> {
-    const { after, before, limit, ...etc } = options
-
-    return this.txHost.tx[this.modelName]
-      .paginate(etc)
-      .withCursor({ after, before, limit })
+    return this.txHost.tx[this.modelName].cursorPaginate(options)
   }
 
   update(options: UpdateOptions<T>): UpdateReturn<T, UpdateOptions<T>> {

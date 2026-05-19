@@ -12,16 +12,20 @@ import { ORDER_BY, SORT_BY_FIELD } from '../consts'
 
 export class FindManyArticlesQueryDto {
   @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  after?: string
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   authorId?: number
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  subsiteId?: number
+  @IsString()
+  @IsNotEmpty()
+  before?: string
 
   @IsOptional()
   @Type(() => Number)
@@ -31,20 +35,16 @@ export class FindManyArticlesQueryDto {
   limit?: number
 
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  nextCursor?: string
-
-  @IsOptional()
   @IsIn(ORDER_BY)
   orderBy?: (typeof ORDER_BY)[number]
 
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  previousCursor?: string
-
-  @IsOptional()
   @IsIn(SORT_BY_FIELD)
   sortBy?: (typeof SORT_BY_FIELD)[number]
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  subsiteId?: number
 }

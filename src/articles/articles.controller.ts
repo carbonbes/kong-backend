@@ -36,9 +36,10 @@ export class ArticlesController {
 
   @Get()
   findMany(@Query() query: FindManyArticlesQueryDto) {
-    const { authorId, subsiteId, ...etc } = query
+    const { authorId, subsiteId, sortBy, ...etc } = query
 
     return this.articlesService.findMany({
+      paginationKeys: ['id', sortBy],
       where: { authorId, subsiteId },
       ...etc,
     })

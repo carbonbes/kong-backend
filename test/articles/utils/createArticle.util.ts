@@ -2,8 +2,8 @@ import { PrismaClient } from '@/prisma/types'
 import { getFakeParagraphNode } from '@/test/utils'
 import { JSONContent } from '@tiptap/core'
 
-export const createArticle = async (prismaClient: PrismaClient) =>
-  prismaClient.article.create({
+export const createArticle = async (prismaClient: PrismaClient) => {
+  const result = await prismaClient.article.create({
     data: {
       authorId: 1,
       content: {
@@ -12,3 +12,6 @@ export const createArticle = async (prismaClient: PrismaClient) =>
       },
     },
   })
+
+  return JSON.parse(JSON.stringify(result))
+}

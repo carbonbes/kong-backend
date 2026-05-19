@@ -1,13 +1,7 @@
-import { Prisma } from './prisma.type'
-import { CursorPaginationMeta } from 'prisma-extension-pagination'
+import {
+  CursorPaginateOptions,
+  CursorPaginateReturn,
+} from '@/lib/prisma/extensions/cursor-pagination/types'
 
-export type FindManyOptions<T> = {
-  after?: string
-  before?: string
-  limit?: number
-} & Prisma.Args<T, 'findMany'>
-
-export type FindManyReturn<T> = {
-  items: T[]
-  meta: CursorPaginationMeta
-}
+export type FindManyOptions<T> = CursorPaginateOptions<T>
+export type FindManyReturn<T> = CursorPaginateReturn<T>
