@@ -1,6 +1,6 @@
 import { Prisma } from '@/prisma/client'
 import { CursorPaginateOptions, CursorPaginateReturn } from './types'
-import { parseCursor } from '@/lib/prisma/extensions/cursor-pagination/utils'
+import { buildCursor, buildOrderBy, parseCursor } from './utils'
 
 function createCursorPaginate() {
   return async function <T>(
@@ -18,48 +18,52 @@ function createCursorPaginate() {
       ...etc
     } = options
 
-    console.log(options)
-
+    const isBackward = !!before
     const encodedCursor = after || before
-    const cursor = encodedCursor
-      ? parseCursor<Prisma.Args<T, 'findMany'>['cursor']>(encodedCursor)
-      : undefined
+    const cursor = encodedCursor ? parseCursor<T>(encodedCursor) : undefined
+    const orderBy = buildOrderBy<T>(paginationKeys, order)
+    const skip = cursor ? 1 : undefined
+    const take = isBackward ? -(limit + 1) : limit + 1
 
-    const orderBy = paginationKeys.reduce(
-      (acc, field) => {
-        acc.push({ [field]: order })
-
-        return acc
-      },
-      [] as Prisma.Args<T, 'findMany'>['orderBy'],
-    )
-
-    const result = await (context as any).findMany({
+    const result = (await (context as any).findMany({
       cursor,
       orderBy,
-      skip: cursor ? 1 : undefined,
-      take: cursor ? limit + 1 : limit,
+      skip,
+      take,
       ...etc,
-    })
+    })) as Prisma.Payload<T>['scalars'][]
 
     const hasMore = result.length > limit
-    const items = result.slice(0, -1)
 
-    return { items, meta: { after: null, before: null } }
+    const items = hasMore
+      ? isBackward
+        ? result.slice(1)
+        : result.slice(0, -1)
+      : result
+
+    const firstItem = items[0]
+    const lastItem = items[items.length - 1]
+
+    return {
+      items,
+      meta: {
+        after: buildCursor<T>(lastItem, paginationKeys),
+        before: buildCursor<T>(firstItem, paginationKeys),
+        hasNextPage: isBackward ? true : hasMore,
+        hasPreviousPage: isBackward ? hasMore : !!after,
+      },
+    }
   }
 }
 
 export const cursorPaginate = createCursorPaginate()
 
-export const cursorPagination = () => {
-  const cursorPaginate = createCursorPaginate()
-
-  return Prisma.defineExtension({
+export const cursorPagination = () =>
+  Prisma.defineExtension({
     name: 'cursor-pagination',
     model: {
       $allModels: {
-        cursorPaginate,
+        cursorPaginate: createCursorPaginate(),
       },
     },
   })
-}

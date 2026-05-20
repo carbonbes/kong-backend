@@ -179,14 +179,17 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before } = result.body.meta as CursorPaginateMeta
+          const { after, before, hasNextPage, hasPreviousPage } = result.body
+            .meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.rating).toBe(9)
           expect(lastArticle.rating).toBe(0)
-          expect(after).toBeNull()
-          expect(before).toBeNull()
+          expect(after).not.toBeNull()
+          expect(before).not.toBeNull()
+          expect(hasNextPage).toBeFalsy()
+          expect(hasPreviousPage).toBeFalsy()
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
@@ -205,14 +208,17 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before } = result.body.meta as CursorPaginateMeta
+          const { after, before, hasNextPage, hasPreviousPage } = result.body
+            .meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
           expect(firstArticle.rating).toBe(0)
           expect(lastArticle.rating).toBe(9)
-          expect(after).toBeNull()
-          expect(before).toBeNull()
+          expect(after).not.toBeNull()
+          expect(before).not.toBeNull()
+          expect(hasNextPage).toBeFalsy()
+          expect(hasPreviousPage).toBeFalsy()
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
@@ -231,14 +237,17 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before } = result.body.meta as CursorPaginateMeta
+          const { after, before, hasNextPage, hasPreviousPage } = result.body
+            .meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
-          expect(firstArticle.createdAt).toBe(9)
-          expect(lastArticle.createdAt).toBe(0)
-          expect(after).toBeNull()
-          expect(before).toBeNull()
+          expect(firstArticle.createdAt).toBe(new Date(9).toISOString())
+          expect(lastArticle.createdAt).toBe(new Date(0).toISOString())
+          expect(after).not.toBeNull()
+          expect(before).not.toBeNull()
+          expect(hasNextPage).toBeFalsy()
+          expect(hasPreviousPage).toBeFalsy()
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
@@ -257,14 +266,17 @@ describe('Articles (e2e)', () => {
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before } = result.body.meta as CursorPaginateMeta
+          const { after, before, hasNextPage, hasPreviousPage } = result.body
+            .meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
-          expect(firstArticle.createdAt).toBe(0)
-          expect(lastArticle.createdAt).toBe(9)
-          expect(after).toBeNull()
-          expect(before).toBeNull()
+          expect(firstArticle.createdAt).toBe(new Date(0).toISOString())
+          expect(lastArticle.createdAt).toBe(new Date(9).toISOString())
+          expect(after).not.toBeNull()
+          expect(before).not.toBeNull()
+          expect(hasNextPage).toBeFalsy()
+          expect(hasPreviousPage).toBeFalsy()
         })
       })
 
@@ -273,7 +285,7 @@ describe('Articles (e2e)', () => {
         afterEach(async () => await truncateArticles(prismaClient))
 
         test('should return articles sorted by rating and ordered by DESC', async () => {
-          const result1 = await request(server)
+          const firstResponse = await request(server)
             .get('/articles')
             .query({
               authorId: 1,
@@ -283,70 +295,78 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const firstResponseStatus = result1.status
-          const firstResponseItems: Article[] = result1.body.items
+          const firstResponseStatus = firstResponse.status
+          const firstResponseItems: Article[] = firstResponse.body.items
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const { after: firstResponseAfter, before: firstResponseBefore } =
-            result1.body.meta as CursorPaginateMeta
+          const {
+            after: firstResponseAfter,
+            before: firstResponseBefore,
+            hasNextPage: firstResponseHasNextPage,
+            hasPreviousPage: firstResponseHasPreviousPage,
+          } = firstResponse.body.meta as CursorPaginateMeta
+
+          const secondResponse = await request(server)
+            .get('/articles')
+            .query({
+              after: firstResponseAfter,
+              authorId: 1,
+              limit: 10,
+              orderBy: 'desc',
+              sortBy: 'rating',
+            })
+            .set('Authorization', `Bearer ${accessToken}`)
+
+          const secondResponseStatus = secondResponse.status
+          const secondResponseItems: Article[] = secondResponse.body.items
+          const secondResponseArticlesCount = secondResponseItems.length
+          const secondResponseFirstArticle = secondResponseItems[0]
+          const secondResponseLastArticle = secondResponseItems[9]
+          const {
+            after: secondResponseAfter,
+            before: secondResponseBefore,
+            hasNextPage: secondResponseHasNextPage,
+            hasPreviousPage: secondResponseHasPreviousPage,
+          } = secondResponse.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.rating).toBe(19)
           expect(firstResponseLastArticle.rating).toBe(10)
-          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseAfter).not.toBeNull()
           expect(firstResponseBefore).not.toBeNull()
-
-          const result2 = await request(server)
-            .get('/articles')
-            .query({
-              after: firstResponseAfter,
-              authorId: 1,
-              limit: 10,
-              orderBy: 'desc',
-              sortBy: 'rating',
-            })
-            .set('Authorization', `Bearer ${accessToken}`)
-
-          const secondResponseStatus = result2.status
-          const secondResponseItems: Article[] = result2.body.items
-          const secondResponseArticlesCount = secondResponseItems.length
-          const secondResponseFirstArticle = secondResponseItems[0]
-          const secondResponseLastArticle = secondResponseItems[9]
-          const { after: secondResponseAfter, before: secondResponseBefore } =
-            result2.body.meta as CursorPaginateMeta
-
+          expect(firstResponseHasNextPage).toBeTruthy()
+          expect(firstResponseHasPreviousPage).toBeFalsy()
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.rating).toBe(9)
           expect(secondResponseLastArticle.rating).toBe(0)
           expect(secondResponseAfter).not.toBeNull()
-          expect(secondResponseBefore).toBeNull()
+          expect(secondResponseBefore).not.toBeNull()
+          expect(secondResponseHasNextPage).toBeFalsy()
+          expect(secondResponseHasPreviousPage).toBeTruthy()
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
-          const result1 = await request(server)
+          const firstResponse = await request(server)
             .get('/articles')
             .query({ authorId: 1, limit: 10, orderBy: 'asc', sortBy: 'rating' })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const firstResponseStatus = result1.status
-          const firstResponseItems: Article[] = result1.body.items
+          const firstResponseStatus = firstResponse.status
+          const firstResponseItems: Article[] = firstResponse.body.items
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const { after: firstResponseAfter, before: firstResponseBefore } =
-            result1.body.meta as CursorPaginateMeta
+          const {
+            after: firstResponseAfter,
+            before: firstResponseBefore,
+            hasNextPage: firstResponseHasNextPage,
+            hasPreviousPage: firstResponseHasPreviousPage,
+          } = firstResponse.body.meta as CursorPaginateMeta
 
-          expect(firstResponseStatus).toBe(200)
-          expect(firstResponseArticlesCount).toBe(10)
-          expect(firstResponseFirstArticle.rating).toBe(0)
-          expect(firstResponseLastArticle.rating).toBe(9)
-          expect(firstResponseAfter).toBeNull()
-          expect(firstResponseBefore).not.toBeNull()
-
-          const result2 = await request(server)
+          const secondResponse = await request(server)
             .get('/articles')
             .query({
               after: firstResponseAfter,
@@ -357,24 +377,38 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const secondResponseStatus = result2.status
-          const secondResponseItems: Article[] = result2.body.items
+          const secondResponseStatus = secondResponse.status
+          const secondResponseItems: Article[] = secondResponse.body.items
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const { after: secondResponseAfter, before: secondResponseBefore } =
-            result2.body.meta as CursorPaginateMeta
+          const {
+            after: secondResponseAfter,
+            before: secondResponseBefore,
+            hasNextPage: secondResponseHasNextPage,
+            hasPreviousPage: secondResponseHasPreviousPage,
+          } = secondResponse.body.meta as CursorPaginateMeta
 
+          expect(firstResponseStatus).toBe(200)
+          expect(firstResponseArticlesCount).toBe(10)
+          expect(firstResponseFirstArticle.rating).toBe(0)
+          expect(firstResponseLastArticle.rating).toBe(9)
+          expect(firstResponseAfter).not.toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
+          expect(firstResponseHasNextPage).toBeTruthy()
+          expect(firstResponseHasPreviousPage).toBeFalsy()
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.rating).toBe(10)
           expect(secondResponseLastArticle.rating).toBe(19)
           expect(secondResponseAfter).not.toBeNull()
-          expect(secondResponseBefore).toBeNull()
+          expect(secondResponseBefore).not.toBeNull()
+          expect(secondResponseHasNextPage).toBeFalsy()
+          expect(secondResponseHasPreviousPage).toBeTruthy()
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
-          const result1 = await request(server)
+          const firstResponse = await request(server)
             .get('/articles')
             .query({
               authorId: 1,
@@ -384,22 +418,19 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const firstResponseStatus = result1.status
-          const firstResponseItems: Article[] = result1.body.items
+          const firstResponseStatus = firstResponse.status
+          const firstResponseItems: Article[] = firstResponse.body.items
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const { after: firstResponseAfter, before: firstResponseBefore } =
-            result1.body.meta as CursorPaginateMeta
+          const {
+            after: firstResponseAfter,
+            before: firstResponseBefore,
+            hasNextPage: firstResponseHasNextPage,
+            hasPreviousPage: firstResponseHasPreviousPage,
+          } = firstResponse.body.meta as CursorPaginateMeta
 
-          expect(firstResponseStatus).toBe(200)
-          expect(firstResponseArticlesCount).toBe(10)
-          expect(firstResponseFirstArticle.createdAt).toBe(19)
-          expect(firstResponseLastArticle.createdAt).toBe(10)
-          expect(firstResponseAfter).toBeNull()
-          expect(firstResponseBefore).not.toBeNull()
-
-          const result2 = await request(server)
+          const secondResponse = await request(server)
             .get('/articles')
             .query({
               after: firstResponseAfter,
@@ -410,24 +441,46 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const secondResponseStatus = result2.status
-          const secondResponseItems: Article[] = result2.body.items
+          const secondResponseStatus = secondResponse.status
+          const secondResponseItems: Article[] = secondResponse.body.items
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const { after: secondResponseAfter, before: secondResponseBefore } =
-            result2.body.meta as CursorPaginateMeta
+          const {
+            after: secondResponseAfter,
+            before: secondResponseBefore,
+            hasNextPage: secondResponseHasNextPage,
+            hasPreviousPage: secondResponseHasPreviousPage,
+          } = secondResponse.body.meta as CursorPaginateMeta
 
+          expect(firstResponseStatus).toBe(200)
+          expect(firstResponseArticlesCount).toBe(10)
+          expect(firstResponseFirstArticle.createdAt).toBe(
+            new Date(19).toISOString(),
+          )
+          expect(firstResponseLastArticle.createdAt).toBe(
+            new Date(10).toISOString(),
+          )
+          expect(firstResponseAfter).not.toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
+          expect(firstResponseHasNextPage).toBeTruthy()
+          expect(firstResponseHasPreviousPage).toBeFalsy()
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
-          expect(secondResponseFirstArticle.createdAt).toBe(9)
-          expect(secondResponseLastArticle.createdAt).toBe(0)
+          expect(secondResponseFirstArticle.createdAt).toBe(
+            new Date(9).toISOString(),
+          )
+          expect(secondResponseLastArticle.createdAt).toBe(
+            new Date(0).toISOString(),
+          )
           expect(secondResponseAfter).not.toBeNull()
-          expect(secondResponseBefore).toBeNull()
+          expect(secondResponseBefore).not.toBeNull()
+          expect(secondResponseHasNextPage).toBeFalsy()
+          expect(secondResponseHasPreviousPage).toBeTruthy()
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
-          const result1 = await request(server)
+          const firstResponse = await request(server)
             .get('/articles')
             .query({
               authorId: 1,
@@ -437,22 +490,19 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const firstResponseStatus = result1.status
-          const firstResponseItems: Article[] = result1.body.items
+          const firstResponseStatus = firstResponse.status
+          const firstResponseItems: Article[] = firstResponse.body.items
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
-          const { after: firstResponseAfter, before: firstResponseBefore } =
-            result1.body.meta as CursorPaginateMeta
+          const {
+            after: firstResponseAfter,
+            before: firstResponseBefore,
+            hasNextPage: firstResponseHasNextPage,
+            hasPreviousPage: firstResponseHasPreviousPage,
+          } = firstResponse.body.meta as CursorPaginateMeta
 
-          expect(firstResponseStatus).toBe(200)
-          expect(firstResponseArticlesCount).toBe(10)
-          expect(firstResponseFirstArticle.createdAt).toBe(0)
-          expect(firstResponseLastArticle.createdAt).toBe(9)
-          expect(firstResponseAfter).toBeNull()
-          expect(firstResponseBefore).not.toBeNull()
-
-          const result2 = await request(server)
+          const secondResponse = await request(server)
             .get('/articles')
             .query({
               after: firstResponseAfter,
@@ -463,20 +513,42 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const secondResponseStatus = result2.status
-          const secondResponseItems: Article[] = result2.body.items
+          const secondResponseStatus = secondResponse.status
+          const secondResponseItems: Article[] = secondResponse.body.items
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
-          const { after: secondResponseAfter, before: secondResponseBefore } =
-            result2.body.meta as CursorPaginateMeta
+          const {
+            after: secondResponseAfter,
+            before: secondResponseBefore,
+            hasNextPage: secondResponseHasNextPage,
+            hasPreviousPage: secondResponseHasPreviousPage,
+          } = secondResponse.body.meta as CursorPaginateMeta
 
+          expect(firstResponseStatus).toBe(200)
+          expect(firstResponseArticlesCount).toBe(10)
+          expect(firstResponseFirstArticle.createdAt).toBe(
+            new Date(0).toISOString(),
+          )
+          expect(firstResponseLastArticle.createdAt).toBe(
+            new Date(9).toISOString(),
+          )
+          expect(firstResponseAfter).not.toBeNull()
+          expect(firstResponseBefore).not.toBeNull()
+          expect(firstResponseHasNextPage).toBeTruthy()
+          expect(firstResponseHasPreviousPage).toBeFalsy()
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
-          expect(secondResponseFirstArticle.createdAt).toBe(10)
-          expect(secondResponseLastArticle.createdAt).toBe(19)
+          expect(secondResponseFirstArticle.createdAt).toBe(
+            new Date(10).toISOString(),
+          )
+          expect(secondResponseLastArticle.createdAt).toBe(
+            new Date(19).toISOString(),
+          )
           expect(secondResponseAfter).not.toBeNull()
-          expect(secondResponseBefore).toBeNull()
+          expect(secondResponseBefore).not.toBeNull()
+          expect(secondResponseHasNextPage).toBeFalsy()
+          expect(secondResponseHasPreviousPage).toBeTruthy()
         })
       })
 
@@ -530,8 +602,8 @@ describe('Articles (e2e)', () => {
           expect(articlesCount).toBe(10)
           expect(firstArticle.rating).toBe(9)
           expect(lastArticle.rating).toBe(0)
-          expect(after).toBeNull()
-          expect(before).toBeNull()
+          expect(after).not.toBeNull()
+          expect(before).not.toBeNull()
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
@@ -556,8 +628,8 @@ describe('Articles (e2e)', () => {
           expect(articlesCount).toBe(10)
           expect(firstArticle.rating).toBe(0)
           expect(lastArticle.rating).toBe(9)
-          expect(after).toBeNull()
-          expect(before).toBeNull()
+          expect(after).not.toBeNull()
+          expect(before).not.toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
@@ -580,10 +652,10 @@ describe('Articles (e2e)', () => {
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
-          expect(firstArticle.createdAt).toBe(9)
-          expect(lastArticle.createdAt).toBe(0)
-          expect(after).toBeNull()
-          expect(before).toBeNull()
+          expect(firstArticle.createdAt).toBe(new Date(9).toISOString())
+          expect(lastArticle.createdAt).toBe(new Date(0).toISOString())
+          expect(after).not.toBeNull()
+          expect(before).not.toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
@@ -606,10 +678,10 @@ describe('Articles (e2e)', () => {
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
-          expect(firstArticle.createdAt).toBe(0)
-          expect(lastArticle.createdAt).toBe(9)
-          expect(after).toBeNull()
-          expect(before).toBeNull()
+          expect(firstArticle.createdAt).toBe(new Date(0).toISOString())
+          expect(lastArticle.createdAt).toBe(new Date(9).toISOString())
+          expect(after).not.toBeNull()
+          expect(before).not.toBeNull()
         })
       })
 
@@ -618,7 +690,7 @@ describe('Articles (e2e)', () => {
         afterEach(async () => await truncateArticles(prismaClient))
 
         test('should return articles sorted by rating and ordered by DESC', async () => {
-          const result1 = await request(server)
+          const firstResponse = await request(server)
             .get('/articles')
             .query({
               subsiteId: 1,
@@ -628,22 +700,22 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const firstResponseStatus = result1.status
-          const firstResponseItems: Article[] = result1.body.items
+          const firstResponseStatus = firstResponse.status
+          const firstResponseItems: Article[] = firstResponse.body.items
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
           const { after: firstResponseAfter, before: firstResponseBefore } =
-            result1.body.meta as CursorPaginateMeta
+            firstResponse.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.rating).toBe(19)
           expect(firstResponseLastArticle.rating).toBe(10)
-          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseAfter).not.toBeNull()
           expect(firstResponseBefore).not.toBeNull()
 
-          const result2 = await request(server)
+          const secondResponse = await request(server)
             .get('/articles')
             .query({
               after: firstResponseAfter,
@@ -654,24 +726,24 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const secondResponseStatus = result2.status
-          const secondResponseItems: Article[] = result2.body.items
+          const secondResponseStatus = secondResponse.status
+          const secondResponseItems: Article[] = secondResponse.body.items
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
           const { after: secondResponseAfter, before: secondResponseBefore } =
-            result2.body.meta as CursorPaginateMeta
+            secondResponse.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.rating).toBe(9)
           expect(secondResponseLastArticle.rating).toBe(0)
           expect(secondResponseAfter).not.toBeNull()
-          expect(secondResponseBefore).toBeNull()
+          expect(secondResponseBefore).not.toBeNull()
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
-          const result1 = await request(server)
+          const firstResponse = await request(server)
             .get('/articles')
             .query({
               subsiteId: 1,
@@ -681,22 +753,22 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const firstResponseStatus = result1.status
-          const firstResponseItems: Article[] = result1.body.items
+          const firstResponseStatus = firstResponse.status
+          const firstResponseItems: Article[] = firstResponse.body.items
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
           const { after: firstResponseAfter, before: firstResponseBefore } =
-            result1.body.meta as CursorPaginateMeta
+            firstResponse.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
           expect(firstResponseFirstArticle.rating).toBe(0)
           expect(firstResponseLastArticle.rating).toBe(9)
-          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseAfter).not.toBeNull()
           expect(firstResponseBefore).not.toBeNull()
 
-          const result2 = await request(server)
+          const secondResponse = await request(server)
             .get('/articles')
             .query({
               after: firstResponseAfter,
@@ -707,24 +779,24 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const secondResponseStatus = result2.status
-          const secondResponseItems: Article[] = result2.body.items
+          const secondResponseStatus = secondResponse.status
+          const secondResponseItems: Article[] = secondResponse.body.items
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
           const { after: secondResponseAfter, before: secondResponseBefore } =
-            result2.body.meta as CursorPaginateMeta
+            secondResponse.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
           expect(secondResponseFirstArticle.rating).toBe(10)
           expect(secondResponseLastArticle.rating).toBe(19)
           expect(secondResponseAfter).not.toBeNull()
-          expect(secondResponseBefore).toBeNull()
+          expect(secondResponseBefore).not.toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
-          const result1 = await request(server)
+          const firstResponse = await request(server)
             .get('/articles')
             .query({
               subsiteId: 1,
@@ -734,22 +806,26 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const firstResponseStatus = result1.status
-          const firstResponseItems: Article[] = result1.body.items
+          const firstResponseStatus = firstResponse.status
+          const firstResponseItems: Article[] = firstResponse.body.items
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
           const { after: firstResponseAfter, before: firstResponseBefore } =
-            result1.body.meta as CursorPaginateMeta
+            firstResponse.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
-          expect(firstResponseFirstArticle.createdAt).toBe(19)
-          expect(firstResponseLastArticle.createdAt).toBe(10)
-          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseFirstArticle.createdAt).toBe(
+            new Date(19).toISOString(),
+          )
+          expect(firstResponseLastArticle.createdAt).toBe(
+            new Date(10).toISOString(),
+          )
+          expect(firstResponseAfter).not.toBeNull()
           expect(firstResponseBefore).not.toBeNull()
 
-          const result2 = await request(server)
+          const secondResponse = await request(server)
             .get('/articles')
             .query({
               after: firstResponseAfter,
@@ -760,24 +836,28 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const secondResponseStatus = result2.status
-          const secondResponseItems: Article[] = result2.body.items
+          const secondResponseStatus = secondResponse.status
+          const secondResponseItems: Article[] = secondResponse.body.items
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
           const { after: secondResponseAfter, before: secondResponseBefore } =
-            result2.body.meta as CursorPaginateMeta
+            secondResponse.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
-          expect(secondResponseFirstArticle.createdAt).toBe(9)
-          expect(secondResponseLastArticle.createdAt).toBe(0)
+          expect(secondResponseFirstArticle.createdAt).toBe(
+            new Date(9).toISOString(),
+          )
+          expect(secondResponseLastArticle.createdAt).toBe(
+            new Date(0).toISOString(),
+          )
           expect(secondResponseAfter).not.toBeNull()
-          expect(secondResponseBefore).toBeNull()
+          expect(secondResponseBefore).not.toBeNull()
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
-          const result1 = await request(server)
+          const firstResponse = await request(server)
             .get('/articles')
             .query({
               subsiteId: 1,
@@ -787,22 +867,26 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const firstResponseStatus = result1.status
-          const firstResponseItems: Article[] = result1.body.items
+          const firstResponseStatus = firstResponse.status
+          const firstResponseItems: Article[] = firstResponse.body.items
           const firstResponseArticlesCount = firstResponseItems.length
           const firstResponseFirstArticle = firstResponseItems[0]
           const firstResponseLastArticle = firstResponseItems[9]
           const { after: firstResponseAfter, before: firstResponseBefore } =
-            result1.body.meta as CursorPaginateMeta
+            firstResponse.body.meta as CursorPaginateMeta
 
           expect(firstResponseStatus).toBe(200)
           expect(firstResponseArticlesCount).toBe(10)
-          expect(firstResponseFirstArticle.createdAt).toBe(0)
-          expect(firstResponseLastArticle.createdAt).toBe(9)
-          expect(firstResponseAfter).toBeNull()
+          expect(firstResponseFirstArticle.createdAt).toBe(
+            new Date(0).toISOString(),
+          )
+          expect(firstResponseLastArticle.createdAt).toBe(
+            new Date(9).toISOString(),
+          )
+          expect(firstResponseAfter).not.toBeNull()
           expect(firstResponseBefore).not.toBeNull()
 
-          const result2 = await request(server)
+          const secondResponse = await request(server)
             .get('/articles')
             .query({
               after: firstResponseAfter,
@@ -813,20 +897,24 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const secondResponseStatus = result2.status
-          const secondResponseItems: Article[] = result2.body.items
+          const secondResponseStatus = secondResponse.status
+          const secondResponseItems: Article[] = secondResponse.body.items
           const secondResponseArticlesCount = secondResponseItems.length
           const secondResponseFirstArticle = secondResponseItems[0]
           const secondResponseLastArticle = secondResponseItems[9]
           const { after: secondResponseAfter, before: secondResponseBefore } =
-            result2.body.meta as CursorPaginateMeta
+            secondResponse.body.meta as CursorPaginateMeta
 
           expect(secondResponseStatus).toBe(200)
           expect(secondResponseArticlesCount).toBe(10)
-          expect(secondResponseFirstArticle.createdAt).toBe(10)
-          expect(secondResponseLastArticle.createdAt).toBe(19)
+          expect(secondResponseFirstArticle.createdAt).toBe(
+            new Date(10).toISOString(),
+          )
+          expect(secondResponseLastArticle.createdAt).toBe(
+            new Date(19).toISOString(),
+          )
           expect(secondResponseAfter).not.toBeNull()
-          expect(secondResponseBefore).toBeNull()
+          expect(secondResponseBefore).not.toBeNull()
         })
       })
 

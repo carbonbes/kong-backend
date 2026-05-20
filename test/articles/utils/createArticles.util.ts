@@ -2,8 +2,11 @@ import { PrismaClient } from '@/prisma/types'
 import { getFakeParagraphNode } from '@/test/utils'
 import { JSONContent } from '@tiptap/core'
 
-export const createArticles = (prismaClient: PrismaClient, count: number) => {
-  const result = prismaClient.article.createMany({
+export const createArticles = async (
+  prismaClient: PrismaClient,
+  count: number,
+) => {
+  const result = await prismaClient.article.createMany({
     data: Array.from({ length: count }).map((_, i) => ({
       authorId: 1,
       subsiteId: 1,
