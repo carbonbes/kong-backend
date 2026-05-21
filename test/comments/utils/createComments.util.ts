@@ -2,12 +2,12 @@ import { PrismaClient } from '@/prisma/types'
 import { getFakeParagraphNode } from '@/test/utils'
 import { JSONContent } from '@tiptap/core'
 
-export const createComments = (
+export const createComments = async (
   prismaClient: PrismaClient,
   count: number,
   parentCommentId?: number,
-) =>
-  prismaClient.comment.createMany({
+) => {
+  const result = await prismaClient.comment.createMany({
     data: Array.from({ length: count }).map((_, i) => ({
       authorId: 1,
       articleId: 1,
@@ -16,7 +16,10 @@ export const createComments = (
         content: [getFakeParagraphNode() as JSONContent],
       },
       parentCommentId: parentCommentId ?? null,
-      createdAt: i,
+      createdAt: new Date(i),
       rating: i,
     })),
   })
+
+  return JSON.parse(JSON.stringify(result))
+}

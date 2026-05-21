@@ -2,11 +2,11 @@ import { PrismaClient } from '@/prisma/types'
 import { getFakeParagraphNode } from '@/test/utils'
 import { JSONContent } from '@tiptap/core'
 
-export const createComment = (
+export const createComment = async (
   prismaClient: PrismaClient,
   parentCommentId?: number,
-) =>
-  prismaClient.comment.create({
+) => {
+  const result = await prismaClient.comment.create({
     data: {
       authorId: 1,
       articleId: 1,
@@ -17,3 +17,6 @@ export const createComment = (
       },
     },
   })
+
+  return JSON.parse(JSON.stringify(result))
+}

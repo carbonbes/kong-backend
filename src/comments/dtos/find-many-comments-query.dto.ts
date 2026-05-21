@@ -12,6 +12,11 @@ import { ORDER_BY, SORT_BY_FIELD } from '@/comments/consts'
 
 export class FindManyCommentsQueryDto {
   @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  after?: string
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -22,6 +27,11 @@ export class FindManyCommentsQueryDto {
   @IsInt()
   @Min(1)
   authorId?: number
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  before?: string
 
   @IsOptional()
   @Type(() => Number)
@@ -37,18 +47,8 @@ export class FindManyCommentsQueryDto {
   limit?: number
 
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  nextCursor?: string
-
-  @IsOptional()
   @IsIn(ORDER_BY)
   orderBy?: (typeof ORDER_BY)[number]
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  previousCursor?: string
 
   @IsOptional()
   @IsIn(SORT_BY_FIELD)

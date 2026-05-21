@@ -47,10 +47,13 @@ function createCursorPaginate() {
     return {
       items,
       meta: {
-        after: buildCursor<T>(lastItem, paginationKeys),
-        before: buildCursor<T>(firstItem, paginationKeys),
-        hasNextPage: isBackward ? true : hasMore,
-        hasPreviousPage: isBackward ? hasMore : !!after,
+        after:
+          isBackward || hasMore
+            ? buildCursor<T>(lastItem, paginationKeys)
+            : null,
+        before: (!isBackward ? !!after : hasMore)
+          ? null
+          : buildCursor<T>(firstItem, paginationKeys),
       },
     }
   }

@@ -108,13 +108,13 @@ describe('Articles (e2e)', () => {
         },
       }
 
-      const result = await request(server)
+      const response = await request(server)
         .post('/articles')
         .set('Authorization', `Bearer ${accessToken}`)
         .send(body)
 
-      expect(result.status).toBe(201)
-      expect(result.body).toEqual({ ...result.body, ...body })
+      expect(response.status).toBe(201)
+      expect(response.body).toEqual({ ...response.body, ...body })
     })
 
     test('should return 400 if body is empty', async () => {
@@ -164,7 +164,7 @@ describe('Articles (e2e)', () => {
         afterEach(async () => await truncateArticles(prismaClient))
 
         test('should return articles sorted by rating and ordered by DESC', async () => {
-          const result = await request(server)
+          const response = await request(server)
             .get('/articles')
             .query({
               authorId: 1,
@@ -174,12 +174,12 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const status = result.status
-          const items: Article[] = result.body.items
+          const status = response.status
+          const items: Article[] = response.body.items
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before, hasNextPage, hasPreviousPage } = result.body
+          const { after, before, hasNextPage, hasPreviousPage } = response.body
             .meta as CursorPaginateMeta
 
           expect(status).toBe(200)
@@ -193,7 +193,7 @@ describe('Articles (e2e)', () => {
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
-          const result = await request(server)
+          const response = await request(server)
             .get('/articles')
             .query({
               authorId: 1,
@@ -203,12 +203,12 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const status = result.status
-          const items: Article[] = result.body.items
+          const status = response.status
+          const items: Article[] = response.body.items
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before, hasNextPage, hasPreviousPage } = result.body
+          const { after, before, hasNextPage, hasPreviousPage } = response.body
             .meta as CursorPaginateMeta
 
           expect(status).toBe(200)
@@ -222,7 +222,7 @@ describe('Articles (e2e)', () => {
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
-          const result = await request(server)
+          const response = await request(server)
             .get('/articles')
             .query({
               authorId: 1,
@@ -232,12 +232,12 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const status = result.status
-          const items: Article[] = result.body.items
+          const status = response.status
+          const items: Article[] = response.body.items
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before, hasNextPage, hasPreviousPage } = result.body
+          const { after, before, hasNextPage, hasPreviousPage } = response.body
             .meta as CursorPaginateMeta
 
           expect(status).toBe(200)
@@ -251,7 +251,7 @@ describe('Articles (e2e)', () => {
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
-          const result = await request(server)
+          const response = await request(server)
             .get('/articles')
             .query({
               authorId: 1,
@@ -261,12 +261,12 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const status = result.status
-          const items: Article[] = result.body.items
+          const status = response.status
+          const items: Article[] = response.body.items
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before, hasNextPage, hasPreviousPage } = result.body
+          const { after, before, hasNextPage, hasPreviousPage } = response.body
             .meta as CursorPaginateMeta
 
           expect(status).toBe(200)
@@ -553,7 +553,7 @@ describe('Articles (e2e)', () => {
       })
 
       test('should return empty articles if a user is not have an articles', async () => {
-        const result = await request(server)
+        const response = await request(server)
           .get('/articles')
           .query({
             authorId: 2,
@@ -563,10 +563,10 @@ describe('Articles (e2e)', () => {
           })
           .set('Authorization', `Bearer ${accessToken}`)
 
-        const status = result.status
-        const items: Article[] = result.body.items
+        const status = response.status
+        const items: Article[] = response.body.items
         const articlesCount = items.length
-        const { after, before } = result.body.meta as CursorPaginateMeta
+        const { after, before } = response.body.meta as CursorPaginateMeta
 
         expect(status).toBe(200)
         expect(articlesCount).toBe(0)
@@ -581,7 +581,7 @@ describe('Articles (e2e)', () => {
         afterEach(async () => await truncateArticles(prismaClient))
 
         test('should return articles sorted by rating and ordered by DESC', async () => {
-          const result = await request(server)
+          const response = await request(server)
             .get('/articles')
             .query({
               subsiteId: 1,
@@ -591,12 +591,12 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const status = result.status
-          const items: Article[] = result.body.items
+          const status = response.status
+          const items: Article[] = response.body.items
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before } = result.body.meta as CursorPaginateMeta
+          const { after, before } = response.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
@@ -607,7 +607,7 @@ describe('Articles (e2e)', () => {
         })
 
         test('should return articles sorted by rating and ordered by ASC', async () => {
-          const result = await request(server)
+          const response = await request(server)
             .get('/articles')
             .query({
               subsiteId: 1,
@@ -617,12 +617,12 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const status = result.status
-          const items: Article[] = result.body.items
+          const status = response.status
+          const items: Article[] = response.body.items
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before } = result.body.meta as CursorPaginateMeta
+          const { after, before } = response.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
@@ -633,7 +633,7 @@ describe('Articles (e2e)', () => {
         })
 
         test('should return articles sorted by createdAt and ordered by DESC', async () => {
-          const result = await request(server)
+          const response = await request(server)
             .get('/articles')
             .query({
               subsiteId: 1,
@@ -643,12 +643,12 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const status = result.status
-          const items: Article[] = result.body.items
+          const status = response.status
+          const items: Article[] = response.body.items
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before } = result.body.meta as CursorPaginateMeta
+          const { after, before } = response.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
@@ -659,7 +659,7 @@ describe('Articles (e2e)', () => {
         })
 
         test('should return articles sorted by createdAt and ordered by ASC', async () => {
-          const result = await request(server)
+          const response = await request(server)
             .get('/articles')
             .query({
               subsiteId: 1,
@@ -669,12 +669,12 @@ describe('Articles (e2e)', () => {
             })
             .set('Authorization', `Bearer ${accessToken}`)
 
-          const status = result.status
-          const items: Article[] = result.body.items
+          const status = response.status
+          const items: Article[] = response.body.items
           const articlesCount = items.length
           const firstArticle = items[0]
           const lastArticle = items[9]
-          const { after, before } = result.body.meta as CursorPaginateMeta
+          const { after, before } = response.body.meta as CursorPaginateMeta
 
           expect(status).toBe(200)
           expect(articlesCount).toBe(10)
@@ -919,7 +919,7 @@ describe('Articles (e2e)', () => {
       })
 
       test('should return empty articles if a subsite is not have an articles', async () => {
-        const result = await request(server)
+        const response = await request(server)
           .get('/articles')
           .query({
             subsiteId: 2,
@@ -929,10 +929,10 @@ describe('Articles (e2e)', () => {
           })
           .set('Authorization', `Bearer ${accessToken}`)
 
-        const status = result.status
-        const items: Article[] = result.body.items
+        const status = response.status
+        const items: Article[] = response.body.items
         const articlesCount = items.length
-        const { after, before } = result.body.meta as CursorPaginateMeta
+        const { after, before } = response.body.meta as CursorPaginateMeta
 
         expect(status).toBe(200)
         expect(articlesCount).toBe(0)
@@ -961,13 +961,13 @@ describe('Articles (e2e)', () => {
 
       const updatedArticle = { ...originalArticle, ...body }
 
-      const result = await request(server)
+      const response = await request(server)
         .patch('/articles/1')
         .set('Authorization', `Bearer ${accessToken}`)
         .send(body)
 
-      expect(result.status).toBe(200)
-      expect(result.body.content).toEqual(updatedArticle.content)
+      expect(response.status).toBe(200)
+      expect(response.body.content).toEqual(updatedArticle.content)
     })
 
     test('should return 400 if a doc content field contains not allowed node', async () => {
@@ -998,12 +998,12 @@ describe('Articles (e2e)', () => {
     test('should return an article', async () => {
       const deletedArticle = await createArticle(prismaClient)
 
-      const result = await request(server)
+      const response = await request(server)
         .delete('/articles/1')
         .set('Authorization', `Bearer ${accessToken}`)
 
-      expect(result.status).toBe(200)
-      expect(result.body).toEqual(deletedArticle)
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual(deletedArticle)
     })
 
     test('should return 401 if user is not authenticated', async () => {
