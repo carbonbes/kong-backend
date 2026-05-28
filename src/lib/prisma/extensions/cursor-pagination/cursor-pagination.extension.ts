@@ -2,7 +2,7 @@ import { Prisma } from '@/prisma/client'
 import { CursorPaginateOptions, CursorPaginateReturn } from './types'
 import { buildCursor, buildOrderBy, parseCursor } from './utils'
 
-async function cursorPaginateMethod<T>(
+export async function cursorPaginate<T>(
   this: T,
   options: CursorPaginateOptions<T>,
 ): CursorPaginateReturn<T> {
@@ -67,7 +67,7 @@ export const cursorPagination = () =>
     name: 'cursor-pagination',
     model: {
       $allModels: {
-        cursorPaginate: cursorPaginateMethod,
+        cursorPaginate,
       },
     },
   })
