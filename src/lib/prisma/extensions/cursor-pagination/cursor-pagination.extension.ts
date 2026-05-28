@@ -2,71 +2,72 @@ import { Prisma } from '@/prisma/client'
 import { CursorPaginateOptions, CursorPaginateReturn } from './types'
 import { buildCursor, buildOrderBy, parseCursor } from './utils'
 
-function createCursorPaginate() {
-  return async function <T>(
-    this: T,
-    options: CursorPaginateOptions<T>,
-  ): CursorPaginateReturn<T> {
-    const context = Prisma.getExtensionContext(this)
+async function cursorPaginateMethod<T>(
+  this: T,
+  options: CursorPaginateOptions<T>,
+): CursorPaginateReturn<T> {
+  const context = Prisma.getExtensionContext(this) as any
+  const {
+    after,
+    before,
+    limit = 10,
+    orderBy: order = 'asc',
+    paginationKeys = ['id'],
+    ...etc
+  } = options
 
-    const {
-      after,
-      before,
-      limit = 10,
-      orderBy: order = 'asc',
-      paginationKeys = ['id'],
-      ...etc
-    } = options
+  const isBefore = Boolean(before && !after)
+  const cursorToken = after || before
 
-    const isBackward = !!before
-    const encodedCursor = after || before
-    const cursor = encodedCursor ? parseCursor<T>(encodedCursor) : undefined
-    const orderBy = buildOrderBy<T>(paginationKeys, order)
-    const skip = cursor ? 1 : undefined
-    const take = isBackward ? -(limit + 1) : limit + 1
+  const cursor = cursorToken ? parseCursor<T>(cursorToken) : undefined
+  const skip = cursor ? 1 : undefined
+  const take = isBefore ? -(limit + 1) : limit + 1
+  const orderBy = buildOrderBy<T>(paginationKeys, order)
 
-    const result = (await (context as any).findMany({
-      cursor,
-      orderBy,
-      skip,
-      take,
-      ...etc,
-    })) as Prisma.Payload<T>['scalars'][]
+  const result = (await context.findMany({
+    cursor,
+    orderBy,
+    skip,
+    take,
+    ...etc,
+  })) as Prisma.Payload<T>['scalars'][]
 
-    const hasMore = result.length > limit
+  const hasMore = result.length > limit
 
-    const items = hasMore
-      ? isBackward
-        ? result.slice(1)
-        : result.slice(0, -1)
-      : result
+  let items = hasMore
+    ? isBefore
+      ? result.slice(1)
+      : result.slice(0, -1)
+    : result
 
-    const firstItem = items[0]
-    const lastItem = items[items.length - 1]
+  if (isBefore) items.reverse()
 
-    return {
-      items,
-      meta: {
-        after:
-          isBackward || hasMore
-            ? buildCursor<T>(lastItem, paginationKeys)
-            : null,
-        before: (!isBackward ? !!after : hasMore)
-          ? null
-          : buildCursor<T>(firstItem, paginationKeys),
-      },
-    }
+  const firstItem = items[0]
+  const lastItem = items[items.length - 1]
+
+  if (items.length === 0) {
+    return { items, meta: { after: null, before: null } }
+  }
+
+  return {
+    items,
+    meta: {
+      after:
+        isBefore || hasMore ? buildCursor<T>(lastItem, paginationKeys) : null,
+      before:
+        (!isBefore && after) || (isBefore && hasMore)
+          ? buildCursor<T>(firstItem, paginationKeys)
+          : null,
+    },
   }
 }
-
-export const cursorPaginate = createCursorPaginate()
 
 export const cursorPagination = () =>
   Prisma.defineExtension({
     name: 'cursor-pagination',
     model: {
       $allModels: {
-        cursorPaginate: createCursorPaginate(),
+        cursorPaginate: cursorPaginateMethod,
       },
     },
   })

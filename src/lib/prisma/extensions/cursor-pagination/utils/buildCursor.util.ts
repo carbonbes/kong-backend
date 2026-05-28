@@ -5,9 +5,7 @@ export const buildCursor = <T>(
   item: Prisma.Payload<T>['scalars'],
   paginationKeys: (keyof Prisma.Payload<T, 'findMany'>['scalars'])[],
 ) => {
-  if (!item) return null
-
-  const cursorObj = paginationKeys.reduce(
+  const obj = paginationKeys.reduce(
     (acc, field) => {
       acc[field] = item[field]
 
@@ -16,5 +14,5 @@ export const buildCursor = <T>(
     {} as Prisma.Args<T, 'findMany'>['cursor'],
   )
 
-  return getCursor(cursorObj)
+  return getCursor(obj)
 }
