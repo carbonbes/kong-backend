@@ -17,9 +17,9 @@ export async function cursorPaginate<T>(
   } = options
 
   const isBefore = Boolean(before && !after)
-  const cursorToken = after || before
+  const encodedCursor = after || before
 
-  const cursor = cursorToken ? parseCursor<T>(cursorToken) : undefined
+  const cursor = encodedCursor ? parseCursor<T>(encodedCursor) : undefined
   const skip = cursor ? 1 : undefined
   const take = isBefore ? -(limit + 1) : limit + 1
   const orderBy = buildOrderBy<T>(paginationKeys, order)
@@ -34,7 +34,7 @@ export async function cursorPaginate<T>(
 
   const hasMore = result.length > limit
 
-  let items = hasMore
+  const items = hasMore
     ? isBefore
       ? result.slice(1)
       : result.slice(0, -1)
