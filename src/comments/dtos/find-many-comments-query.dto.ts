@@ -1,21 +1,10 @@
-import {
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator'
+import { IsIn, IsInt, IsOptional, Min } from 'class-validator'
 import { Type } from 'class-transformer'
 import { ORDER_BY, SORT_BY_FIELD } from '@/comments/consts'
+import { FindManyQueryDto } from '@/prisma/dtos'
+import { IntersectionType } from '@nestjs/mapped-types'
 
-export class FindManyCommentsQueryDto {
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  after?: string
-
+class FindManyCommentsQueryAdditionalDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -29,22 +18,10 @@ export class FindManyCommentsQueryDto {
   authorId?: number
 
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  before?: string
-
-  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   parentCommentId?: number
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(10)
-  @Max(50)
-  limit?: number
 
   @IsOptional()
   @IsIn(ORDER_BY)
@@ -54,3 +31,8 @@ export class FindManyCommentsQueryDto {
   @IsIn(SORT_BY_FIELD)
   sortBy?: (typeof SORT_BY_FIELD)[number]
 }
+
+export class FindManyCommentsQueryDto extends IntersectionType(
+  FindManyQueryDto,
+  FindManyCommentsQueryAdditionalDto,
+) {}

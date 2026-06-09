@@ -30,12 +30,15 @@ export class CommentsController {
 
   @Get()
   async findMany(@Query() query: FindManyCommentsQueryDto) {
-    const { articleId, authorId, parentCommentId, sortBy, ...etc } = query
+    const { after, before, limit, orderBy, sortBy = 'rating', ...where } = query
 
     return this.commentsService.findMany({
+      after,
+      before,
+      limit,
+      orderBy,
       paginationKeys: ['id', sortBy],
-      where: { articleId, authorId, parentCommentId },
-      ...etc,
+      where,
     })
   }
 

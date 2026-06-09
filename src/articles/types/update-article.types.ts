@@ -3,7 +3,7 @@ import { ArticleDelegate } from './article-delegate.type'
 
 export type UpdateArticleOptions = UpdateOptions<ArticleDelegate>
 
-export type UpdateArticleReturn = UpdateReturn<
+export type UpdateArticleReturn<T extends UpdateArticleOptions> = UpdateReturn<
   ArticleDelegate,
-  UpdateArticleOptions
+  T
 >

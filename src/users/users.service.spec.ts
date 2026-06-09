@@ -6,7 +6,7 @@ import {
   ExistsUserOptions,
   UpdateUserOptions,
   FindManyUsersOptions,
-} from '@/users/types'
+} from './types'
 import { getFakeEmail, getFakeUser } from '@/test/utils'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
 import { PrismaClient } from '@/prisma/types'
@@ -75,31 +75,43 @@ describe('UsersService', () => {
   })
 
   describe('findMany', () => {
-    test('should find users', async () => {
+    test('should find comments', async () => {
       const users = Array.from({ length: 10 }).map(() => getFakeUser())
       const options: FindManyUsersOptions = {
-        where: { email: getFakeEmail() },
+        where: { id: 1 },
       }
 
-      txHost.tx.user.findMany.mockResolvedValue(users)
+      txHost.tx.user.cursorPaginate.mockResolvedValue({
+        items: users,
+        meta: { after: null, before: null },
+      })
 
       const result = await usersService.findMany(options)
 
-      expect(txHost.tx.user.findMany).toHaveBeenCalledWith(options)
-      expect(result).toEqual(users)
+      expect(txHost.tx.user.cursorPaginate).toHaveBeenCalledWith(options)
+      expect(result).toEqual({
+        items: users,
+        meta: { after: null, before: null },
+      })
     })
 
     test('should find empty', async () => {
       const options: FindManyUsersOptions = {
-        where: { email: getFakeEmail() },
+        where: { id: 1 },
       }
 
-      txHost.tx.user.findMany.mockResolvedValue([])
+      txHost.tx.user.cursorPaginate.mockResolvedValue({
+        items: [],
+        meta: { after: null, before: null },
+      })
 
       const result = await usersService.findMany(options)
 
-      expect(txHost.tx.user.findMany).toHaveBeenCalledWith(options)
-      expect(result).toEqual([])
+      expect(txHost.tx.user.cursorPaginate).toHaveBeenCalledWith(options)
+      expect(result).toEqual({
+        items: [],
+        meta: { after: null, before: null },
+      })
     })
   })
 

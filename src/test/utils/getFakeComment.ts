@@ -25,6 +25,6 @@ export const getFakeComment = ({
     content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Test' }] }],
   },
   rating: rating ?? faker.number.int(),
-  createdAt: createdAt ?? faker.date.past().getTime(),
-  updatedAt: updatedAt ?? faker.date.future().getTime(),
+  createdAt: createdAt ?? faker.date.past(),
+  updatedAt: updatedAt ?? faker.date.future(),
 })

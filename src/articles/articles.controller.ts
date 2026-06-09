@@ -36,12 +36,15 @@ export class ArticlesController {
 
   @Get()
   findMany(@Query() query: FindManyArticlesQueryDto) {
-    const { authorId, subsiteId, sortBy, ...etc } = query
+    const { after, before, limit, orderBy, sortBy = 'rating', ...where } = query
 
     return this.articlesService.findMany({
+      after,
+      before,
+      limit,
+      orderBy,
       paginationKeys: ['id', sortBy],
-      where: { authorId, subsiteId },
-      ...etc,
+      where,
     })
   }
 

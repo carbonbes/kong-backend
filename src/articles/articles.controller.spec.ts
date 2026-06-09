@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ArticlesController } from './articles.controller'
 import { ArticlesService } from './articles.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { getFakeArticle, getFakeInt } from '@/test/utils'
+import { getFakeArticle, getFakeComment, getFakeInt } from '@/test/utils'
 import {
   CreateArticleDto,
   FindManyArticlesQueryDto,
@@ -76,29 +76,155 @@ describe('ArticlesController', () => {
   })
 
   describe('findMany', () => {
-    test('should find and return articles', async () => {
-      const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
-      const query: FindManyArticlesQueryDto = { authorId: 1 }
+    describe('subsite', () => {
+      test('should find and return articles', async () => {
+        const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
+        const query: FindManyArticlesQueryDto = {
+          sortBy: 'rating',
+          subsiteId: 1,
+        }
 
-      articlesService.findManyWithCursorPagination.mockResolvedValue({
-        items: articles,
-        meta: { previousCursor: null, nextCursor: null },
+        const {
+          after,
+          before,
+          limit,
+          orderBy,
+          sortBy = 'rating',
+          ...where
+        } = query
+
+        articlesService.findMany.mockResolvedValue({
+          items: articles,
+          meta: { after: null, before: null },
+        })
+
+        const result = await articlesController.findMany(query)
+
+        expect(articlesService.findMany).toHaveBeenCalledWith({
+          after,
+          before,
+          limit,
+          orderBy,
+          paginationKeys: ['id', sortBy],
+          where,
+        })
+        expect(result).toEqual({
+          items: articles,
+          meta: { after: null, before: null },
+        })
       })
 
-      const result = await articlesController.findMany(query)
+      test('should not found and return empty array', async () => {
+        const query: FindManyArticlesQueryDto = {
+          limit: 10,
+          subsiteId: 1,
+        }
 
-      expect(articlesService.findManyWithCursorPagination).toHaveBeenCalledWith(
-        {
-          where: { authorId: 1 },
-        },
-      )
-      expect(result).toEqual({
-        items: articles,
-        meta: { previousCursor: null, nextCursor: null },
+        const {
+          after,
+          before,
+          limit,
+          orderBy,
+          sortBy = 'rating',
+          ...where
+        } = query
+
+        articlesService.findMany.mockResolvedValue({
+          items: [],
+          meta: { after: null, before: null },
+        })
+
+        const result = await articlesController.findMany(query)
+
+        expect(articlesService.findMany).toHaveBeenCalledWith({
+          after,
+          before,
+          limit,
+          orderBy,
+          paginationKeys: ['id', sortBy],
+          where,
+        })
+        expect(result).toEqual({
+          items: [],
+          meta: { after: null, before: null },
+        })
       })
     })
 
-    test('should not found and return empty array', async () => {})
+    describe('user', () => {
+      test('should find and return articles', async () => {
+        const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
+        const query: FindManyArticlesQueryDto = {
+          authorId: 1,
+          sortBy: 'rating',
+        }
+
+        const {
+          after,
+          before,
+          limit,
+          orderBy,
+          sortBy = 'rating',
+          ...where
+        } = query
+
+        articlesService.findMany.mockResolvedValue({
+          items: articles,
+          meta: { after: null, before: null },
+        })
+
+        const result = await articlesController.findMany(query)
+
+        expect(articlesService.findMany).toHaveBeenCalledWith({
+          after,
+          before,
+          limit,
+          orderBy,
+          paginationKeys: ['id', sortBy],
+          where,
+        })
+        expect(result).toEqual({
+          items: articles,
+          meta: { after: null, before: null },
+        })
+      })
+
+      test('should not found and return empty array', async () => {
+        const query: FindManyArticlesQueryDto = {
+          authorId: 1,
+          limit: 10,
+        }
+
+        const {
+          after,
+          before,
+          limit,
+          orderBy,
+          sortBy = 'rating',
+          ...where
+        } = query
+
+        articlesService.findMany.mockResolvedValue({
+          items: [],
+          meta: { after: null, before: null },
+        })
+
+        const result = await articlesController.findMany(query)
+
+        expect(articlesService.findMany).toHaveBeenCalledWith({
+          after,
+          before,
+          limit,
+          orderBy,
+          paginationKeys: ['id', sortBy],
+          where,
+        })
+        expect(result).toEqual({
+          items: [],
+          meta: { after: null, before: null },
+        })
+      })
+    })
   })
 
   describe('update', () => {

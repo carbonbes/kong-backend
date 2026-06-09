@@ -17,6 +17,6 @@ export type CursorPaginateMeta = {
 }
 
 export type CursorPaginateReturn<T> = Promise<{
-  items: T[]
+  items: Prisma.Payload<T, 'findMany'>['scalars'][]
   meta: CursorPaginateMeta
 }>

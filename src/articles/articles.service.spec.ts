@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ArticlesService } from './articles.service'
 import {
-  ArticleDelegate,
   CreateArticleOptions,
   DeleteArticleOptions,
   ExistsArticleOptions,
@@ -77,35 +76,24 @@ describe('ArticlesService', () => {
 
   describe('findMany', () => {
     test('should find articles', async () => {
-      const options: FindManyArticlesOptions<ArticleDelegate> = {
-        where: { authorId: getFakeInt() },
+      const options: FindManyArticlesOptions = {
+        where: { authorId: 1 },
       }
       const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
 
-      const mockWithCursor = vi.fn().mockResolvedValue([
-        articles,
-        {
-          previousCursor: null,
-          nextCursor: null,
-        },
-      ])
-
-      // @ts-expect-error missing withPages
-      txHost.tx.article.paginate.mockReturnValue({
-        withCursor: mockWithCursor,
+      txHost.tx.article.cursorPaginate.mockResolvedValue({
+        items: articles,
+        meta: { after: null, before: null },
       })
 
       const result = await articlesService.findMany(options)
 
-      expect(txHost.tx.article.paginate).toHaveBeenCalled()
-      expect(txHost.tx.article.findMany).toHaveBeenCalledWith(options)
+      expect(txHost.tx.article.cursorPaginate).toHaveBeenCalledWith(options)
       expect(result).toEqual({
         items: articles,
         meta: {
-          previousPage: false,
-          nextPage: false,
-          previousCursor: null,
-          nextCursor: null,
+          after: null,
+          before: null,
         },
       })
     })
@@ -115,12 +103,15 @@ describe('ArticlesService', () => {
         where: { authorId: getFakeInt() },
       }
 
-      txHost.tx.article.findMany.mockResolvedValue([])
+      txHost.tx.article.cursorPaginate.mockResolvedValue({
+        items: [],
+        meta: { after: null, before: null },
+      })
 
       const result = await articlesService.findMany(options)
 
-      expect(txHost.tx.article.findMany).toHaveBeenCalledWith(options)
-      expect(result).toEqual([])
+      expect(txHost.tx.article.cursorPaginate).toHaveBeenCalledWith(options)
+      expect(result).toEqual({ items: [], meta: { after: null, before: null } })
     })
   })
 
@@ -157,24 +148,24 @@ describe('ArticlesService', () => {
 
   describe('exists', () => {
     test('should return true', async () => {
-      const options: ExistsArticleOptions = { where: { id: getFakeInt() } }
+      const options: ExistsArticleOptions = { where: { id: 1 } }
 
-      txHost.tx.article.count.mockResolvedValue(1)
+      txHost.tx.article.exists.mockResolvedValue(true)
 
       const result = await articlesService.exists(options)
 
-      expect(txHost.tx.article.count).toHaveBeenCalledWith(options)
+      expect(txHost.tx.article.exists).toHaveBeenCalledWith(options)
       expect(result).toBeTruthy()
     })
 
     test('should return false', async () => {
-      const options: ExistsArticleOptions = { where: { id: getFakeInt() } }
+      const options: ExistsArticleOptions = { where: { id: 1 } }
 
-      txHost.tx.article.count.mockResolvedValue(0)
+      txHost.tx.article.exists.mockResolvedValue(false)
 
       const result = await articlesService.exists(options)
 
-      expect(txHost.tx.article.count).toHaveBeenCalledWith(options)
+      expect(txHost.tx.article.exists).toHaveBeenCalledWith(options)
       expect(result).toBeFalsy()
     })
   })

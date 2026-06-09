@@ -100,17 +100,23 @@ describe('CommentsService', () => {
 
   describe('findMany', () => {
     test('should find comments', async () => {
-      const comments = Array.from({ length: 100 }).map(() => getFakeComment())
+      const comments = Array.from({ length: 10 }).map(() => getFakeComment())
       const options: FindManyCommentsOptions = {
         where: { articleId: getFakeInt() },
       }
 
-      txHost.tx.comment.findMany.mockResolvedValue(comments)
+      txHost.tx.comment.cursorPaginate.mockResolvedValue({
+        items: comments,
+        meta: { after: null, before: null },
+      })
 
       const result = await commentsService.findMany(options)
 
-      expect(txHost.tx.comment.findMany).toHaveBeenCalledWith(options)
-      expect(result).toEqual(comments)
+      expect(txHost.tx.comment.cursorPaginate).toHaveBeenCalledWith(options)
+      expect(result).toEqual({
+        items: comments,
+        meta: { after: null, before: null },
+      })
     })
 
     test('should find empty', async () => {
@@ -118,12 +124,18 @@ describe('CommentsService', () => {
         where: { articleId: getFakeInt() },
       }
 
-      txHost.tx.comment.findMany.mockResolvedValue([])
+      txHost.tx.comment.cursorPaginate.mockResolvedValue({
+        items: [],
+        meta: { after: null, before: null },
+      })
 
       const result = await commentsService.findMany(options)
 
-      expect(txHost.tx.comment.findMany).toHaveBeenCalledWith(options)
-      expect(result).toEqual([])
+      expect(txHost.tx.comment.cursorPaginate).toHaveBeenCalledWith(options)
+      expect(result).toEqual({
+        items: [],
+        meta: { after: null, before: null },
+      })
     })
   })
 

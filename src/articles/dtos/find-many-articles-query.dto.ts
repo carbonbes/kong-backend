@@ -1,38 +1,15 @@
-import {
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator'
+import { IsIn, IsInt, IsOptional, Min } from 'class-validator'
 import { Type } from 'class-transformer'
 import { ORDER_BY, SORT_BY_FIELD } from '../consts'
+import { FindManyQueryDto } from '@/prisma/dtos'
+import { IntersectionType } from '@nestjs/mapped-types'
 
-export class FindManyArticlesQueryDto {
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  after?: string
-
+class FindManyArticlesQueryAdditionalDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   authorId?: number
-
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  before?: string
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(10)
-  @Max(50)
-  limit?: number
 
   @IsOptional()
   @IsIn(ORDER_BY)
@@ -48,3 +25,8 @@ export class FindManyArticlesQueryDto {
   @Min(1)
   subsiteId?: number
 }
+
+export class FindManyArticlesQueryDto extends IntersectionType(
+  FindManyQueryDto,
+  FindManyArticlesQueryAdditionalDto,
+) {}

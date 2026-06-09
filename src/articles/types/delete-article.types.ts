@@ -3,7 +3,7 @@ import { ArticleDelegate } from './article-delegate.type'
 
 export type DeleteArticleOptions = DeleteOptions<ArticleDelegate>
 
-export type DeleteArticleReturn = DeleteReturn<
+export type DeleteArticleReturn<T extends DeleteArticleOptions> = DeleteReturn<
   ArticleDelegate,
-  DeleteArticleOptions
+  T
 >
