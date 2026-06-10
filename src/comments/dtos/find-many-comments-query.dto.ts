@@ -18,14 +18,14 @@ class FindManyCommentsQueryAdditionalDto {
   authorId?: number
 
   @IsOptional()
+  @IsIn(ORDER_BY)
+  orderBy?: (typeof ORDER_BY)[number]
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   parentCommentId?: number
-
-  @IsOptional()
-  @IsIn(ORDER_BY)
-  orderBy?: (typeof ORDER_BY)[number]
 
   @IsOptional()
   @IsIn(SORT_BY_FIELD)

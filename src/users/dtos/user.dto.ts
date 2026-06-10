@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsDate,
   IsEmail,
   IsEnum,
   IsInt,
@@ -34,11 +35,9 @@ export class UserDto implements User {
   @IsBoolean()
   isActive: boolean
 
-  @IsInt()
-  @Min(0)
-  createdAt: number
+  @IsDate()
+  createdAt: Date
 
-  @IsInt()
-  @Min(0)
-  updatedAt: number
+  @IsDate()
+  updatedAt: Date
 }

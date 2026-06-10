@@ -10,19 +10,16 @@ import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { App } from 'supertest/types'
 import { OtpsService } from '@/otps/otps.service'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
-import { DataSource, Repository } from 'typeorm'
-import { User } from '@/users/entities'
-import { getRepositoryToken } from '@nestjs/typeorm'
 import { UserGender } from '@/users/enums'
-import {
-  initializeTransactionalContext,
-  StorageDriver,
-} from 'typeorm-transactional'
 import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql'
 import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
+import { PrismaClient } from '@/prisma/types'
+import { PRISMA_CLIENT } from '@/prisma/consts'
+import { execSync } from 'node:child_process'
+import { createUser, truncateUsers } from './utils'
 
 describe('AuthController (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -30,10 +27,9 @@ describe('AuthController (e2e)', () => {
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
-  let usersRepository: Repository<User>
+  let prismaClient: PrismaClient
   let otpsService: OtpsService
   let authJwtsService: AuthJwtsService
-  let dataSource: DataSource
 
   beforeAll(async () => {
     postgresContainer = await new PostgreSqlContainer(
@@ -46,10 +42,6 @@ describe('AuthController (e2e)', () => {
     process.env.DATABASE_URL = postgresContainer.getConnectionUri()
     process.env.REDIS_URL = redisContainer.getConnectionUrl()
 
-    initializeTransactionalContext({
-      storageDriver: StorageDriver.ASYNC_LOCAL_STORAGE,
-    })
-
     mailService = mock<MailService>()
 
     const module: TestingModule = await Test.createTestingModule({
@@ -59,17 +51,16 @@ describe('AuthController (e2e)', () => {
       .useValue(mailService)
       .compile()
 
-    usersRepository = module.get<Repository<User>>(getRepositoryToken(User))
+    prismaClient = module.get<PrismaClient>(PRISMA_CLIENT)
     otpsService = module.get<OtpsService>(OtpsService)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
-    dataSource = module.get<DataSource>(DataSource)
-
-    await dataSource.synchronize()
 
     app = module.createNestApplication()
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
     server = app.getHttpServer()
     await app.init()
+
+    execSync('yarn prisma db push')
   }, 60000)
 
   afterAll(async () => {
@@ -79,31 +70,29 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/signup', () => {
-    afterEach(async () => {
-      await usersRepository.deleteAll()
-    })
+    afterEach(async () => await truncateUsers(prismaClient))
 
     test('should return 201 when user with some email does not exist', async () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(201)
     })
 
     test('should return 403 when user with some email already exists', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       })
 
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(403)
@@ -113,7 +102,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: '',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -123,7 +112,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'not email',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -134,7 +123,7 @@ describe('AuthController (e2e)', () => {
         email:
           'PMXWwZOQDyTyKiHDViGLscBnRCWoalwESoXWShXytJZBXIhAeJGTdhSiSmZuORRuzUcGyzrxjvYttqIOLTZLWhMfAfna@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -144,7 +133,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: '',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -154,7 +143,7 @@ describe('AuthController (e2e)', () => {
       const body: SignUpDto = {
         email: 'test@test.com',
         name: 'MYpmYTLaqoDuasawqeIxGgaqgkwBLjqGogJYxDfyEDUTnTpUkerWnmXuehNzvYhkmjHDZIvwZYZNCIETEqDjzOnMSLYNDDJcvBdxh',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       }
 
       await request(server).post('/auth/signup').send(body).expect(400)
@@ -184,15 +173,13 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/signin', () => {
-    afterEach(async () => {
-      await usersRepository.deleteAll()
-    })
+    afterEach(async () => await truncateUsers(prismaClient))
 
     test('should return 201 when user exists and is active', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
         isActive: true,
       })
 
@@ -202,22 +189,22 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should return 403 when user does not exist', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       })
 
-      const body: SignInDto = { email: 'random@random.com' }
+      const body: SignInDto = { email: 'test2@test.com' }
 
       await request(server).post('/auth/signin').send(body).expect(403)
     })
 
     test('should return 403 when user exists but is not active', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       })
 
       const body: SignInDto = { email: 'test@test.com' }
@@ -239,15 +226,13 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/verify-otp', () => {
-    afterEach(async () => {
-      await usersRepository.deleteAll()
-    })
+    afterEach(async () => await truncateUsers(prismaClient))
 
     test('should return 201 and auth-jwts if signup otp is verified', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       })
 
       const { code } = await otpsService.create({
@@ -271,10 +256,10 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should return 201 and auth-jwts if signin otp is verified', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       })
 
       const { code } = await otpsService.create({
@@ -298,10 +283,10 @@ describe('AuthController (e2e)', () => {
     })
 
     test('should return 404 when otp is not verified', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       })
 
       await otpsService.create({
@@ -320,15 +305,13 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('GET /auth/me', () => {
-    afterEach(async () => {
-      await usersRepository.deleteAll()
-    })
+    afterEach(async () => await truncateUsers(prismaClient))
 
     test('should return 200 and user', async () => {
-      const user = await usersRepository.save({
+      const user = await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
         isActive: true,
       })
 
@@ -339,11 +322,7 @@ describe('AuthController (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
 
-      expect(response.body).toEqual({
-        ...user,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-      })
+      expect(response.body).toEqual(user)
     })
 
     test('should return 401 when no authorization header', async () => {
@@ -359,15 +338,13 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/update', () => {
-    afterEach(async () => {
-      await usersRepository.deleteAll()
-    })
+    afterEach(async () => truncateUsers(prismaClient))
 
     test('should return 201 and new auth jwts pair with valid refresh token', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       })
 
       const { refreshToken } = authJwtsService.sign({ sub: 'test@test.com' })
@@ -394,15 +371,13 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/logout', () => {
-    afterEach(async () => {
-      await usersRepository.deleteAll()
-    })
+    afterEach(async () => await truncateUsers(prismaClient))
 
     test('should return 200 and revoke token successfully', async () => {
-      await usersRepository.save({
+      await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
-        gender: UserGender.Male,
+        gender: UserGender.male,
       })
 
       const { accessToken } = authJwtsService.sign({ sub: 'test@test.com' })
