@@ -2,17 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { CommentsService } from './comments.service'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
 import { getFakeComment, getFakeInt } from '@/test/utils'
-import {
-  CreateCommentOptions,
-  DeleteCommentOptions,
-  FindManyCommentsOptions,
-  FindUniqueCommentOptions,
-  UpdateCommentOptions,
-  ExistsCommentOptions,
-} from '@/comments/types'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { PrismaClient } from '@/prisma/types'
+import {
+  CreateOptions,
+  DeleteOptions,
+  ExistsOptions,
+  FindUniqueOptions,
+  PrismaClient,
+  UpdateOptions,
+  JsonValue,
+} from '@/prisma/types'
+import { CommentDelegate } from './types'
+import { CursorPaginateOptions } from '@/lib/prisma/extensions/cursor-pagination/types'
 
 describe('CommentsService', () => {
   let commentsService: CommentsService
@@ -37,7 +39,7 @@ describe('CommentsService', () => {
   describe('create', () => {
     test('should create root comment', async () => {
       const comment = getFakeComment({ parentCommentId: null })
-      const options: CreateCommentOptions = {
+      const options: CreateOptions<CommentDelegate> = {
         data: {
           authorId: comment.authorId,
           articleId: comment.articleId,
@@ -55,7 +57,7 @@ describe('CommentsService', () => {
 
     test('should create child comment', async () => {
       const comment = getFakeComment()
-      const options: CreateCommentOptions = {
+      const options: CreateOptions<CommentDelegate> = {
         data: {
           authorId: comment.authorId,
           articleId: comment.articleId,
@@ -76,7 +78,9 @@ describe('CommentsService', () => {
   describe('findUnique', () => {
     test('should find comment', async () => {
       const comment = getFakeComment()
-      const options: FindUniqueCommentOptions = { where: { id: comment.id } }
+      const options: FindUniqueOptions<CommentDelegate> = {
+        where: { id: comment.id },
+      }
 
       txHost.tx.comment.findUnique.mockResolvedValue(comment)
 
@@ -87,7 +91,9 @@ describe('CommentsService', () => {
     })
 
     test('should find null', async () => {
-      const options: FindUniqueCommentOptions = { where: { id: getFakeInt() } }
+      const options: FindUniqueOptions<CommentDelegate> = {
+        where: { id: getFakeInt() },
+      }
 
       txHost.tx.comment.findUnique.mockResolvedValue(null)
 
@@ -101,7 +107,7 @@ describe('CommentsService', () => {
   describe('findMany', () => {
     test('should find comments', async () => {
       const comments = Array.from({ length: 10 }).map(() => getFakeComment())
-      const options: FindManyCommentsOptions = {
+      const options: CursorPaginateOptions<CommentDelegate> = {
         where: { articleId: getFakeInt() },
       }
 
@@ -120,7 +126,7 @@ describe('CommentsService', () => {
     })
 
     test('should find empty', async () => {
-      const options: FindManyCommentsOptions = {
+      const options: CursorPaginateOptions<CommentDelegate> = {
         where: { articleId: getFakeInt() },
       }
 
@@ -142,7 +148,7 @@ describe('CommentsService', () => {
   describe('update', () => {
     test('should update comment', async () => {
       const comment = getFakeComment({ id: 1 })
-      const options: UpdateCommentOptions = {
+      const options: UpdateOptions<CommentDelegate> = {
         where: { id: comment.id },
         data: {
           content: {
@@ -159,7 +165,7 @@ describe('CommentsService', () => {
 
       txHost.tx.comment.update.mockResolvedValue({
         ...comment,
-        ...options.data,
+        content: options.data.content as JsonValue,
       })
 
       const result = await commentsService.update(options)
@@ -172,7 +178,9 @@ describe('CommentsService', () => {
   describe('delete', () => {
     test('should delete comment', async () => {
       const comment = getFakeComment()
-      const options: DeleteCommentOptions = { where: { id: comment.id } }
+      const options: DeleteOptions<CommentDelegate> = {
+        where: { id: comment.id },
+      }
 
       txHost.tx.comment.delete.mockResolvedValue(comment)
 
@@ -185,7 +193,9 @@ describe('CommentsService', () => {
 
   describe('exists', () => {
     test('should return true', async () => {
-      const options: ExistsCommentOptions = { where: { id: getFakeInt() } }
+      const options: ExistsOptions<CommentDelegate> = {
+        where: { id: getFakeInt() },
+      }
 
       txHost.tx.comment.exists.mockResolvedValue(true)
 
@@ -196,7 +206,9 @@ describe('CommentsService', () => {
     })
 
     test('should return false', async () => {
-      const options: ExistsCommentOptions = { where: { id: getFakeInt() } }
+      const options: ExistsOptions<CommentDelegate> = {
+        where: { id: getFakeInt() },
+      }
 
       txHost.tx.comment.exists.mockResolvedValue(false)
 
