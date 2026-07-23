@@ -1,18 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ArticlesService } from './articles.service'
-import {
-  CreateArticleOptions,
-  DeleteArticleOptions,
-  ExistsArticleOptions,
-  FindManyArticlesOptions,
-  FindUniqueArticleOptions,
-  UpdateArticleOptions,
-} from './types'
 import { getFakeArticle, getFakeInt } from '@/test/utils'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
-import { PrismaClient } from '@/prisma/types'
+import {
+  CreateOptions,
+  DeleteOptions,
+  ExistsOptions,
+  FindUniqueOptions,
+  PrismaClient,
+  UpdateOptions,
+} from '@/prisma/types'
 import { TransactionHost } from '@nestjs-cls/transactional'
+import { ArticleDelegate } from './types'
+import { CursorPaginateOptions } from '@/lib/prisma/extensions/cursor-pagination/types'
 
 describe('ArticlesService', () => {
   let articlesService: ArticlesService
@@ -37,7 +38,9 @@ describe('ArticlesService', () => {
   describe('create', () => {
     test('should create article', async () => {
       const { authorId, content } = getFakeArticle()
-      const options: CreateArticleOptions = { data: { authorId, content } }
+      const options: CreateOptions<ArticleDelegate> = {
+        data: { authorId, content },
+      }
       const article = getFakeArticle({ authorId, content })
 
       txHost.tx.article.create.mockResolvedValue(article)
@@ -51,7 +54,9 @@ describe('ArticlesService', () => {
 
   describe('findUnique', () => {
     test('should find article', async () => {
-      const options: FindUniqueArticleOptions = { where: { id: getFakeInt() } }
+      const options: FindUniqueOptions<ArticleDelegate> = {
+        where: { id: getFakeInt() },
+      }
       const article = getFakeArticle()
 
       txHost.tx.article.findUnique.mockResolvedValue(article)
@@ -63,7 +68,9 @@ describe('ArticlesService', () => {
     })
 
     test('should find null', async () => {
-      const options: FindUniqueArticleOptions = { where: { id: getFakeInt() } }
+      const options: FindUniqueOptions<ArticleDelegate> = {
+        where: { id: getFakeInt() },
+      }
 
       txHost.tx.article.findUnique.mockResolvedValue(null)
 
@@ -76,7 +83,7 @@ describe('ArticlesService', () => {
 
   describe('findMany', () => {
     test('should find articles', async () => {
-      const options: FindManyArticlesOptions = {
+      const options: CursorPaginateOptions<ArticleDelegate> = {
         where: { authorId: 1 },
       }
       const articles = Array.from({ length: 10 }).map(() => getFakeArticle())
@@ -99,7 +106,7 @@ describe('ArticlesService', () => {
     })
 
     test('should find empty', async () => {
-      const options: FindManyArticlesOptions = {
+      const options: CursorPaginateOptions<ArticleDelegate> = {
         where: { authorId: getFakeInt() },
       }
 
@@ -117,7 +124,7 @@ describe('ArticlesService', () => {
 
   describe('update', () => {
     test('should update article', async () => {
-      const options: UpdateArticleOptions = {
+      const options: UpdateOptions<ArticleDelegate> = {
         where: { id: getFakeInt() },
         data: { content: getFakeArticle() },
       }
@@ -134,7 +141,9 @@ describe('ArticlesService', () => {
 
   describe('delete', () => {
     test('should delete article', async () => {
-      const options: DeleteArticleOptions = { where: { id: getFakeInt() } }
+      const options: DeleteOptions<ArticleDelegate> = {
+        where: { id: getFakeInt() },
+      }
       const article = getFakeArticle()
 
       txHost.tx.article.delete.mockResolvedValue(article)
@@ -148,7 +157,7 @@ describe('ArticlesService', () => {
 
   describe('exists', () => {
     test('should return true', async () => {
-      const options: ExistsArticleOptions = { where: { id: 1 } }
+      const options: ExistsOptions<ArticleDelegate> = { where: { id: 1 } }
 
       txHost.tx.article.exists.mockResolvedValue(true)
 
@@ -159,7 +168,7 @@ describe('ArticlesService', () => {
     })
 
     test('should return false', async () => {
-      const options: ExistsArticleOptions = { where: { id: 1 } }
+      const options: ExistsOptions<ArticleDelegate> = { where: { id: 1 } }
 
       txHost.tx.article.exists.mockResolvedValue(false)
 
