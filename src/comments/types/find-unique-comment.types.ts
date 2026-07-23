@@ -3,5 +3,6 @@ import { CommentDelegate } from './comment-delegate.type'
 
 export type FindUniqueCommentOptions = FindUniqueOptions<CommentDelegate>
 
-export type FindUniqueCommentReturn<T extends FindUniqueCommentOptions> =
-  FindUniqueReturn<CommentDelegate, T>
+export type FindUniqueCommentReturn = Promise<
+  FindUniqueReturn<CommentDelegate, FindUniqueCommentOptions>
+>

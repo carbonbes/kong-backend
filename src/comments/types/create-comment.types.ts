@@ -3,7 +3,6 @@ import { CommentDelegate } from './comment-delegate.type'
 
 export type CreateCommentOptions = CreateOptions<CommentDelegate>
 
-export type CreateCommentReturn<T extends CreateCommentOptions> = CreateReturn<
-  CommentDelegate,
-  T
+export type CreateCommentReturn = Promise<
+  CreateReturn<CommentDelegate, CreateCommentOptions>
 >
