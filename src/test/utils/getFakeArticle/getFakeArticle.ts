@@ -25,6 +25,6 @@ export const getFakeArticle = ({
   rating: rating ?? faker.number.int(),
   content: content ?? getFakeArticleContent(),
   status: status ?? faker.helpers.enumValue(ArticleStatus),
-  createdAt: createdAt ?? faker.date.past().getTime(),
-  updatedAt: updatedAt ?? faker.date.recent().getTime(),
+  createdAt: createdAt ?? faker.date.past(),
+  updatedAt: updatedAt ?? faker.date.recent(),
 })
