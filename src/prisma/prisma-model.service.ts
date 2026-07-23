@@ -26,28 +26,28 @@ export abstract class PrismaModelService<T> {
   ) {}
 
   create(options: CreateOptions<T>): CreateReturn<T, CreateOptions<T>> {
-    return this.txHost.tx[this.modelName].create(options)
+    return (this.txHost.tx[this.modelName] as any).create(options)
   }
 
   findUnique(
     options: FindUniqueOptions<T>,
   ): FindUniqueReturn<T, FindUniqueOptions<T>> {
-    return this.txHost.tx[this.modelName].findUnique(options)
+    return (this.txHost.tx[this.modelName] as any).findUnique(options)
   }
 
   findMany(options: FindManyOptions<T>): FindManyReturn<T> {
-    return this.txHost.tx[this.modelName].cursorPaginate(options)
+    return (this.txHost.tx[this.modelName] as any).cursorPaginate(options)
   }
 
   update(options: UpdateOptions<T>): UpdateReturn<T, UpdateOptions<T>> {
-    return this.txHost.tx[this.modelName].update(options)
+    return (this.txHost.tx[this.modelName] as any).update(options)
   }
 
   delete(options: DeleteOptions<T>): DeleteReturn<T, DeleteOptions<T>> {
-    return this.txHost.tx[this.modelName].delete(options)
+    return (this.txHost.tx[this.modelName] as any).delete(options)
   }
 
   exists(options: ExistsOptions<T>): ExistsReturn {
-    return this.txHost.tx[this.modelName].exists(options)
+    return (this.txHost.tx[this.modelName] as any).exists(options)
   }
 }
