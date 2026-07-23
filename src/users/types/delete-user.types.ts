@@ -3,7 +3,6 @@ import { UserDelegate } from './user-delegate.type'
 
 export type DeleteUserOptions = DeleteOptions<UserDelegate>
 
-export type DeleteUserReturn<T extends DeleteUserOptions> = DeleteReturn<
-  UserDelegate,
-  T
+export type DeleteUserReturn = Promise<
+  DeleteReturn<UserDelegate, DeleteUserOptions>
 >

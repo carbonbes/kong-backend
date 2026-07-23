@@ -3,7 +3,6 @@ import { UserDelegate } from './user-delegate.type'
 
 export type CreateUserOptions = CreateOptions<UserDelegate>
 
-export type CreateUserReturn<T extends CreateUserOptions> = CreateReturn<
-  UserDelegate,
-  T
+export type CreateUserReturn = Promise<
+  CreateReturn<UserDelegate, CreateUserOptions>
 >
