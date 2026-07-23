@@ -2,14 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ArticlesController } from './articles.controller'
 import { ArticlesService } from './articles.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { getFakeArticle, getFakeComment, getFakeInt } from '@/test/utils'
+import { getFakeArticle, getFakeInt } from '@/test/utils'
 import {
   CreateArticleDto,
   FindManyArticlesQueryDto,
   UpdateArticleDto,
 } from './dtos'
 import { ArticleStatus } from '@/articles/enums'
-import { CreateArticleOptions } from '@/articles/types'
+import { CreateOptions } from '@/prisma/types'
+import { ArticleDelegate } from './types'
 
 describe('ArticlesController', () => {
   let articlesController: ArticlesController
@@ -36,7 +37,7 @@ describe('ArticlesController', () => {
       const body: CreateArticleDto = {
         content: article.content,
       }
-      const options: CreateArticleOptions = {
+      const options: CreateOptions<ArticleDelegate> = {
         data: { authorId, content: body.content },
       }
 
