@@ -1,5 +1,6 @@
 import { Comment } from '@/comments/types'
 import {
+  IsDate,
   IsInt,
   IsObject,
   IsOptional,
@@ -36,11 +37,9 @@ export class CommentDto implements Comment {
   @Type(() => CommentContentDto)
   content: JSONContent
 
-  @IsInt()
-  @Min(0)
-  createdAt: number
+  @IsDate()
+  createdAt: Date
 
-  @IsInt()
-  @Min(0)
-  updatedAt: number
+  @IsDate()
+  updatedAt: Date
 }

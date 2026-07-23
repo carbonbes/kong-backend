@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer'
 import {
+  IsDate,
   IsEnum,
   IsInt,
   IsObject,
@@ -37,9 +38,9 @@ export class ArticleDto implements Article {
   @Type(() => ArticleContentDto)
   content: JSONContent
 
-  @IsInt()
-  createdAt: number
+  @IsDate()
+  createdAt: Date
 
-  @IsInt()
-  updatedAt: number
+  @IsDate()
+  updatedAt: Date
 }
