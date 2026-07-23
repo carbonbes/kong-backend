@@ -1,17 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { UsersService } from './users.service'
-import {
-  CreateUserOptions,
-  FindUniqueUserOptions,
-  ExistsUserOptions,
-  UpdateUserOptions,
-  FindManyUsersOptions,
-} from './types'
 import { getFakeEmail, getFakeUser } from '@/test/utils'
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended'
-import { PrismaClient } from '@/prisma/types'
+import {
+  CreateOptions,
+  ExistsOptions,
+  FindUniqueOptions,
+  PrismaClient,
+  UpdateOptions,
+} from '@/prisma/types'
 import { TransactionHost } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
+import { UserDelegate } from './types'
+import { CursorPaginateOptions } from '@/lib/prisma/extensions/cursor-pagination/types'
 
 describe('UsersService', () => {
   let usersService: UsersService
@@ -33,7 +34,9 @@ describe('UsersService', () => {
   describe('create', () => {
     test('should create user', async () => {
       const { email, name, gender } = getFakeUser()
-      const options: CreateUserOptions = { data: { email, name, gender } }
+      const options: CreateOptions<UserDelegate> = {
+        data: { email, name, gender },
+      }
       const user = getFakeUser()
 
       txHost.tx.user.create.mockResolvedValue(user)
@@ -47,7 +50,7 @@ describe('UsersService', () => {
 
   describe('findUnique', () => {
     test('should find user', async () => {
-      const options: FindUniqueUserOptions = {
+      const options: FindUniqueOptions<UserDelegate> = {
         where: { email: getFakeEmail() },
       }
       const user = getFakeUser()
@@ -61,7 +64,7 @@ describe('UsersService', () => {
     })
 
     test('should find null', async () => {
-      const options: FindUniqueUserOptions = {
+      const options: FindUniqueOptions<UserDelegate> = {
         where: { email: getFakeEmail() },
       }
 
@@ -77,7 +80,7 @@ describe('UsersService', () => {
   describe('findMany', () => {
     test('should find comments', async () => {
       const users = Array.from({ length: 10 }).map(() => getFakeUser())
-      const options: FindManyUsersOptions = {
+      const options: CursorPaginateOptions<UserDelegate> = {
         where: { id: 1 },
       }
 
@@ -96,7 +99,7 @@ describe('UsersService', () => {
     })
 
     test('should find empty', async () => {
-      const options: FindManyUsersOptions = {
+      const options: CursorPaginateOptions<UserDelegate> = {
         where: { id: 1 },
       }
 
@@ -118,7 +121,10 @@ describe('UsersService', () => {
   describe('update', () => {
     test('should update user', async () => {
       const { email, name } = getFakeUser()
-      const options: UpdateUserOptions = { where: { email }, data: { name } }
+      const options: UpdateOptions<UserDelegate> = {
+        where: { email },
+        data: { name },
+      }
       const user = getFakeUser()
 
       txHost.tx.user.update.mockResolvedValue(user)
@@ -132,7 +138,9 @@ describe('UsersService', () => {
 
   describe('exists', () => {
     test('should return true', async () => {
-      const options: ExistsUserOptions = { where: { email: getFakeEmail() } }
+      const options: ExistsOptions<UserDelegate> = {
+        where: { email: getFakeEmail() },
+      }
 
       txHost.tx.user.exists.mockResolvedValue(true)
 
@@ -143,7 +151,9 @@ describe('UsersService', () => {
     })
 
     test('should return false', async () => {
-      const options: ExistsUserOptions = { where: { email: getFakeEmail() } }
+      const options: ExistsOptions<UserDelegate> = {
+        where: { email: getFakeEmail() },
+      }
 
       txHost.tx.user.exists.mockResolvedValue(false)
 
