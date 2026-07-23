@@ -1,5 +1,5 @@
 import { OtpType } from '@/otps/enums'
-import { User } from '@/users/entities'
+import { User } from '@/users/types'
 
 export type Otp = {
   code: string

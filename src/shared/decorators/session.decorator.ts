@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common'
 import { Request } from 'express'
-import { User } from '@/users/entities'
+import { User } from '@/users/types'
 
 export const Session = createParamDecorator(
   (field: keyof User | undefined, ctx: ExecutionContext) => {
