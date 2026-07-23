@@ -6,17 +6,7 @@ import {
   OPTIONS_TYPE,
 } from './prisma.module-definition'
 import { PRISMA_CLIENT } from '@/prisma/consts'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '@/prisma/client'
-import { cursorPagination, existsExtension } from '@/lib/prisma/extensions'
-
-export const createPrismaClient = (options: typeof OPTIONS_TYPE) => {
-  const { isGlobal, ...prismaPgOptions } = options
-
-  return new PrismaClient({ adapter: new PrismaPg(prismaPgOptions) })
-    .$extends(existsExtension())
-    .$extends(cursorPagination())
-}
+import { createPrismaClient } from '@/prisma/utils'
 
 @Module({})
 export class PrismaModule extends ConfigurableModuleClass {

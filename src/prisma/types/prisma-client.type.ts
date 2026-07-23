@@ -1,3 +1,3 @@
-import { createPrismaClient } from '@/prisma/prisma.module'
+import { createPrismaClient } from '@/prisma/utils'
 
 export type PrismaClient = ReturnType<typeof createPrismaClient>
