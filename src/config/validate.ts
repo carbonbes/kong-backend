@@ -21,16 +21,7 @@ class EnvVariables {
   MAIL_PASS: string
 
   @IsString()
-  ACCESS_JWT_SECRET: string
-
-  @IsString()
-  REFRESH_JWT_SECRET: string
-
-  @IsNumber()
-  ACCESS_JWT_EXPIRES_IN: number
-
-  @IsNumber()
-  REFRESH_JWT_EXPIRES_IN: number
+  SESSION_SECRET: string
 
   @IsString()
   OTP_SECRET: string
