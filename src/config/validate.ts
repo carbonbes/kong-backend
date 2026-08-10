@@ -2,6 +2,9 @@ import { IsNumber, IsString, validateSync } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
 
 class EnvVariables {
+  @IsNumber()
+  PORT: number
+
   @IsString()
   DATABASE_URL: string
 
