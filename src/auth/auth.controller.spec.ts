@@ -10,7 +10,7 @@ import {
   getFakeOtp,
   getFakeUser,
 } from '@/test/utils'
-import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
+import { ResendOtpDto, SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { RefreshJwtDto } from '@/refresh-jwt/dtos'
 
@@ -79,6 +79,32 @@ describe('AuthController', () => {
         ForbiddenException,
       )
       expect(authService.signIn).toHaveBeenCalledWith(body)
+    })
+  })
+
+  describe('resendOtp', () => {
+    let body: ResendOtpDto
+
+    beforeEach(() => {
+      body = { email: getFakeEmail(), type: getFakeOtp().type }
+    })
+
+    test('should be return 200', async () => {
+      authService.resendOtp.mockResolvedValue(undefined)
+
+      const result = await authController.resendOtp(body)
+
+      expect(authService.resendOtp).toHaveBeenCalledWith(body)
+      expect(result).toEqual(undefined)
+    })
+
+    test('should be return 403', async () => {
+      authService.resendOtp.mockRejectedValue(new ForbiddenException())
+
+      await expect(authController.resendOtp(body)).rejects.toThrow(
+        ForbiddenException,
+      )
+      expect(authService.resendOtp).toHaveBeenCalledWith(body)
     })
   })
 

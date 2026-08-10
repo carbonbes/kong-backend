@@ -10,7 +10,12 @@ import {
   getFakeUser,
 } from '@/test/utils'
 import { OtpType } from '@/otps/enums'
-import { SignInOptions, SignUpOptions, VerifyOtpOptions } from '@/auth/types'
+import {
+  ResendedOtpOptions,
+  SignInOptions,
+  SignUpOptions,
+  VerifyOtpOptions,
+} from '@/auth/types'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { User } from '@/users/types'
@@ -152,6 +157,44 @@ describe('AuthService', () => {
       expect(usersService.findUnique).toHaveBeenCalledWith({
         where: { email: user.email },
       })
+    })
+  })
+
+  describe('resendOtp', () => {
+    let options: ResendedOtpOptions
+
+    beforeEach(() => {
+      options = { email: getFakeEmail(), type: getFakeOtp().type }
+    })
+
+    test('should return a 403 if a user does not exist', async () => {
+      usersService.findUnique.mockResolvedValue(null)
+
+      await expect(authService.resendOtp(options)).rejects.toThrow(
+        new ForbiddenException(),
+      )
+      expect(usersService.findUnique).toHaveBeenCalledWith({
+        where: { email: options.email },
+      })
+    })
+
+    test('should return a void if a user is exist', async () => {
+      const user = getFakeUser({ email: options.email })
+      const otp = getFakeOtp({ type: OtpType.SIGN_IN, email: user.email })
+
+      usersService.findUnique.mockResolvedValue(user)
+      otpsService.create.mockResolvedValue(otp)
+
+      const result = await authService.resendOtp(options)
+
+      expect(usersService.findUnique).toHaveBeenCalledWith({
+        where: { email: user.email },
+      })
+      expect(otpsService.create).toHaveBeenCalledWith({
+        type: otp.type,
+        email: user.email,
+      })
+      expect(result).toEqual(undefined)
     })
   })
 

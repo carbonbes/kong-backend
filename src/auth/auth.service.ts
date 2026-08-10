@@ -7,6 +7,8 @@ import { UsersService } from '@/users/users.service'
 import type {
   LogoutOptions,
   LogoutReturn,
+  ResendedOtpOptions,
+  ResendedOtpReturn,
   SignInOptions,
   SignInReturn,
   SignUpOptions,
@@ -54,6 +56,18 @@ export class AuthService {
     }
 
     await this.otpsService.create({ type: OtpType.SIGN_IN, email })
+  }
+
+  async resendOtp(options: ResendedOtpOptions): ResendedOtpReturn {
+    const { email, type } = options
+
+    const user = await this.usersService.findUnique({ where: { email } })
+
+    if (!user) {
+      throw new ForbiddenException()
+    }
+
+    await this.otpsService.create({ email, type })
   }
 
   @Transactional()

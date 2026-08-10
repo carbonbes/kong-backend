@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
-import { SignInDto, SignUpDto, VerifyOtpDto } from './dtos'
+import { ResendOtpDto, SignInDto, SignUpDto, VerifyOtpDto } from './dtos'
 import { AuthService } from './auth.service'
 import { type Request } from 'express'
 import { type EncodedJwt } from '@/shared/types'
@@ -22,6 +22,12 @@ export class AuthController {
   @Post('signin')
   signIn(@Body() body: SignInDto) {
     return this.authService.signIn(body)
+  }
+
+  @Public()
+  @Post('resend-otp')
+  resendOtp(@Body() body: ResendOtpDto) {
+    return this.authService.resendOtp(body)
   }
 
   @Public()

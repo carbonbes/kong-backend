@@ -4,7 +4,7 @@ import request from 'supertest'
 import { AppModule } from '@/app.module'
 import { MailService } from '@/mail/mail.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
+import { ResendOtpDto, SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { OtpType } from '@/otps/enums'
 import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
 import { App } from 'supertest/types'
@@ -222,6 +222,68 @@ describe('AuthController (e2e)', () => {
       const body: SignInDto = { email: 'invalid' }
 
       await request(server).post('/auth/signin').send(body).expect(400)
+    })
+  })
+
+  describe('POST /auth/resend-otp', () => {
+    afterEach(async () => await truncateUsers(prismaClient))
+
+    test('should return 201 when user exists', async () => {
+      await createUser(prismaClient, {
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.male,
+        isActive: true,
+      })
+
+      const body: ResendOtpDto = {
+        email: 'test@test.com',
+        type: OtpType.SIGN_IN,
+      }
+
+      await request(server).post('/auth/resend-otp').send(body).expect(201)
+    })
+
+    test('should return 403 when user does not exists', async () => {
+      await createUser(prismaClient, {
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.male,
+        isActive: true,
+      })
+
+      const body: ResendOtpDto = {
+        email: 'test2@test.com',
+        type: OtpType.SIGN_IN,
+      }
+
+      await request(server).post('/auth/resend-otp').send(body).expect(403)
+    })
+
+    test('should return 400 when email is empty', async () => {
+      const body: ResendOtpDto = { email: '', type: OtpType.SIGN_IN }
+
+      await request(server).post('/auth/resend-otp').send(body).expect(400)
+    })
+
+    test('should return 400 when email is invalid', async () => {
+      const body: ResendOtpDto = { email: 'invalid', type: OtpType.SIGN_IN }
+
+      await request(server).post('/auth/resend-otp').send(body).expect(400)
+    })
+
+    test('should return 400 when otp type is empty', async () => {
+      // @ts-expect-error type field
+      const body: ResendOtpDto = { email: 'test@test.com', type: '' }
+
+      await request(server).post('/auth/resend-otp').send(body).expect(400)
+    })
+
+    test('should return 400 when otp type is invalid', async () => {
+      // @ts-expect-error type field
+      const body: ResendOtpDto = { email: 'test@test.com', type: 'invalid' }
+
+      await request(server).post('/auth/resend-otp').send(body).expect(400)
     })
   })
 

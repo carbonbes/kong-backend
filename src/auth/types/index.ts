@@ -1,4 +1,5 @@
 export * from './logout.types'
+export * from './resend-otp.types'
 export * from './signin.types'
 export * from './signup.types'
 export * from './update.types'
