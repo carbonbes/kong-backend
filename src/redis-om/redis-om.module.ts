@@ -8,8 +8,7 @@ import {
   MODULE_OPTIONS_TOKEN,
   OPTIONS_TYPE,
 } from './redis-om.module-definition'
-import { getRedisOmRepositoryToken } from './utils'
-import { createClient } from 'redis'
+import { createRedisClient, getRedisOmRepositoryToken } from './utils'
 
 @Module({})
 export class RedisOmModule extends ConfigurableModuleClass {
@@ -18,12 +17,7 @@ export class RedisOmModule extends ConfigurableModuleClass {
 
     const redisClientProvider: Provider = {
       provide: REDIS_CLIENT,
-      useFactory: async () => {
-        const redis = createClient(options)
-        await redis.connect()
-
-        return redis
-      },
+      useFactory: () => createRedisClient(options),
     }
 
     const providers = [...(base.providers ?? []), redisClientProvider]
@@ -37,12 +31,7 @@ export class RedisOmModule extends ConfigurableModuleClass {
 
     const redisClientProvider: Provider = {
       provide: REDIS_CLIENT,
-      useFactory: async (options: typeof OPTIONS_TYPE) => {
-        const redis = createClient(options)
-        await redis.connect()
-
-        return redis
-      },
+      useFactory: (options: typeof OPTIONS_TYPE) => createRedisClient(options),
       inject: [MODULE_OPTIONS_TOKEN],
     }
 
