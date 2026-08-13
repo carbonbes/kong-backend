@@ -115,15 +115,19 @@ describe('AuthController', () => {
       body = getFakeOtp()
     })
 
-    test('should be return JWT pair', async () => {
-      const authJwts = getFakeAuthJwts()
+    test('should be return jwts and user', async () => {
+      const user = getFakeUser()
+      const jwts = getFakeAuthJwts({
+        accessJwtOptions: { payload: { sub: user.email } },
+        refreshJwtOptions: { payload: { sub: user.email } },
+      })
 
-      authService.verifyOtp.mockResolvedValue(authJwts)
+      authService.verifyOtp.mockResolvedValue({ ...jwts, user })
 
       const result = await authController.verifyOtp(body)
 
-      expect(result).toEqual(authJwts)
       expect(authService.verifyOtp).toHaveBeenCalledWith(body)
+      expect(result).toEqual({ ...jwts, user })
     })
 
     test('should be return 403', async () => {

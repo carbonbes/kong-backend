@@ -87,7 +87,10 @@ export class AuthService {
       })
     }
 
-    return this.authJwtsService.sign({ sub: email })
+    const jwts = this.authJwtsService.sign({ sub: email })
+    const user = (await this.usersService.findUnique({ where: { email } }))!
+
+    return { ...jwts, user }
   }
 
   update(options: UpdateOptions): UpdateReturn {

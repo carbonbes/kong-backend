@@ -199,61 +199,69 @@ describe('AuthService', () => {
   })
 
   describe('verifyOtp', () => {
-    let email: User['email']
+    let user: User
 
     beforeEach(() => {
-      email = getFakeUser().email
+      user = getFakeUser()
     })
 
-    test('should return auth-jwts if such an OTP exists and type is SIGN_UP', async () => {
+    test('should return auth-jwts and user if such an OTP exists and type is SIGN_UP', async () => {
       const options: VerifyOtpOptions = getFakeOtp({
         type: OtpType.SIGN_UP,
-        email,
+        email: user.email,
       })
-      const authJwts = getFakeAuthJwts({
-        accessJwtOptions: { payload: { sub: email } },
-        refreshJwtOptions: { payload: { sub: email } },
+      const jwts = getFakeAuthJwts({
+        accessJwtOptions: { payload: { sub: user.email } },
+        refreshJwtOptions: { payload: { sub: user.email } },
       })
 
       otpsService.verify.mockResolvedValue(true)
-      authJwtsService.sign.mockResolvedValue(authJwts)
+      usersService.update.mockResolvedValue(user)
+      authJwtsService.sign.mockReturnValue(jwts)
+      usersService.findUnique.mockResolvedValue(user)
 
       const result = await authService.verifyOtp(options)
 
       expect(otpsService.verify).toHaveBeenCalledWith(options)
       expect(usersService.update).toHaveBeenCalledWith({
-        where: { email },
+        where: { email: user.email },
         data: { isActive: true },
       })
-      expect(authJwtsService.sign).toHaveBeenCalledWith({ sub: email })
-      expect(result).toEqual(authJwts)
+      expect(authJwtsService.sign).toHaveBeenCalledWith({ sub: user.email })
+      expect(usersService.findUnique).toHaveBeenCalledWith({
+        where: { email: user.email },
+      })
+      expect(result).toEqual({ ...jwts, user })
     })
 
-    test('should return auth-jwts if such an OTP exists and type is SIGN_IN', async () => {
+    test('should return auth-jwts and user if such an OTP exists and type is SIGN_IN', async () => {
       const options: VerifyOtpOptions = getFakeOtp({
         type: OtpType.SIGN_IN,
-        email,
+        email: user.email,
       })
-
-      const authJwts = getFakeAuthJwts({
-        accessJwtOptions: { payload: { sub: email } },
-        refreshJwtOptions: { payload: { sub: email } },
+      const jwts = getFakeAuthJwts({
+        accessJwtOptions: { payload: { sub: user.email } },
+        refreshJwtOptions: { payload: { sub: user.email } },
       })
 
       otpsService.verify.mockResolvedValue(true)
-      authJwtsService.sign.mockResolvedValue(authJwts)
+      authJwtsService.sign.mockReturnValue(jwts)
+      usersService.findUnique.mockResolvedValue(user)
 
       const result = await authService.verifyOtp(options)
 
       expect(otpsService.verify).toHaveBeenCalledWith(options)
-      expect(authJwtsService.sign).toHaveBeenCalledWith({ sub: email })
-      expect(result).toEqual(authJwts)
+      expect(authJwtsService.sign).toHaveBeenCalledWith({ sub: user.email })
+      expect(usersService.findUnique).toHaveBeenCalledWith({
+        where: { email: user.email },
+      })
+      expect(result).toEqual({ ...jwts, user })
     })
 
     test('should return a 404 if a OTP not found', async () => {
       const options: VerifyOtpOptions = getFakeOtp({
         type: OtpType.SIGN_UP,
-        email,
+        email: user.email,
       })
 
       otpsService.verify.mockResolvedValue(false)
