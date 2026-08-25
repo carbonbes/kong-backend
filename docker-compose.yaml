@@ -13,7 +13,7 @@ services:
   redis-om:
     image: redis/redis-stack:7.2.0-v20
     restart: always
-    container_name: kong-redis
+    container_name: kong-redis-om
     ports:
       - "6379:6379"
       - "8001:8001"
