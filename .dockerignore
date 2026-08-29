@@ -1,0 +1,15 @@
+.idea
+coverage
+dist
+e2e
+node_modules
+.git
+.gitignore
+.prettierrc
+eslint.config.mjs
+vitest.config.e2e.ts
+vitest.config.ts
+.env
+.env.*
+*.log
+*.md
