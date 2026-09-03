@@ -60,7 +60,7 @@ describe('AuthController (e2e)', () => {
     server = app.getHttpServer()
     await app.init()
 
-    execSync('yarn prisma db push')
+    execSync('pnpm exec prisma db push')
   }, 60000)
 
   afterAll(async () => {

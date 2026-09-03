@@ -1,27 +1,24 @@
-FROM node:24.0.0-alpine AS base
+FROM ghcr.io/pnpm/pnpm:11 AS base
+
+RUN pnpm runtime set node 24 -g
+
+COPY . /app
+
 WORKDIR /app
 
-RUN corepack enable
+FROM base AS prod-deps
 
-FROM base AS deps
-
-COPY package.json yarn.lock .yarnrc.yml ./
-
-RUN yarn --immutable
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
 
 FROM base AS build
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm run build
 
-RUN yarn build
-RUN yarn workspaces focus --production
+FROM base
 
-FROM base AS runtime
-
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/package.json ./
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=build /app/dist /app/dist
 
 USER node
 

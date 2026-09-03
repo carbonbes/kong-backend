@@ -62,7 +62,7 @@ describe('Articles (e2e)', () => {
 
     accessToken = authJwtsService.sign({ sub: 'test@test.com' }).accessToken
 
-    execSync('yarn prisma db push')
+    execSync('pnpm exec prisma db push')
 
     await prismaClient.user.createMany({
       data: [
