@@ -19,11 +19,7 @@ import {
 } from '../marks'
 
 type TextMarkNodes =
-  | BoldMarkDto
-  | ItalicMarkDto
-  | LinkMarkDto
-  | BlurMarkDto
-  | StrikeMarkDto
+  BoldMarkDto | ItalicMarkDto | LinkMarkDto | BlurMarkDto | StrikeMarkDto
 
 class MarkDto {
   @IsIn(MARK_NODES)
