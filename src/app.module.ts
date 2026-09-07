@@ -24,6 +24,7 @@ import { ClsPluginTransactional } from '@nestjs-cls/transactional'
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma'
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { SubsitesModule } from '@/subsites/subsites.module'
+import { HealthModule } from '@/health/health.module'
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { SubsitesModule } from '@/subsites/subsites.module'
     ArticlesModule,
     CommentsModule,
     SubsitesModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AccessJwtAuthGuard },
