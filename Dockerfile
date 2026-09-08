@@ -14,7 +14,6 @@ FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN yarn prisma generate
 RUN yarn build
 RUN yarn workspaces focus --production
 
