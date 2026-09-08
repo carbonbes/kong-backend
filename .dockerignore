@@ -1,12 +1,11 @@
 .idea
-coverage
+.yarn
 dist
-e2e
 node_modules
-.git
+test
+.eslintrc.js
 .gitignore
 .prettierrc
-eslint.config.mjs
 vitest.config.e2e.ts
 vitest.config.ts
 .env
