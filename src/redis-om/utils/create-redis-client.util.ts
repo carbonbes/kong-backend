@@ -7,7 +7,7 @@ export const createRedisClient = async (
   const { isGlobal, ...redisOptions } = options
 
   const redis = createClient(redisOptions)
-  await redis.on('error', () => {}).connect()
+  await redis.connect()
 
   return redis
 }
