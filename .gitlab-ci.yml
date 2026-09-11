@@ -1,0 +1,43 @@
+default:
+  image: node:24.21.0-alpine
+  before_script:
+    - corepack enable
+
+stages:
+  - install deps
+  - generate prisma client
+  - tests
+
+installing-deps:
+  stage: install deps
+  script:
+    - yarn --immutable
+  artifacts:
+    paths:
+      - node_modules/
+
+generating-prisma-client:
+  stage: generate prisma client
+  script:
+    - yarn prisma generate
+  dependencies:
+    - installing-deps-job
+  artifacts:
+    paths:
+      - generated/
+
+unit-tests:
+  stage: tests
+  script:
+    - yarn run test
+  dependencies:
+    - installing-deps-job
+    - generating-prisma-client-job
+
+e2e-tests:
+  stage: tests
+  script:
+    - yarn run test:e2e
+  dependencies:
+    - installing-deps-job
+    - generating-prisma-client-job
