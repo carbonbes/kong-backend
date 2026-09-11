@@ -8,11 +8,6 @@ import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { EncodedJwt } from '@/shared/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { MailService } from '@/mail/mail.service'
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql'
-import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { PrismaClient } from '@/prisma/types'
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { UserGender } from '@/users/enums'
@@ -23,8 +18,6 @@ import { getFakeHeadingNode, getFakeTextNode } from '@/test/utils'
 import { CursorPaginateMeta } from '@/lib/prisma/extensions/cursor-pagination/types'
 
 describe('Articles (e2e)', () => {
-  let postgresContainer: StartedPostgreSqlContainer
-  let redisContainer: StartedRedisContainer
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
@@ -33,16 +26,6 @@ describe('Articles (e2e)', () => {
   let accessToken: EncodedJwt
 
   beforeAll(async () => {
-    postgresContainer = await new PostgreSqlContainer(
-      'postgres:18-alpine',
-    ).start()
-    redisContainer = await new RedisContainer(
-      'redis/redis-stack:7.2.0-v20',
-    ).start()
-
-    process.env.DATABASE_URL = postgresContainer.getConnectionUri()
-    process.env.REDIS_URL = redisContainer.getConnectionUrl()
-
     mailService = mock<MailService>()
 
     const module: TestingModule = await Test.createTestingModule({
@@ -93,8 +76,6 @@ describe('Articles (e2e)', () => {
 
   afterAll(async () => {
     await app.close()
-    await postgresContainer.stop()
-    await redisContainer.stop()
   })
 
   describe('POST /articles', () => {

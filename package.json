@@ -57,8 +57,6 @@
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@swc/core": "^1.11.31",
-    "@testcontainers/postgresql": "^11.13.0",
-    "@testcontainers/redis": "^11.13.0",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
     "@types/node": "^20.3.1",

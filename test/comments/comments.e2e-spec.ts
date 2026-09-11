@@ -1,8 +1,3 @@
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql'
-import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { INestApplication, ValidationPipe } from '@nestjs/common'
 import { App } from 'supertest/types'
 import { mock, MockProxy } from 'vitest-mock-extended'
@@ -28,8 +23,6 @@ import { createComment, createComments, truncateComments } from './utils'
 import { CursorPaginateMeta } from '@/lib/prisma/extensions/cursor-pagination/types'
 
 describe('Comments (e2e)', () => {
-  let postgresContainer: StartedPostgreSqlContainer
-  let redisContainer: StartedRedisContainer
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
@@ -38,16 +31,6 @@ describe('Comments (e2e)', () => {
   let accessToken: EncodedJwt
 
   beforeAll(async () => {
-    postgresContainer = await new PostgreSqlContainer(
-      'postgres:18-alpine',
-    ).start()
-    redisContainer = await new RedisContainer(
-      'redis/redis-stack:7.2.0-v20',
-    ).start()
-
-    process.env.DATABASE_URL = postgresContainer.getConnectionUri()
-    process.env.REDIS_URL = redisContainer.getConnectionUrl()
-
     mailService = mock<MailService>()
 
     const module: TestingModule = await Test.createTestingModule({
@@ -106,8 +89,6 @@ describe('Comments (e2e)', () => {
 
   afterAll(async () => {
     await app.close()
-    await postgresContainer.stop()
-    await redisContainer.stop()
   })
 
   describe('POST /comments', () => {

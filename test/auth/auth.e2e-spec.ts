@@ -11,19 +11,12 @@ import { App } from 'supertest/types'
 import { OtpsService } from '@/otps/otps.service'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
 import { UserGender } from '@/users/enums'
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql'
-import { RedisContainer, StartedRedisContainer } from '@testcontainers/redis'
 import { PrismaClient } from '@/prisma/types'
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { execSync } from 'node:child_process'
 import { createUser, truncateUsers } from './utils'
 
 describe('AuthController (e2e)', () => {
-  let postgresContainer: StartedPostgreSqlContainer
-  let redisContainer: StartedRedisContainer
   let app: INestApplication<App>
   let server: App
   let mailService: MockProxy<MailService>
@@ -32,16 +25,6 @@ describe('AuthController (e2e)', () => {
   let authJwtsService: AuthJwtsService
 
   beforeAll(async () => {
-    postgresContainer = await new PostgreSqlContainer(
-      'postgres:18-alpine',
-    ).start()
-    redisContainer = await new RedisContainer(
-      'redis/redis-stack:7.2.0-v20',
-    ).start()
-
-    process.env.DATABASE_URL = postgresContainer.getConnectionUri()
-    process.env.REDIS_URL = redisContainer.getConnectionUrl()
-
     mailService = mock<MailService>()
 
     const module: TestingModule = await Test.createTestingModule({
@@ -65,8 +48,6 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => {
     await app.close()
-    await postgresContainer.stop()
-    await redisContainer.stop()
   })
 
   describe('POST /auth/signup', () => {
