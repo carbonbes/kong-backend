@@ -179,8 +179,12 @@ describe('AuthService', () => {
     })
 
     test('should return a void if a user is exist', async () => {
-      const user = getFakeUser({ email: options.email })
-      const otp = getFakeOtp({ type: OtpType.SIGN_IN, email: user.email })
+      const user = getFakeUser()
+      const otp = getFakeOtp({ email: user.email })
+      const options: ResendedOtpOptions = {
+        email: user.email,
+        type: otp.type,
+      }
 
       usersService.findUnique.mockResolvedValue(user)
       otpsService.create.mockResolvedValue(otp)
@@ -188,12 +192,9 @@ describe('AuthService', () => {
       const result = await authService.resendOtp(options)
 
       expect(usersService.findUnique).toHaveBeenCalledWith({
-        where: { email: user.email },
+        where: { email: options.email },
       })
-      expect(otpsService.create).toHaveBeenCalledWith({
-        type: otp.type,
-        email: user.email,
-      })
+      expect(otpsService.create).toHaveBeenCalledWith(options)
       expect(result).toEqual(undefined)
     })
   })

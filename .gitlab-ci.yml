@@ -4,40 +4,78 @@ default:
     - corepack enable
 
 stages:
-  - install deps
-  - generate prisma client
+  - deps
+  - prisma
   - tests
+  - build
 
-installing-deps:
-  stage: install deps
+install deps:
+  stage: deps
   script:
     - yarn --immutable
   artifacts:
     paths:
       - node_modules/
 
-generating-prisma-client:
-  stage: generate prisma client
+generate prisma client:
+  stage: prisma
   script:
     - yarn prisma generate
   dependencies:
-    - installing-deps-job
+    - install deps
   artifacts:
     paths:
       - generated/
 
-unit-tests:
+run unit-tests:
   stage: tests
   script:
     - yarn run test
   dependencies:
-    - installing-deps-job
-    - generating-prisma-client-job
+    - install deps
+    - generate prisma client
 
-e2e-tests:
+run e2e-tests:
   stage: tests
+  services:
+    - name: docker:29.8.0-dind-alpine3.24
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    PORT: 3000
+    DATABASE_URL: ""
+    REDIS_URL: ""
+    MAIL_HOST: localhost
+    MAIL_PORT: 1025
+    MAIL_USER: test
+    MAIL_PASS: test
+    ACCESS_JWT_SECRET: test
+    REFRESH_JWT_SECRET: test1
+    ACCESS_JWT_EXPIRES_IN: 300
+    REFRESH_JWT_EXPIRES_IN: 2592000
+    OTP_SECRET: test
+    OTP_ALPHABET: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+    OTP_SIZE: 6
+    OTP_EXPIRES_IN: 300
   script:
     - yarn run test:e2e
   dependencies:
-    - installing-deps-job
-    - generating-prisma-client-job
+    - install deps
+    - generate prisma client
+
+build and push image:
+  stage: build
+  image: docker:29.8.0-cli-alpine3.24
+  services:
+    - name: docker:29.8.0-dind-alpine3.24
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest

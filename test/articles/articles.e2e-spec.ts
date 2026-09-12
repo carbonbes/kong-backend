@@ -37,7 +37,7 @@ describe('Articles (e2e)', () => {
       'postgres:18-alpine',
     ).start()
     redisContainer = await new RedisContainer(
-      'redis/redis-stack:7.2.0-v20',
+      'redis/redis-stack-server:7.2.0-v20',
     ).start()
 
     process.env.DATABASE_URL = postgresContainer.getConnectionUri()
@@ -89,7 +89,7 @@ describe('Articles (e2e)', () => {
         },
       ],
     })
-  }, 60000)
+  }, 60000 * 5)
 
   afterAll(async () => {
     await app.close()

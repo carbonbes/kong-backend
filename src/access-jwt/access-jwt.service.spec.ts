@@ -96,14 +96,20 @@ describe('AccessJwtService', () => {
     })
 
     test('should be throw TokenExpiredError when token is expired', async () => {
+      vi.useFakeTimers()
+
+      const currentDate = new Date()
+
       jwtService.verify.mockRejectedValue(
-        new TokenExpiredError('Token expired', new Date()),
+        new TokenExpiredError('Token expired', currentDate),
       )
 
       await expect(accessJwtService.verify(encodedJwt)).rejects.toThrow(
-        new TokenExpiredError('Token expired', new Date()),
+        new TokenExpiredError('Token expired', currentDate),
       )
       expect(jwtService.verify).toHaveBeenCalledWith(encodedJwt)
+
+      vi.useRealTimers()
     })
   })
 })
