@@ -19,9 +19,12 @@ install deps:
   stage: deps
   script:
     - yarn --immutable
-  artifacts:
-    paths:
-      - node_modules/
+  cache:
+    key:
+      files:
+        - yarn.lock
+      paths:
+        - node_modules/
 
 generate prisma client:
   stage: prisma
@@ -38,7 +41,6 @@ run unit-tests:
   script:
     - yarn run test
   dependencies:
-    - install deps
     - generate prisma client
 
 run e2e-tests:
@@ -67,7 +69,6 @@ run e2e-tests:
   script:
     - yarn run test:e2e
   dependencies:
-    - install deps
     - generate prisma client
 
 build and push image:
