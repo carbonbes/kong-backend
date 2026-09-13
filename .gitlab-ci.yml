@@ -23,8 +23,8 @@ install deps:
     key:
       files:
         - yarn.lock
-      paths:
-        - node_modules/
+    paths:
+      - node_modules/
 
 generate prisma client:
   stage: prisma
