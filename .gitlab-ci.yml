@@ -6,6 +6,9 @@ workflow:
 
 default:
   image: node:24.21.0-alpine
+  services:
+    - name: docker:29.8.0-dind-alpine3.24
+      alias: docker
   before_script:
     - corepack enable
   cache:
@@ -23,11 +26,13 @@ stages:
 
 install_deps:
   stage: deps
+  services: [ ]
   script:
     - yarn --immutable
 
 generate_prisma_client:
   stage: prisma
+  services: [ ]
   script:
     - yarn prisma generate
   artifacts:
@@ -36,6 +41,7 @@ generate_prisma_client:
 
 run_unit_tests:
   stage: tests
+  services: [ ]
   script:
     - yarn run test
   dependencies:
@@ -43,9 +49,6 @@ run_unit_tests:
 
 run_e2e_tests:
   stage: tests
-  services:
-    - name: docker:29.8.0-dind-alpine3.24
-      alias: docker
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
@@ -72,9 +75,6 @@ run_e2e_tests:
 build_and_push_image:
   stage: build
   image: docker:29.8.0-cli-alpine3.24
-  services:
-    - name: docker:29.8.0-dind-alpine3.24
-      alias: docker
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
