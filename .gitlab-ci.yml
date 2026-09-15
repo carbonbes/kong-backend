@@ -20,6 +20,7 @@ stages:
   - prisma
   - tests
   - build
+  - deploy
 
 install_deps:
   stage: deps
@@ -86,3 +87,9 @@ build_and_push_image:
   script:
     - docker build --provenance=false -t $CI_REGISTRY_IMAGE:latest .
     - docker push $CI_REGISTRY_IMAGE:latest
+
+deploy:
+  stage: deploy
+  image: curlimages/curl:8.12.0
+  script:
+    - curl -X POST "$COOLIFY_WEBHOOK_URL"
