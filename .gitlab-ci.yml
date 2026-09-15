@@ -94,4 +94,4 @@ deploy:
   before_script: [ ]
   cache: [ ]
   script:
-    - curl -X POST "$COOLIFY_WEBHOOK_URL"
+    - 'curl -X POST "$COOLIFY_WEBHOOK_URL" -H "Authorization: Bearer $COOLIFY_WEBHOOK_SECRET"'
