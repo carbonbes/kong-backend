@@ -82,6 +82,7 @@ build_and_push_image:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   cache: [ ]
+  before_script: [ ]
   script:
     - docker build -t $CONTAINER_REGISTRY_URL/kong-backend:latest .
     - docker push $CONTAINER_REGISTRY_URL/kong-backend:latest
