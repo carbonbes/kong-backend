@@ -77,16 +77,14 @@ build_and_push_image:
     - name: docker:29.8.0-dind-alpine3.24
       alias: docker
       command:
-        - "--insecure-registry=192.168.0.101:5050"
+        - "--insecure-registry=192.168.0.101:5000"
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   cache: [ ]
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - docker build --provenance=false -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:latest
+    - docker build -t $CONTAINER_REGISTRY_URL/kong-backend:latest .
+    - docker push $CONTAINER_REGISTRY_URL/kong-backend:latest
 
 deploy:
   stage: deploy
