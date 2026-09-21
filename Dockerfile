@@ -1,4 +1,4 @@
-FROM node:24.0.0-alpine AS base
+FROM node:24.21.0-alpine AS base
 
 WORKDIR /app
 
@@ -24,9 +24,10 @@ FROM base AS runtime
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./
+COPY entrypoint.sh /entrypoint.sh
 
 EXPOSE 3000
 
-USER node
+ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["node", "dist/src/main"]
