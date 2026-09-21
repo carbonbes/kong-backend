@@ -1,4 +1,4 @@
 #!/bin/sh
-yarn prisma migrate deploy
+npx prisma migrate deploy
 
 exec "$@"
