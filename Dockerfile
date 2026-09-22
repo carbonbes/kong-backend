@@ -24,12 +24,7 @@ FROM base AS runtime
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./
-COPY entrypoint.sh /entrypoint.sh
 
 EXPOSE 3000
-
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["node", "dist/src/main"]
