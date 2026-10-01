@@ -98,18 +98,6 @@ describe('HeadingNodeDto', () => {
     )
   })
 
-  test('should throw a BadRequestException if content field is empty', async () => {
-    const body: HeadingNodeDto = {
-      type: 'heading',
-      attrs: { level: 1 },
-      content: [],
-    }
-
-    await expect(target.transform(body, metadata)).rejects.toThrow(
-      BadRequestException,
-    )
-  })
-
   test('should throw a BadRequestException if content contains not allowed node', async () => {
     const body: HeadingNodeDto = {
       type: 'heading',
