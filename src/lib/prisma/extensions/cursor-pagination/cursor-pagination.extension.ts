@@ -24,13 +24,17 @@ export async function cursorPaginate<T>(
   const take = isBefore ? -(limit + 1) : limit + 1
   const orderBy = buildOrderBy<T>(paginationKeys, order)
 
-  const result = (await context.findMany({
-    cursor,
-    orderBy,
-    skip,
-    take,
-    ...etc,
-  })) as Prisma.Payload<T>['scalars'][]
+  const [result, total] = await Promise.all([
+    (await context.findMany({
+      cursor,
+      orderBy,
+      skip,
+      take,
+      ...etc,
+    })) as Prisma.Payload<T>['scalars'][],
+
+    context.count() as number,
+  ])
 
   const hasMore = result.length > limit
 
@@ -46,7 +50,7 @@ export async function cursorPaginate<T>(
   const lastItem = items[items.length - 1]
 
   if (items.length === 0) {
-    return { items, meta: { after: null, before: null } }
+    return { items, meta: { after: null, before: null, total } }
   }
 
   return {
@@ -58,6 +62,7 @@ export async function cursorPaginate<T>(
         (!isBefore && after) || (isBefore && hasMore)
           ? buildCursor<T>(firstItem, paginationKeys)
           : null,
+      total,
     },
   }
 }

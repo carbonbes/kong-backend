@@ -96,7 +96,7 @@ describe('ArticlesController', () => {
 
         articlesService.findMany.mockResolvedValue({
           items: articles,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
 
         const result = await articlesController.findMany(query)
@@ -111,7 +111,7 @@ describe('ArticlesController', () => {
         })
         expect(result).toEqual({
           items: articles,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
       })
 
@@ -132,7 +132,7 @@ describe('ArticlesController', () => {
 
         articlesService.findMany.mockResolvedValue({
           items: [],
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
 
         const result = await articlesController.findMany(query)
@@ -147,7 +147,7 @@ describe('ArticlesController', () => {
         })
         expect(result).toEqual({
           items: [],
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
       })
     })
@@ -171,7 +171,7 @@ describe('ArticlesController', () => {
 
         articlesService.findMany.mockResolvedValue({
           items: articles,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
 
         const result = await articlesController.findMany(query)
@@ -186,7 +186,7 @@ describe('ArticlesController', () => {
         })
         expect(result).toEqual({
           items: articles,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
       })
 
@@ -207,7 +207,7 @@ describe('ArticlesController', () => {
 
         articlesService.findMany.mockResolvedValue({
           items: [],
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 0 },
         })
 
         const result = await articlesController.findMany(query)
@@ -222,7 +222,7 @@ describe('ArticlesController', () => {
         })
         expect(result).toEqual({
           items: [],
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 0 },
         })
       })
     })

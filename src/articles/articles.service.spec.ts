@@ -90,7 +90,7 @@ describe('ArticlesService', () => {
 
       txHost.tx.article.cursorPaginate.mockResolvedValue({
         items: articles,
-        meta: { after: null, before: null },
+        meta: { after: null, before: null, total: 10 },
       })
 
       const result = await articlesService.findMany(options)
@@ -101,6 +101,7 @@ describe('ArticlesService', () => {
         meta: {
           after: null,
           before: null,
+          total: 10,
         },
       })
     })
@@ -112,13 +113,16 @@ describe('ArticlesService', () => {
 
       txHost.tx.article.cursorPaginate.mockResolvedValue({
         items: [],
-        meta: { after: null, before: null },
+        meta: { after: null, before: null, total: 0 },
       })
 
       const result = await articlesService.findMany(options)
 
       expect(txHost.tx.article.cursorPaginate).toHaveBeenCalledWith(options)
-      expect(result).toEqual({ items: [], meta: { after: null, before: null } })
+      expect(result).toEqual({
+        items: [],
+        meta: { after: null, before: null, total: 0 },
+      })
     })
   })
 

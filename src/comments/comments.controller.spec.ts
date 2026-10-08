@@ -89,7 +89,7 @@ describe('CommentsController', () => {
 
         commentsService.findMany.mockResolvedValue({
           items: comments,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
 
         const result = await commentsController.findMany(query)
@@ -104,7 +104,7 @@ describe('CommentsController', () => {
         })
         expect(result).toEqual({
           items: comments,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
       })
 
@@ -126,7 +126,7 @@ describe('CommentsController', () => {
 
         commentsService.findMany.mockResolvedValue({
           items: comments,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
 
         const result = await commentsController.findMany(query)
@@ -141,7 +141,7 @@ describe('CommentsController', () => {
         })
         expect(result).toEqual({
           items: comments,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
       })
     })
@@ -153,7 +153,7 @@ describe('CommentsController', () => {
 
         commentsService.findMany.mockResolvedValue({
           items: comments,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
 
         const result = await commentsController.findMany(query)
@@ -165,7 +165,7 @@ describe('CommentsController', () => {
         })
         expect(result).toEqual({
           items: comments,
-          meta: { after: null, before: null },
+          meta: { after: null, before: null, total: 10 },
         })
       })
     })

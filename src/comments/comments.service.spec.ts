@@ -113,7 +113,7 @@ describe('CommentsService', () => {
 
       txHost.tx.comment.cursorPaginate.mockResolvedValue({
         items: comments,
-        meta: { after: null, before: null },
+        meta: { after: null, before: null, total: 10 },
       })
 
       const result = await commentsService.findMany(options)
@@ -121,7 +121,7 @@ describe('CommentsService', () => {
       expect(txHost.tx.comment.cursorPaginate).toHaveBeenCalledWith(options)
       expect(result).toEqual({
         items: comments,
-        meta: { after: null, before: null },
+        meta: { after: null, before: null, total: 10 },
       })
     })
 
@@ -132,7 +132,7 @@ describe('CommentsService', () => {
 
       txHost.tx.comment.cursorPaginate.mockResolvedValue({
         items: [],
-        meta: { after: null, before: null },
+        meta: { after: null, before: null, total: 0 },
       })
 
       const result = await commentsService.findMany(options)
@@ -140,7 +140,7 @@ describe('CommentsService', () => {
       expect(txHost.tx.comment.cursorPaginate).toHaveBeenCalledWith(options)
       expect(result).toEqual({
         items: [],
-        meta: { after: null, before: null },
+        meta: { after: null, before: null, total: 0 },
       })
     })
   })

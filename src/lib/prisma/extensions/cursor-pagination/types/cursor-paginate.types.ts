@@ -14,6 +14,7 @@ export type CursorPaginateOptions<T> = Omit<
 export type CursorPaginateMeta = {
   after: string | null
   before: string | null
+  total: number
 }
 
 export type CursorPaginateReturn<T> = Promise<{
