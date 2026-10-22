@@ -1,12 +1,19 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common'
 import { ResendOtpDto, SignInDto, SignUpDto, VerifyOtpDto } from './dtos'
 import { AuthService } from './auth.service'
-import { type Request } from 'express'
+import type { Request, Response } from 'express'
 import { type EncodedJwt } from '@/shared/types'
-import { Public } from '@/shared/decorators'
+import { Public, RefreshTokenCookie } from '@/shared/decorators'
 import { RefreshJwtAuthGuard } from '@/shared/guards'
-import { AuthHeader } from '@/shared/decorators'
-import { RefreshJwtDto } from '@/refresh-jwt/dtos'
+import { clearJwtCookie, setJwtCookie } from '@/auth/utils'
 
 @Controller('auth')
 export class AuthController {
@@ -32,8 +39,17 @@ export class AuthController {
 
   @Public()
   @Post('verify-otp')
-  verifyOtp(@Body() body: VerifyOtpDto) {
-    return this.authService.verifyOtp(body)
+  async verifyOtp(
+    @Body() body: VerifyOtpDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { accessToken, refreshToken, user } =
+      await this.authService.verifyOtp(body)
+
+    setJwtCookie({ response, name: 'kong_access_token', value: accessToken })
+    setJwtCookie({ response, name: 'kong_refresh_token', value: refreshToken })
+
+    return { user }
   }
 
   @Get('me')
@@ -44,12 +60,30 @@ export class AuthController {
   @Public()
   @UseGuards(RefreshJwtAuthGuard)
   @Post('update')
-  update(@AuthHeader() refreshToken: EncodedJwt) {
-    return this.authService.update(refreshToken)
+  async update(
+    @RefreshTokenCookie() oldRefreshToken: EncodedJwt,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      await this.authService.update(oldRefreshToken)
+
+    setJwtCookie({ response, name: 'kong_access_token', value: newAccessToken })
+
+    setJwtCookie({
+      response,
+      name: 'kong_refresh_token',
+      value: newRefreshToken,
+    })
   }
 
   @Post('logout')
-  logout(@Body() { refreshToken }: RefreshJwtDto) {
-    return this.authService.logout(refreshToken)
+  async logout(
+    @RefreshTokenCookie() refreshToken: EncodedJwt,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.authService.logout(refreshToken)
+
+    clearJwtCookie({ response, name: 'kong_access_token' })
+    clearJwtCookie({ response, name: 'kong_refresh_token' })
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { AccessJwtService } from '@/access-jwt/access-jwt.service'
 import { RefreshJwtService } from '@/refresh-jwt/refresh-jwt.service'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
@@ -31,8 +31,8 @@ export class AuthJwtsService {
     }
   }
 
-  async revoke(options: RevokeOptions): RevokeReturn {
-    this.revokeJwt(options)
+  revoke(options: RevokeOptions): RevokeReturn {
+    return this.revokeJwt(options)
   }
 
   async rotate(options: RotateOptions): RotateReturn {
@@ -48,6 +48,8 @@ export class AuthJwtsService {
       const { jti, sub, exp } = this.refreshJwtService.verify(options)
 
       await this.revokedJwtsService.add({ jti, sub, exp })
-    } catch {}
+    } catch {
+      throw new UnauthorizedException()
+    }
   }
 }

@@ -26,6 +26,9 @@ import { execSync } from 'node:child_process'
 import { UserGender } from '@/users/enums'
 import { createComment, createComments, truncateComments } from './utils'
 import { CursorPaginateMeta } from '@/lib/prisma/extensions/cursor-pagination/types'
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/shared/consts'
+import fs from 'node:fs'
+import cookieParser from 'cookie-parser'
 
 describe('Comments (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -60,8 +63,18 @@ describe('Comments (e2e)', () => {
     prismaClient = module.get<PrismaClient>(PRISMA_CLIENT)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
-    app = module.createNestApplication()
+    const httpsOptions = {
+      key: fs.readFileSync('certs/private-key.pem'),
+      cert: fs.readFileSync('certs/public.pem'),
+    }
+
+    app = module.createNestApplication({ httpsOptions })
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
+    app.enableCors({
+      credentials: true,
+      origin: 'http://localhost:3000',
+    })
+    app.use(cookieParser())
     server = app.getHttpServer()
     await app.init()
 
@@ -111,9 +124,9 @@ describe('Comments (e2e)', () => {
   })
 
   describe('POST /comments', () => {
-    afterEach(async () => await truncateComments(prismaClient))
+    beforeEach(async () => await truncateComments(prismaClient))
 
-    test('should return a root comment', async () => {
+    test('should be return a root comment', async () => {
       const body: CreateCommentDto = {
         articleId: 1,
         content: {
@@ -124,7 +137,7 @@ describe('Comments (e2e)', () => {
 
       const response = await request(server)
         .post('/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
 
       const comment = response.body as Comment
@@ -134,7 +147,7 @@ describe('Comments (e2e)', () => {
       expect(comment.content).toEqual(body.content)
     })
 
-    test('should return a child comment', async () => {
+    test('should be return a child comment', async () => {
       await createComment(prismaClient)
 
       const body: CreateCommentDto = {
@@ -148,7 +161,7 @@ describe('Comments (e2e)', () => {
 
       const response = await request(server)
         .post('/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
 
       const comment = response.body as Comment
@@ -158,7 +171,7 @@ describe('Comments (e2e)', () => {
       expect(comment.content).toEqual(body.content)
     })
 
-    test('should return 400 if a article is not found', async () => {
+    test('should be return 400 if a article is not found', async () => {
       const body: CreateCommentDto = {
         articleId: 2,
         content: {
@@ -169,12 +182,12 @@ describe('Comments (e2e)', () => {
 
       return request(server)
         .post('/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
         .expect(400)
     })
 
-    test('should return 400 if a parent comment is not found', async () => {
+    test('should be return 400 if a parent comment is not found', async () => {
       const body: CreateCommentDto = {
         articleId: 1,
         parentCommentId: 2,
@@ -186,12 +199,12 @@ describe('Comments (e2e)', () => {
 
       return request(server)
         .post('/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
         .expect(400)
     })
 
-    test('should return 400 if a doc content field contains not allowed node', async () => {
+    test('should be return 400 if a doc content field contains not allowed node', async () => {
       const body: CreateCommentDto = {
         articleId: 1,
         content: {
@@ -202,12 +215,12 @@ describe('Comments (e2e)', () => {
 
       return request(server)
         .post('/comments')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
         .expect(400)
     })
 
-    test('should return 401 if a user is not authenticated', async () => {
+    test('should be return 401 if a user is not authenticated', async () => {
       const body: CreateCommentDto = {
         articleId: 1,
         content: {
@@ -227,7 +240,7 @@ describe('Comments (e2e)', () => {
           beforeEach(async () => await createComments(prismaClient, 10))
           afterEach(async () => await truncateComments(prismaClient))
 
-          test('should return comments sorted by rating and ordered by DESC', async () => {
+          test('should be return comments sorted by rating and ordered by DESC', async () => {
             const response = await request(server)
               .get('/comments')
               .query({
@@ -236,7 +249,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'desc',
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const items = response.body.items as Comment[]
             const { after, before } = response.body.meta as CursorPaginateMeta
@@ -250,7 +263,7 @@ describe('Comments (e2e)', () => {
             expect(before).toBeNull()
           })
 
-          test('should return comments sorted by rating and ordered by ASC', async () => {
+          test('should be return comments sorted by rating and ordered by ASC', async () => {
             const response = await request(server)
               .get('/comments')
               .query({
@@ -259,7 +272,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'asc',
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const items = response.body.items as Comment[]
             const { after, before } = response.body.meta as CursorPaginateMeta
@@ -273,7 +286,7 @@ describe('Comments (e2e)', () => {
             expect(before).toBeNull()
           })
 
-          test('should return comments sorted by createdAt and ordered by DESC', async () => {
+          test('should be return comments sorted by createdAt and ordered by DESC', async () => {
             const response = await request(server)
               .get('/comments')
               .query({
@@ -282,7 +295,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'desc',
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const items = response.body.items as Comment[]
             const { after, before } = response.body.meta as CursorPaginateMeta
@@ -296,7 +309,7 @@ describe('Comments (e2e)', () => {
             expect(before).toBeNull()
           })
 
-          test('should return comments sorted by createdAt and ordered by ASC', async () => {
+          test('should be return comments sorted by createdAt and ordered by ASC', async () => {
             const response = await request(server)
               .get('/comments')
               .query({
@@ -305,7 +318,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'asc',
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const items = response.body.items as Comment[]
             const { after, before } = response.body.meta as CursorPaginateMeta
@@ -324,7 +337,7 @@ describe('Comments (e2e)', () => {
           beforeEach(async () => await createComments(prismaClient, 20))
           afterEach(async () => await truncateComments(prismaClient))
 
-          test('should return comments sorted by rating and ordered by DESC', async () => {
+          test('should be return comments sorted by rating and ordered by DESC', async () => {
             const firstResponse = await request(server)
               .get('/comments')
               .query({
@@ -333,7 +346,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'desc',
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const firstResponseItems = firstResponse.body.items as Comment[]
             const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -355,7 +368,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'desc',
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const secondResponseItems = secondResponse.body.items as Comment[]
             const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -369,7 +382,7 @@ describe('Comments (e2e)', () => {
             expect(secondResponseBefore).not.toBeNull()
           })
 
-          test('should return comments sorted by rating and ordered by ASC', async () => {
+          test('should be return comments sorted by rating and ordered by ASC', async () => {
             const firstResponse = await request(server)
               .get('/comments')
               .query({
@@ -378,7 +391,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'asc',
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const firstResponseItems = firstResponse.body.items as Comment[]
             const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -400,7 +413,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'asc',
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const secondResponseItems = secondResponse.body.items as Comment[]
             const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -414,7 +427,7 @@ describe('Comments (e2e)', () => {
             expect(secondResponseBefore).not.toBeNull()
           })
 
-          test('should return comments sorted by createdAt and ordered by DESC', async () => {
+          test('should be return comments sorted by createdAt and ordered by DESC', async () => {
             const firstResponse = await request(server)
               .get('/comments')
               .query({
@@ -423,7 +436,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'desc',
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const firstResponseItems = firstResponse.body.items as Comment[]
             const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -449,7 +462,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'desc',
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const secondResponseItems = secondResponse.body.items as Comment[]
             const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -467,7 +480,7 @@ describe('Comments (e2e)', () => {
             expect(secondResponseBefore).not.toBeNull()
           })
 
-          test('should return comments sorted by createdAt and ordered by ASC', async () => {
+          test('should be return comments sorted by createdAt and ordered by ASC', async () => {
             const firstResponse = await request(server)
               .get('/comments')
               .query({
@@ -476,7 +489,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'asc',
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const firstResponseItems = firstResponse.body.items as Comment[]
             const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -502,7 +515,7 @@ describe('Comments (e2e)', () => {
                 orderBy: 'asc',
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const secondResponseItems = secondResponse.body.items as Comment[]
             const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -531,7 +544,7 @@ describe('Comments (e2e)', () => {
 
           afterEach(async () => await truncateComments(prismaClient))
 
-          test('should return comments sorted by rating and ordered by DESC', async () => {
+          test('should be return comments sorted by rating and ordered by DESC', async () => {
             const response = await request(server)
               .get('/comments')
               .query({
@@ -541,7 +554,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const items = response.body.items as Comment[]
             const { after, before } = response.body.meta as CursorPaginateMeta
@@ -554,7 +567,7 @@ describe('Comments (e2e)', () => {
             expect(before).toBeNull()
           })
 
-          test('should return comments sorted by rating and ordered by ASC', async () => {
+          test('should be return comments sorted by rating and ordered by ASC', async () => {
             const response = await request(server)
               .get('/comments')
               .query({
@@ -564,7 +577,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const items = response.body.items as Comment[]
             const { after, before } = response.body.meta as CursorPaginateMeta
@@ -577,7 +590,7 @@ describe('Comments (e2e)', () => {
             expect(before).toBeNull()
           })
 
-          test('should return comments sorted by createdAt and ordered by DESC', async () => {
+          test('should be return comments sorted by createdAt and ordered by DESC', async () => {
             const response = await request(server)
               .get('/comments')
               .query({
@@ -587,7 +600,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const items = response.body.items as Comment[]
             const { after, before } = response.body.meta as CursorPaginateMeta
@@ -600,7 +613,7 @@ describe('Comments (e2e)', () => {
             expect(before).toBeNull()
           })
 
-          test('should return comments sorted by createdAt and ordered by ASC', async () => {
+          test('should be return comments sorted by createdAt and ordered by ASC', async () => {
             const response = await request(server)
               .get('/comments')
               .query({
@@ -610,7 +623,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const items = response.body.items as Comment[]
             const { after, before } = response.body.meta as CursorPaginateMeta
@@ -632,7 +645,7 @@ describe('Comments (e2e)', () => {
 
           afterEach(async () => await truncateComments(prismaClient))
 
-          test('should return comments sorted by rating and ordered by DESC', async () => {
+          test('should be return comments sorted by rating and ordered by DESC', async () => {
             const firstResponse = await request(server)
               .get('/comments')
               .query({
@@ -642,7 +655,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const firstResponseItems = firstResponse.body.items as Comment[]
             const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -665,7 +678,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const secondResponseItems = secondResponse.body.items as Comment[]
             const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -679,7 +692,7 @@ describe('Comments (e2e)', () => {
             expect(secondResponseBefore).not.toBeNull()
           })
 
-          test('should return comments sorted by rating and ordered by ASC', async () => {
+          test('should be return comments sorted by rating and ordered by ASC', async () => {
             const firstResponse = await request(server)
               .get('/comments')
               .query({
@@ -689,7 +702,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const firstResponseItems = firstResponse.body.items as Comment[]
             const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -712,7 +725,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'rating',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const secondResponseItems = secondResponse.body.items as Comment[]
             const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -726,7 +739,7 @@ describe('Comments (e2e)', () => {
             expect(secondResponseBefore).not.toBeNull()
           })
 
-          test('should return comments sorted by createdAt and ordered by DESC', async () => {
+          test('should be return comments sorted by createdAt and ordered by DESC', async () => {
             const firstResponse = await request(server)
               .get('/comments')
               .query({
@@ -736,7 +749,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const firstResponseItems = firstResponse.body.items as Comment[]
             const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -763,7 +776,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const secondResponseItems = secondResponse.body.items as Comment[]
             const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -781,7 +794,7 @@ describe('Comments (e2e)', () => {
             expect(secondResponseBefore).not.toBeNull()
           })
 
-          test('should return comments sorted by createdAt and ordered by ASC', async () => {
+          test('should be return comments sorted by createdAt and ordered by ASC', async () => {
             const firstResponse = await request(server)
               .get('/comments')
               .query({
@@ -791,7 +804,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const firstResponseItems = firstResponse.body.items as Comment[]
             const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -818,7 +831,7 @@ describe('Comments (e2e)', () => {
                 parentCommentId: 1,
                 sortBy: 'createdAt',
               })
-              .set('Authorization', `Bearer ${accessToken}`)
+              .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
             const secondResponseItems = secondResponse.body.items as Comment[]
             const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -838,7 +851,7 @@ describe('Comments (e2e)', () => {
         })
       })
 
-      test('should return empty comments if an article is not have a comments', async () => {
+      test('should be return empty comments if an article is not have a comments', async () => {
         const response = await request(server)
           .get('/comments')
           .query({
@@ -848,7 +861,7 @@ describe('Comments (e2e)', () => {
             parentCommentId: 1,
             sortBy: 'createdAt',
           })
-          .set('Authorization', `Bearer ${accessToken}`)
+          .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
         const items = response.body.items as Comment[]
         const { after, before } = response.body.meta as CursorPaginateMeta
@@ -865,7 +878,7 @@ describe('Comments (e2e)', () => {
         beforeEach(async () => await createComments(prismaClient, 10))
         afterEach(async () => await truncateComments(prismaClient))
 
-        test('should return comments sorted by rating and ordered by DESC', async () => {
+        test('should be return comments sorted by rating and ordered by DESC', async () => {
           const response = await request(server)
             .get('/comments')
             .query({
@@ -874,7 +887,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const items = response.body.items as Comment[]
           const { after, before } = response.body.meta as CursorPaginateMeta
@@ -887,7 +900,7 @@ describe('Comments (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return comments sorted by rating and ordered by ASC', async () => {
+        test('should be return comments sorted by rating and ordered by ASC', async () => {
           const response = await request(server)
             .get('/comments')
             .query({
@@ -896,7 +909,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const items = response.body.items as Comment[]
           const { after, before } = response.body.meta as CursorPaginateMeta
@@ -909,7 +922,7 @@ describe('Comments (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return comments sorted by createdAt and ordered by DESC', async () => {
+        test('should be return comments sorted by createdAt and ordered by DESC', async () => {
           const response = await request(server)
             .get('/comments')
             .query({
@@ -918,7 +931,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const items = response.body.items as Comment[]
           const { after, before } = response.body.meta as CursorPaginateMeta
@@ -931,7 +944,7 @@ describe('Comments (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return comments sorted by createdAt and ordered by ASC', async () => {
+        test('should be return comments sorted by createdAt and ordered by ASC', async () => {
           const response = await request(server)
             .get('/comments')
             .query({
@@ -940,7 +953,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const items = response.body.items as Comment[]
           const { after, before } = response.body.meta as CursorPaginateMeta
@@ -958,7 +971,7 @@ describe('Comments (e2e)', () => {
         beforeEach(async () => await createComments(prismaClient, 20))
         afterEach(async () => await truncateComments(prismaClient))
 
-        test('should return comments sorted by rating and ordered by DESC', async () => {
+        test('should be return comments sorted by rating and ordered by DESC', async () => {
           const firstResponse = await request(server)
             .get('/comments')
             .query({
@@ -967,7 +980,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseItems = firstResponse.body.items as Comment[]
           const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -989,7 +1002,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseItems = secondResponse.body.items as Comment[]
           const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -1003,7 +1016,7 @@ describe('Comments (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return comments sorted by rating and ordered by ASC', async () => {
+        test('should be return comments sorted by rating and ordered by ASC', async () => {
           const firstResponse = await request(server)
             .get('/comments')
             .query({
@@ -1012,7 +1025,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseItems = firstResponse.body.items as Comment[]
           const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -1034,7 +1047,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseItems = secondResponse.body.items as Comment[]
           const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -1048,7 +1061,7 @@ describe('Comments (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return comments sorted by createdAt and ordered by DESC', async () => {
+        test('should be return comments sorted by createdAt and ordered by DESC', async () => {
           const firstResponse = await request(server)
             .get('/comments')
             .query({
@@ -1057,7 +1070,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseItems = firstResponse.body.items as Comment[]
           const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -1083,7 +1096,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseItems = secondResponse.body.items as Comment[]
           const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -1101,7 +1114,7 @@ describe('Comments (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return comments sorted by createdAt and ordered by ASC', async () => {
+        test('should be return comments sorted by createdAt and ordered by ASC', async () => {
           const firstResponse = await request(server)
             .get('/comments')
             .query({
@@ -1110,7 +1123,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseItems = firstResponse.body.items as Comment[]
           const { after: firstResponseAfter, before: firstResponseBefore } =
@@ -1136,7 +1149,7 @@ describe('Comments (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseItems = secondResponse.body.items as Comment[]
           const { after: secondResponseAfter, before: secondResponseBefore } =
@@ -1155,7 +1168,7 @@ describe('Comments (e2e)', () => {
         })
       })
 
-      test('should return empty comments if a user is not have a comments', async () => {
+      test('should be return empty comments if a user is not have a comments', async () => {
         const response = await request(server)
           .get('/comments')
           .query({
@@ -1165,7 +1178,7 @@ describe('Comments (e2e)', () => {
             parentCommentId: 1,
             sortBy: 'createdAt',
           })
-          .set('Authorization', `Bearer ${accessToken}`)
+          .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
         const items = response.body.items as Comment[]
         const { after, before } = response.body.meta as CursorPaginateMeta
@@ -1177,15 +1190,15 @@ describe('Comments (e2e)', () => {
       })
     })
 
-    test('should return 401 if user is not authenticated', async () => {
+    test('should be return 401 if user is not authenticated', async () => {
       return request(server).get('/comments').expect(401)
     })
   })
 
   describe('PATCH /comments/1', () => {
-    afterEach(async () => await truncateComments(prismaClient))
+    beforeEach(async () => await truncateComments(prismaClient))
 
-    test('should return a comment', async () => {
+    test('should be return a comment', async () => {
       await createComment(prismaClient)
 
       const body: UpdateCommentDto = {
@@ -1197,7 +1210,7 @@ describe('Comments (e2e)', () => {
 
       const response = await request(server)
         .patch('/comments/1')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
 
       const updatedComment = response.body as Comment
@@ -1206,7 +1219,7 @@ describe('Comments (e2e)', () => {
       expect(updatedComment.content).toEqual(body.content)
     })
 
-    test('should return 400 if a doc content field contains not allowed node', async () => {
+    test('should be return 400 if a doc content field contains not allowed node', async () => {
       await createComment(prismaClient)
 
       const body: UpdateCommentDto = {
@@ -1218,12 +1231,12 @@ describe('Comments (e2e)', () => {
 
       return request(server)
         .patch('/comments/1')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
         .expect(400)
     })
 
-    test('should return 401 if user is not authenticated', async () => {
+    test('should be return 401 if user is not authenticated', async () => {
       const body: UpdateCommentDto = {
         content: {
           type: 'doc',
@@ -1236,20 +1249,20 @@ describe('Comments (e2e)', () => {
   })
 
   describe('DELETE /comments/1', () => {
-    afterEach(async () => await truncateComments(prismaClient))
+    beforeEach(async () => await truncateComments(prismaClient))
 
-    test('should return a comment', async () => {
+    test('should be return a comment', async () => {
       const originalComment = await createComment(prismaClient)
 
       const response = await request(server)
         .delete('/comments/1')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual(originalComment)
     })
 
-    test('should return 401 if user is not authenticated', async () => {
+    test('should be return 401 if user is not authenticated', async () => {
       return request(server).delete('/comments/1').expect(401)
     })
   })

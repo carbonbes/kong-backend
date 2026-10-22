@@ -21,6 +21,9 @@ import { Article } from '@/articles/types'
 import { createArticle, createArticles, truncateArticles } from './utils'
 import { getFakeHeadingNode, getFakeTextNode } from '@/test/utils'
 import { CursorPaginateMeta } from '@/lib/prisma/extensions/cursor-pagination/types'
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/shared/consts'
+import fs from 'node:fs'
+import cookieParser from 'cookie-parser'
 
 describe('Articles (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -55,8 +58,18 @@ describe('Articles (e2e)', () => {
     prismaClient = module.get<PrismaClient>(PRISMA_CLIENT)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
-    app = module.createNestApplication()
+    const httpsOptions = {
+      key: fs.readFileSync('certs/private-key.pem'),
+      cert: fs.readFileSync('certs/public.pem'),
+    }
+
+    app = module.createNestApplication({ httpsOptions })
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
+    app.enableCors({
+      credentials: true,
+      origin: 'http://localhost:3000',
+    })
+    app.use(cookieParser())
     server = app.getHttpServer()
     await app.init()
 
@@ -98,9 +111,9 @@ describe('Articles (e2e)', () => {
   })
 
   describe('POST /articles', () => {
-    afterEach(async () => await truncateArticles(prismaClient))
+    beforeEach(async () => await truncateArticles(prismaClient))
 
-    test('should return an article', async () => {
+    test('should be return article', async () => {
       const body: CreateArticleDto = {
         content: {
           type: 'doc',
@@ -110,34 +123,34 @@ describe('Articles (e2e)', () => {
 
       const response = await request(server)
         .post('/articles')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
 
       expect(response.status).toBe(201)
       expect(response.body).toEqual({ ...response.body, ...body })
     })
 
-    test('should return 400 if body is empty', async () => {
+    test('should be return 400 if body is empty', async () => {
       return request(server)
         .post('/articles')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send({})
         .expect(400)
     })
 
-    test('should return 400 if body content field is empty', async () => {
+    test('should be return 400 if body content field is empty', async () => {
       const body: CreateArticleDto = {
         content: {},
       }
 
       return request(server)
         .post('/articles')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
         .expect(400)
     })
 
-    test('should return 400 if doc node content field contains not allowed node', async () => {
+    test('should be return 400 if doc node content field contains not allowed node', async () => {
       const body: CreateArticleDto = {
         content: {
           type: 'doc',
@@ -147,12 +160,12 @@ describe('Articles (e2e)', () => {
 
       return request(server)
         .post('/articles')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
         .expect(400)
     })
 
-    test('should return 401 if user is not authenticated', async () => {
+    test('should be return 401 if user is not authenticated', async () => {
       return request(server).post('/articles').expect(401)
     })
   })
@@ -163,7 +176,7 @@ describe('Articles (e2e)', () => {
         beforeEach(async () => await createArticles(prismaClient, 10))
         afterEach(async () => await truncateArticles(prismaClient))
 
-        test('should return articles sorted by rating and ordered by DESC', async () => {
+        test('should be return articles sorted by rating and ordered by DESC', async () => {
           const response = await request(server)
             .get('/articles')
             .query({
@@ -172,7 +185,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const status = response.status
           const items: Article[] = response.body.items
@@ -189,7 +202,7 @@ describe('Articles (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return articles sorted by rating and ordered by ASC', async () => {
+        test('should be return articles sorted by rating and ordered by ASC', async () => {
           const response = await request(server)
             .get('/articles')
             .query({
@@ -198,7 +211,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const status = response.status
           const items: Article[] = response.body.items
@@ -215,7 +228,7 @@ describe('Articles (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return articles sorted by createdAt and ordered by DESC', async () => {
+        test('should be return articles sorted by createdAt and ordered by DESC', async () => {
           const response = await request(server)
             .get('/articles')
             .query({
@@ -224,7 +237,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const status = response.status
           const items: Article[] = response.body.items
@@ -241,7 +254,7 @@ describe('Articles (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return articles sorted by createdAt and ordered by ASC', async () => {
+        test('should be return articles sorted by createdAt and ordered by ASC', async () => {
           const response = await request(server)
             .get('/articles')
             .query({
@@ -250,7 +263,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const status = response.status
           const items: Article[] = response.body.items
@@ -272,7 +285,7 @@ describe('Articles (e2e)', () => {
         beforeEach(async () => await createArticles(prismaClient, 20))
         afterEach(async () => await truncateArticles(prismaClient))
 
-        test('should return articles sorted by rating and ordered by DESC', async () => {
+        test('should be return articles sorted by rating and ordered by DESC', async () => {
           const firstResponse = await request(server)
             .get('/articles')
             .query({
@@ -281,7 +294,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseStatus = firstResponse.status
           const firstResponseItems: Article[] = firstResponse.body.items
@@ -300,7 +313,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseStatus = secondResponse.status
           const secondResponseItems: Article[] = secondResponse.body.items
@@ -324,11 +337,11 @@ describe('Articles (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return articles sorted by rating and ordered by ASC', async () => {
+        test('should be return articles sorted by rating and ordered by ASC', async () => {
           const firstResponse = await request(server)
             .get('/articles')
             .query({ authorId: 1, limit: 10, orderBy: 'asc', sortBy: 'rating' })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseStatus = firstResponse.status
           const firstResponseItems: Article[] = firstResponse.body.items
@@ -347,7 +360,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseStatus = secondResponse.status
           const secondResponseItems: Article[] = secondResponse.body.items
@@ -371,7 +384,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return articles sorted by createdAt and ordered by DESC', async () => {
+        test('should be return articles sorted by createdAt and ordered by DESC', async () => {
           const firstResponse = await request(server)
             .get('/articles')
             .query({
@@ -380,7 +393,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseStatus = firstResponse.status
           const firstResponseItems: Article[] = firstResponse.body.items
@@ -399,7 +412,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseStatus = secondResponse.status
           const secondResponseItems: Article[] = secondResponse.body.items
@@ -431,7 +444,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return articles sorted by createdAt and ordered by ASC', async () => {
+        test('should be return articles sorted by createdAt and ordered by ASC', async () => {
           const firstResponse = await request(server)
             .get('/articles')
             .query({
@@ -440,7 +453,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseStatus = firstResponse.status
           const firstResponseItems: Article[] = firstResponse.body.items
@@ -459,7 +472,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseStatus = secondResponse.status
           const secondResponseItems: Article[] = secondResponse.body.items
@@ -492,7 +505,7 @@ describe('Articles (e2e)', () => {
         })
       })
 
-      test('should return empty articles if a user is not have an articles', async () => {
+      test('should be return empty articles if a user is not have an articles', async () => {
         const response = await request(server)
           .get('/articles')
           .query({
@@ -501,7 +514,7 @@ describe('Articles (e2e)', () => {
             orderBy: 'desc',
             sortBy: 'rating',
           })
-          .set('Authorization', `Bearer ${accessToken}`)
+          .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
         const status = response.status
         const items: Article[] = response.body.items
@@ -520,7 +533,7 @@ describe('Articles (e2e)', () => {
         beforeEach(async () => await createArticles(prismaClient, 10))
         afterEach(async () => await truncateArticles(prismaClient))
 
-        test('should return articles sorted by rating and ordered by DESC', async () => {
+        test('should be return articles sorted by rating and ordered by DESC', async () => {
           const response = await request(server)
             .get('/articles')
             .query({
@@ -529,7 +542,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const status = response.status
           const items: Article[] = response.body.items
@@ -546,7 +559,7 @@ describe('Articles (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return articles sorted by rating and ordered by ASC', async () => {
+        test('should be return articles sorted by rating and ordered by ASC', async () => {
           const response = await request(server)
             .get('/articles')
             .query({
@@ -555,7 +568,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const status = response.status
           const items: Article[] = response.body.items
@@ -572,7 +585,7 @@ describe('Articles (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return articles sorted by createdAt and ordered by DESC', async () => {
+        test('should be return articles sorted by createdAt and ordered by DESC', async () => {
           const response = await request(server)
             .get('/articles')
             .query({
@@ -581,7 +594,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const status = response.status
           const items: Article[] = response.body.items
@@ -598,7 +611,7 @@ describe('Articles (e2e)', () => {
           expect(before).toBeNull()
         })
 
-        test('should return articles sorted by createdAt and ordered by ASC', async () => {
+        test('should be return articles sorted by createdAt and ordered by ASC', async () => {
           const response = await request(server)
             .get('/articles')
             .query({
@@ -607,7 +620,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const status = response.status
           const items: Article[] = response.body.items
@@ -629,7 +642,7 @@ describe('Articles (e2e)', () => {
         beforeEach(async () => await createArticles(prismaClient, 20))
         afterEach(async () => await truncateArticles(prismaClient))
 
-        test('should return articles sorted by rating and ordered by DESC', async () => {
+        test('should be return articles sorted by rating and ordered by DESC', async () => {
           const firstResponse = await request(server)
             .get('/articles')
             .query({
@@ -638,7 +651,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseStatus = firstResponse.status
           const firstResponseItems: Article[] = firstResponse.body.items
@@ -657,7 +670,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseStatus = secondResponse.status
           const secondResponseItems: Article[] = secondResponse.body.items
@@ -681,7 +694,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return articles sorted by rating and ordered by ASC', async () => {
+        test('should be return articles sorted by rating and ordered by ASC', async () => {
           const firstResponse = await request(server)
             .get('/articles')
             .query({
@@ -690,7 +703,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseStatus = firstResponse.status
           const firstResponseItems: Article[] = firstResponse.body.items
@@ -709,7 +722,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'rating',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseStatus = secondResponse.status
           const secondResponseItems: Article[] = secondResponse.body.items
@@ -733,7 +746,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return articles sorted by createdAt and ordered by DESC', async () => {
+        test('should be return articles sorted by createdAt and ordered by DESC', async () => {
           const firstResponse = await request(server)
             .get('/articles')
             .query({
@@ -742,7 +755,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseStatus = firstResponse.status
           const firstResponseItems: Article[] = firstResponse.body.items
@@ -761,7 +774,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'desc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseStatus = secondResponse.status
           const secondResponseItems: Article[] = secondResponse.body.items
@@ -793,7 +806,7 @@ describe('Articles (e2e)', () => {
           expect(secondResponseBefore).not.toBeNull()
         })
 
-        test('should return articles sorted by createdAt and ordered by ASC', async () => {
+        test('should be return articles sorted by createdAt and ordered by ASC', async () => {
           const firstResponse = await request(server)
             .get('/articles')
             .query({
@@ -802,7 +815,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const firstResponseStatus = firstResponse.status
           const firstResponseItems: Article[] = firstResponse.body.items
@@ -821,7 +834,7 @@ describe('Articles (e2e)', () => {
               orderBy: 'asc',
               sortBy: 'createdAt',
             })
-            .set('Authorization', `Bearer ${accessToken}`)
+            .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
           const secondResponseStatus = secondResponse.status
           const secondResponseItems: Article[] = secondResponse.body.items
@@ -863,7 +876,7 @@ describe('Articles (e2e)', () => {
             orderBy: 'desc',
             sortBy: 'rating',
           })
-          .set('Authorization', `Bearer ${accessToken}`)
+          .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
         const status = response.status
         const items: Article[] = response.body.items
@@ -883,9 +896,9 @@ describe('Articles (e2e)', () => {
   })
 
   describe('PATCH /articles/1', () => {
-    afterEach(async () => await truncateArticles(prismaClient))
+    beforeEach(async () => await truncateArticles(prismaClient))
 
-    test('should return an article', async () => {
+    test('should be return an article', async () => {
       const originalArticle = await createArticle(prismaClient)
 
       const body: UpdateArticleDto = {
@@ -899,14 +912,14 @@ describe('Articles (e2e)', () => {
 
       const response = await request(server)
         .patch('/articles/1')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
 
       expect(response.status).toBe(200)
       expect(response.body.content).toEqual(updatedArticle.content)
     })
 
-    test('should return 400 if a doc content field contains not allowed node', async () => {
+    test('should be return 400 if a doc content field contains not allowed node', async () => {
       await createArticle(prismaClient)
 
       const body: UpdateArticleDto = {
@@ -918,31 +931,31 @@ describe('Articles (e2e)', () => {
 
       return request(server)
         .patch('/articles/1')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .send(body)
         .expect(400)
     })
 
-    test('should return 401 if user is not authenticated', async () => {
+    test('should be return 401 if user is not authenticated', async () => {
       return request(server).patch('/articles/1').expect(401)
     })
   })
 
   describe('DELETE /articles/1', () => {
-    afterEach(async () => await truncateArticles(prismaClient))
+    beforeEach(async () => await truncateArticles(prismaClient))
 
-    test('should return an article', async () => {
+    test('should be return article', async () => {
       const deletedArticle = await createArticle(prismaClient)
 
       const response = await request(server)
         .delete('/articles/1')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
 
       expect(response.status).toBe(200)
       expect(response.body).toEqual(deletedArticle)
     })
 
-    test('should return 401 if user is not authenticated', async () => {
+    test('should иу return 401 if user is not authenticated', async () => {
       return request(server).delete('/articles/1').expect(401)
     })
   })

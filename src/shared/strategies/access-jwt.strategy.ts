@@ -5,6 +5,8 @@ import { UsersService } from '@/users/users.service'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { RevokedJwtsService } from '@/revoked-jwts/revoked-jwts.service'
+import { Request } from 'express'
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/shared/consts'
 
 @Injectable()
 export class AccessJwtStrategy extends PassportStrategy(
@@ -16,7 +18,9 @@ export class AccessJwtStrategy extends PassportStrategy(
     private readonly usersService: UsersService,
     private readonly revokedJwtsService: RevokedJwtsService,
   ) {
-    const jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken()
+    const jwtFromRequest = ExtractJwt.fromExtractors([
+      (req: Request) => req.cookies[ACCESS_TOKEN_COOKIE_NAME],
+    ])
     const secretOrKey = configService.get('jwt.accessJwtSecret')!
 
     super({ jwtFromRequest, ignoreExpiration: false, secretOrKey })

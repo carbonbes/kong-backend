@@ -6,7 +6,10 @@ import { MailService } from '@/mail/mail.service'
 import { mock, MockProxy } from 'vitest-mock-extended'
 import { ResendOtpDto, SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { OtpType } from '@/otps/enums'
-import { ACCESS_TOKEN_NAME, REFRESH_TOKEN_NAME } from '@/shared/consts'
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_NAME,
+} from '@/shared/consts'
 import { App } from 'supertest/types'
 import { OtpsService } from '@/otps/otps.service'
 import { AuthJwtsService } from '@/auth-jwts/auth-jwts.service'
@@ -20,6 +23,9 @@ import { PrismaClient } from '@/prisma/types'
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { execSync } from 'node:child_process'
 import { createUser, truncateUsers } from './utils'
+import cookieParser from 'cookie-parser'
+import { parseSetCookie } from 'cookie'
+import fs from 'node:fs'
 
 describe('AuthController (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer
@@ -55,8 +61,18 @@ describe('AuthController (e2e)', () => {
     otpsService = module.get<OtpsService>(OtpsService)
     authJwtsService = module.get<AuthJwtsService>(AuthJwtsService)
 
-    app = module.createNestApplication()
+    const httpsOptions = {
+      key: fs.readFileSync('certs/private-key.pem'),
+      cert: fs.readFileSync('certs/public.pem'),
+    }
+
+    app = module.createNestApplication({ httpsOptions })
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
+    app.enableCors({
+      credentials: true,
+      origin: 'http://localhost:3000',
+    })
+    app.use(cookieParser())
     server = app.getHttpServer()
     await app.init()
 
@@ -70,7 +86,7 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/signup', () => {
-    afterEach(async () => await truncateUsers(prismaClient))
+    beforeEach(async () => await truncateUsers(prismaClient))
 
     test('should return 201 when user with some email does not exist', async () => {
       const body: SignUpDto = {
@@ -173,7 +189,7 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/signin', () => {
-    afterEach(async () => await truncateUsers(prismaClient))
+    beforeEach(async () => await truncateUsers(prismaClient))
 
     test('should return 201 when user exists and is active', async () => {
       await createUser(prismaClient, {
@@ -226,7 +242,7 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/resend-otp', () => {
-    afterEach(async () => await truncateUsers(prismaClient))
+    beforeEach(async () => await truncateUsers(prismaClient))
 
     test('should return 201 when user exists', async () => {
       await createUser(prismaClient, {
@@ -288,10 +304,10 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('POST /auth/verify-otp', () => {
-    afterEach(async () => await truncateUsers(prismaClient))
+    beforeEach(async () => await truncateUsers(prismaClient))
 
-    test('should return 201 and auth-jwts if signup otp is verified', async () => {
-      await createUser(prismaClient, {
+    test('should be return access/refresh-cookie if signup-otp is verified', async () => {
+      const user = await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
         gender: UserGender.male,
@@ -308,20 +324,56 @@ describe('AuthController (e2e)', () => {
         email: 'test@test.com',
       }
 
-      const response = await request(server)
-        .post('/auth/verify-otp')
-        .send(body)
-        .expect(201)
+      const response = await request(server).post('/auth/verify-otp').send(body)
 
-      expect(response.body).toHaveProperty(ACCESS_TOKEN_NAME)
-      expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
+      const accessTokenSetCookie = parseSetCookie(
+        response.headers['set-cookie'][0],
+      )
+
+      const refreshTokenSetCookie = parseSetCookie(
+        response.headers['set-cookie'][1],
+      )
+
+      expect(response.status).toBe(201)
+
+      expect(accessTokenSetCookie).toEqual({
+        name: ACCESS_TOKEN_COOKIE_NAME,
+        value: expect.any(String),
+        expires: expect.any(Date),
+        httpOnly: true,
+        maxAge: 300,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      })
+
+      expect(refreshTokenSetCookie).toEqual({
+        name: REFRESH_TOKEN_COOKIE_NAME,
+        value: expect.any(String),
+        expires: expect.any(Date),
+        httpOnly: true,
+        maxAge: 2592000,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      })
+
+      expect(response.body).toEqual({
+        user: {
+          ...user,
+          isActive: true,
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+        },
+      })
     })
 
-    test('should return 201 and auth-jwts if signin otp is verified', async () => {
-      await createUser(prismaClient, {
+    test('should be return access/refresh-cookie if signin-otp is verified', async () => {
+      const user = await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
         gender: UserGender.male,
+        isActive: true,
       })
 
       const { code } = await otpsService.create({
@@ -335,16 +387,51 @@ describe('AuthController (e2e)', () => {
         email: 'test@test.com',
       }
 
-      const response = await request(server)
-        .post('/auth/verify-otp')
-        .send(body)
-        .expect(201)
+      const response = await request(server).post('/auth/verify-otp').send(body)
 
-      expect(response.body).toHaveProperty(ACCESS_TOKEN_NAME)
-      expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
+      const accessTokenSetCookie = parseSetCookie(
+        response.headers['set-cookie'][0],
+      )
+
+      const refreshTokenSetCookie = parseSetCookie(
+        response.headers['set-cookie'][1],
+      )
+
+      expect(response.status).toBe(201)
+
+      expect(accessTokenSetCookie).toEqual({
+        name: ACCESS_TOKEN_COOKIE_NAME,
+        value: expect.any(String),
+        expires: expect.any(Date),
+        httpOnly: true,
+        maxAge: 300,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      })
+
+      expect(refreshTokenSetCookie).toEqual({
+        name: REFRESH_TOKEN_COOKIE_NAME,
+        value: expect.any(String),
+        expires: expect.any(Date),
+        httpOnly: true,
+        maxAge: 2592000,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      })
+
+      expect(response.body).toEqual({
+        user: {
+          ...user,
+          isActive: true,
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+        },
+      })
     })
 
-    test('should return 404 when otp is not verified', async () => {
+    test('should be return 404 when otp is not verified', async () => {
       await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
@@ -367,9 +454,9 @@ describe('AuthController (e2e)', () => {
   })
 
   describe('GET /auth/me', () => {
-    afterEach(async () => await truncateUsers(prismaClient))
+    beforeEach(async () => await truncateUsers(prismaClient))
 
-    test('should return 200 and user', async () => {
+    test('should be return user', async () => {
       const user = await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
@@ -381,28 +468,28 @@ describe('AuthController (e2e)', () => {
 
       const response = await request(server)
         .get('/auth/me')
-        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
         .expect(200)
 
       expect(response.body).toEqual(user)
     })
 
-    test('should return 401 when no authorization header', async () => {
+    test('should be return 401 when not provided access-token cookie', async () => {
       await request(server).get('/auth/me').expect(401)
     })
 
-    test('should return 401 when invalid token provided', async () => {
+    test('should be return 401 when provided access-token cookie is invalid', async () => {
       await request(server)
         .get('/auth/me')
-        .set('Authorization', 'Bearer invalid')
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=invalid`)
         .expect(401)
     })
   })
 
   describe('POST /auth/update', () => {
-    afterEach(async () => truncateUsers(prismaClient))
+    beforeEach(async () => truncateUsers(prismaClient))
 
-    test('should return 201 and new auth jwts pair with valid refresh token', async () => {
+    test('should be return new access/refresh-cookie', async () => {
       await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
@@ -413,29 +500,42 @@ describe('AuthController (e2e)', () => {
 
       const response = await request(server)
         .post('/auth/update')
-        .set('Authorization', `Bearer ${refreshToken}`)
-        .expect(201)
+        .set('Cookie', `${REFRESH_TOKEN_COOKIE_NAME}=${refreshToken}`)
 
-      expect(response.body).toHaveProperty(ACCESS_TOKEN_NAME)
-      expect(response.body).toHaveProperty(REFRESH_TOKEN_NAME)
+      const accessTokenSetCookie = parseSetCookie(
+        response.headers['set-cookie'][0],
+      )
+
+      const refreshTokenSetCookie = parseSetCookie(
+        response.headers['set-cookie'][1],
+      )
+
+      expect(response.status).toBe(201)
+
+      expect(accessTokenSetCookie).toEqual({
+        name: ACCESS_TOKEN_COOKIE_NAME,
+        value: expect.any(String),
+        expires: expect.any(Date),
+        httpOnly: true,
+        maxAge: 300,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      })
+
+      expect(refreshTokenSetCookie).toEqual({
+        name: REFRESH_TOKEN_COOKIE_NAME,
+        value: expect.any(String),
+        expires: expect.any(Date),
+        httpOnly: true,
+        maxAge: 2592000,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      })
     })
 
-    test('should return 401 when no refresh token provided', async () => {
-      await request(server).post('/auth/update').expect(401)
-    })
-
-    test('should return 401 when invalid refresh token provided', async () => {
-      await request(server)
-        .post('/auth/update')
-        .set('Authorization', 'Bearer invalid')
-        .expect(401)
-    })
-  })
-
-  describe('POST /auth/logout', () => {
-    afterEach(async () => await truncateUsers(prismaClient))
-
-    test('should return 200 and revoke token successfully', async () => {
+    test('should be return 401 when not provided refresh-token cookie', async () => {
       await createUser(prismaClient, {
         email: 'test@test.com',
         name: 'Test',
@@ -445,15 +545,93 @@ describe('AuthController (e2e)', () => {
       const { accessToken } = authJwtsService.sign({ sub: 'test@test.com' })
 
       await request(server)
-        .get('/auth/me')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(200)
+        .post('/auth/update')
+        .set('Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`)
+        .expect(401)
     })
 
-    test('should return 401 when refresh token is invalid', async () => {
+    test('should be return 401 when provided refresh-token cookie is invalid', async () => {
+      await createUser(prismaClient, {
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.male,
+      })
+
+      const { accessToken } = authJwtsService.sign({ sub: 'test@test.com' })
+
+      await request(server)
+        .post('/auth/update')
+        .set(
+          'Cookie',
+          `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}; ${REFRESH_TOKEN_COOKIE_NAME}=invalid`,
+        )
+        .expect(401)
+    })
+  })
+
+  describe('POST /auth/logout', () => {
+    beforeEach(async () => await truncateUsers(prismaClient))
+
+    test('should be clear access/refresh-cookie', async () => {
+      await createUser(prismaClient, {
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.male,
+      })
+
+      const { accessToken, refreshToken } = authJwtsService.sign({
+        sub: 'test@test.com',
+      })
+
+      const response = await request(server)
+        .post('/auth/logout')
+        .set(
+          'Cookie',
+          `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}; ${REFRESH_TOKEN_COOKIE_NAME}=${refreshToken}`,
+        )
+
+      const accessTokenClearCookie = parseSetCookie(
+        response.headers['set-cookie'][0],
+      )
+
+      const refreshTokenClearCookie = parseSetCookie(
+        response.headers['set-cookie'][1],
+      )
+
+      expect(response.status).toBe(201)
+
+      expect(accessTokenClearCookie).toEqual({
+        name: ACCESS_TOKEN_COOKIE_NAME,
+        value: '',
+        expires: expect.any(Date),
+        path: '/',
+      })
+
+      expect(refreshTokenClearCookie).toEqual({
+        name: REFRESH_TOKEN_COOKIE_NAME,
+        value: '',
+        expires: expect.any(Date),
+        path: '/',
+      })
+    })
+
+    test('should be return 401 when provided refresh-token cookie is invalid', async () => {
+      await createUser(prismaClient, {
+        email: 'test@test.com',
+        name: 'Test',
+        gender: UserGender.male,
+      })
+
+      const { accessToken } = authJwtsService.sign({
+        sub: 'test@test.com',
+      })
+
       await request(server)
         .post('/auth/logout')
-        .set('Authorization', 'Bearer invalid')
+        .set(
+          'Cookie',
+          `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}; ${REFRESH_TOKEN_COOKIE_NAME}=invalid`,
+        )
         .expect(401)
     })
   })

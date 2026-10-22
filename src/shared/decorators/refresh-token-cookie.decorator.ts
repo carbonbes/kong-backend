@@ -1,10 +1,10 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common'
-import { EncodedJwt } from '@/shared/types'
+import { REFRESH_TOKEN_COOKIE_NAME } from '@/shared/consts'
 
-export const AuthHeader = createParamDecorator(
+export const RefreshTokenCookie = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest()
 
-    return request.headers.authorization.replace('Bearer ', '') as EncodedJwt
+    return request.cookies[REFRESH_TOKEN_COOKIE_NAME]
   },
 )

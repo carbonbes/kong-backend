@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { AuthService } from './auth.service'
 import { ForbiddenException, NotFoundException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
-import { getMockReq } from 'vitest-mock-express'
+import { getMockReq, getMockRes } from 'vitest-mock-express'
 import {
   getFakeAuthJwts,
   getFakeEmail,
@@ -12,7 +12,11 @@ import {
 } from '@/test/utils'
 import { ResendOtpDto, SignInDto, SignUpDto, VerifyOtpDto } from '@/auth/dtos'
 import { mock, MockProxy } from 'vitest-mock-extended'
-import { RefreshJwtDto } from '@/refresh-jwt/dtos'
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_NAME,
+} from '@/shared/consts'
+import { Response } from 'express'
 
 describe('AuthController', () => {
   let authController: AuthController
@@ -110,9 +114,13 @@ describe('AuthController', () => {
 
   describe('verifyOtp', () => {
     let body: VerifyOtpDto
+    let res: Response
 
     beforeEach(() => {
       body = getFakeOtp()
+
+      const { res: response } = getMockRes()
+      res = response
     })
 
     test('should be return jwts and user', async () => {
@@ -124,16 +132,38 @@ describe('AuthController', () => {
 
       authService.verifyOtp.mockResolvedValue({ ...jwts, user })
 
-      const result = await authController.verifyOtp(body)
+      const result = await authController.verifyOtp(body, res)
 
       expect(authService.verifyOtp).toHaveBeenCalledWith(body)
-      expect(result).toEqual({ ...jwts, user })
+      expect(res.cookie).toHaveBeenNthCalledWith(
+        1,
+        ACCESS_TOKEN_COOKIE_NAME,
+        jwts.accessToken,
+        {
+          httpOnly: true,
+          maxAge: Number(process.env.ACCESS_JWT_EXPIRES_IN) * 1000,
+          sameSite: 'lax',
+          secure: false,
+        },
+      )
+      expect(res.cookie).toHaveBeenNthCalledWith(
+        2,
+        REFRESH_TOKEN_COOKIE_NAME,
+        jwts.refreshToken,
+        {
+          httpOnly: true,
+          maxAge: Number(process.env.ACCESS_JWT_EXPIRES_IN) * 1000,
+          sameSite: 'lax',
+          secure: false,
+        },
+      )
+      expect(result).toEqual({ user })
     })
 
     test('should be return 403', async () => {
       authService.verifyOtp.mockRejectedValue(new NotFoundException())
 
-      await expect(authController.verifyOtp(body)).rejects.toThrow(
+      await expect(authController.verifyOtp(body, res)).rejects.toThrow(
         NotFoundException,
       )
       expect(authService.verifyOtp).toHaveBeenCalledWith(body)
@@ -153,28 +183,59 @@ describe('AuthController', () => {
 
   describe('update', () => {
     test('should be return new JWT pair', async () => {
+      const { res } = getMockRes()
       const oldAuthJwts = getFakeAuthJwts()
       const newAuthJwts = getFakeAuthJwts()
       const refreshToken = oldAuthJwts.refreshToken
 
       authService.update.mockResolvedValue(newAuthJwts)
 
-      const result = await authController.update(refreshToken)
+      const result = await authController.update(refreshToken, res)
 
-      expect(result).toEqual(newAuthJwts)
       expect(authService.update).toHaveBeenCalledWith(refreshToken)
+      expect(res.cookie).toHaveBeenNthCalledWith(
+        1,
+        ACCESS_TOKEN_COOKIE_NAME,
+        newAuthJwts.accessToken,
+        {
+          httpOnly: true,
+          maxAge: Number(process.env.ACCESS_JWT_EXPIRES_IN) * 1000,
+          sameSite: 'lax',
+          secure: false,
+        },
+      )
+      expect(res.cookie).toHaveBeenNthCalledWith(
+        2,
+        REFRESH_TOKEN_COOKIE_NAME,
+        newAuthJwts.refreshToken,
+        {
+          httpOnly: true,
+          maxAge: Number(process.env.ACCESS_JWT_EXPIRES_IN) * 1000,
+          sameSite: 'lax',
+          secure: false,
+        },
+      )
+      expect(result).toBeUndefined()
     })
   })
 
   describe('logout', () => {
     test('should be return undefined', async () => {
+      const { res } = getMockRes()
       const refreshToken = getFakeJwt()
-      const body: RefreshJwtDto = { refreshToken }
 
       authService.logout.mockResolvedValue(undefined)
 
-      expect(await authController.logout(body)).toBeUndefined()
-      expect(authService.logout).toHaveBeenCalledWith(body.refreshToken)
+      expect(await authController.logout(refreshToken, res)).toBeUndefined()
+      expect(authService.logout).toHaveBeenCalledWith(refreshToken)
+      expect(res.clearCookie).toHaveBeenNthCalledWith(
+        1,
+        ACCESS_TOKEN_COOKIE_NAME,
+      )
+      expect(res.clearCookie).toHaveBeenNthCalledWith(
+        2,
+        REFRESH_TOKEN_COOKIE_NAME,
+      )
     })
   })
 })
