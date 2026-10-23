@@ -25,13 +25,15 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 import { PRISMA_CLIENT } from '@/prisma/consts'
 import { SubsitesModule } from '@/subsites/subsites.module'
 import { HealthModule } from '@/health/health.module'
+import cors from '@/config/cors'
+import server from '@/config/server'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      load: [database, jwt, mail, otp, redis],
+      load: [cors, database, jwt, mail, otp, redis, server],
       validate,
     }),
     EventEmitterModule.forRoot({

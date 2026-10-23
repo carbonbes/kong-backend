@@ -3,6 +3,7 @@ import { AppModule } from './app.module'
 import { ValidationPipe } from '@nestjs/common'
 import cookieParser from 'cookie-parser'
 import fs from 'node:fs'
+import { ConfigService } from '@nestjs/config'
 
 async function bootstrap() {
   const httpsOptions = {
@@ -11,13 +12,22 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule, { httpsOptions })
+
+  const configService = app.get(ConfigService)
+
+  const origin = configService.get<string>('cors.origin')!
+  const port = Number(configService.get('server.port'))
+
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
+
   app.enableCors({
     credentials: true,
-    origin: 'http://localhost:3001',
+    origin,
   })
+
   app.use(cookieParser())
-  await app.listen(process.env.PORT ?? 3000)
+
+  await app.listen(port)
 }
 
 bootstrap()

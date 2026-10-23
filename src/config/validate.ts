@@ -2,9 +2,6 @@ import { IsNumber, IsString, validateSync } from 'class-validator'
 import { plainToInstance } from 'class-transformer'
 
 class EnvVariables {
-  @IsNumber()
-  PORT: number
-
   @IsString()
   DATABASE_URL: string
 
@@ -46,6 +43,12 @@ class EnvVariables {
 
   @IsNumber()
   OTP_EXPIRES_IN: number
+
+  @IsString()
+  CORS_ORIGIN: string
+
+  @IsNumber()
+  SERVER_PORT: number
 }
 
 export function validate(config: Record<string, any>) {
