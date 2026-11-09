@@ -1,11 +1,16 @@
+.agents
 .idea
+.opencode
 .yarn
 dist
+generated
 node_modules
 test
 .eslintrc.js
 .gitignore
 .prettierrc
+docker-compose.yaml
+opencode.json
 vitest.config.e2e.ts
 vitest.config.ts
 .env
